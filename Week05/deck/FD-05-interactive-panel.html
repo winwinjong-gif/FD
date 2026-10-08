@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="lec-html-state-strategy" content="all-reachable">
+<meta name="lec-html-render-check" content="desktop,mobile">
+<title>FD Week 05: 실시간 실험실 인터랙티브 패널 | 재무데이터분석</title>
+<style>
+:root {
+  --primary: #4F46E5;
+  --primary-d: #3730A3;
+  --primary-l: #EEF2FF;
+  --navy: #0F1E3D;
+  --ink: #161D29;
+  --ink2: #33404F;
+  --muted: #64748B;
+  --subtle: #94A3B8;
+  --line: #E2E8F0;
+  --line2: #CBD5E1;
+  --surface: #FFFFFF;
+  --surf2: #FAF7F0;
+  --surf3: #F1F5F9;
+  --success: #16A34A;
+  --success-l: #E8F5E9;
+  --warning: #D97706;
+  --warning-l: #FFF3E0;
+  --danger: #DC2626;
+  --danger-l: #FEE2E2;
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; font-family: var(--font); background: var(--surf3); color: var(--ink); line-height: 1.5; font-size: 15px; word-break: keep-all; -webkit-font-smoothing: antialiased; }
+.top-bar { position: sticky; top: 0; z-index: 10; background: var(--navy); color: #fff; padding: 14px 20px; }
+.top-bar-inner { max-width: 1000px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.top-title { font-size: 16px; font-weight: 800; }
+.top-sub { font-size: 12px; color: #A5B4FC; margin-top: 2px; }
+.bench-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.bench-nav button { font-family: inherit; font-size: 13px; font-weight: 700; color: #C7D2FE; background: #1E2A5C; border: 1px solid #312E81; border-radius: 8px; padding: 8px 14px; cursor: pointer; transition: background .15s, color .15s; }
+.bench-nav button:hover { background: #312E81; color: #fff; }
+.bench-nav button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+main { max-width: 1000px; margin: 0 auto; padding: 22px 20px 60px; }
+.bench { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; box-shadow: 0 1px 3px rgba(15,30,61,.06); }
+.bench[hidden] { display: none; }
+.bench-tag { display: inline-block; font-size: 11.5px; font-weight: 800; color: var(--primary-d); background: var(--primary-l); padding: 4px 10px; border-radius: 20px; margin-bottom: 8px; }
+.bench-head h2 { font-size: 20px; color: var(--navy); margin-bottom: 8px; }
+.bench-note { font-size: 13px; color: var(--ink2); line-height: 1.6; background: var(--surf2); border-left: 4px solid var(--warning); padding: 12px 16px; border-radius: 8px; margin-bottom: 18px; }
+.bench-note code { font-family: var(--mono); background: #fff; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); font-size: 12px; }
+.bench-note-title { font-size: 13.5px; font-weight: 800; color: var(--navy); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.bench-note ul { margin: 4px 0 0 18px; padding: 0; list-style-type: disc; }
+.bench-note ul ul { margin: 3px 0 4px 18px; list-style-type: circle; }
+.bench-note li { margin-bottom: 5px; line-height: 1.55; }
+.bench-note li:last-child { margin-bottom: 0; }
+.bench-note strong { color: var(--navy); font-weight: 800; }
+.hl { background: #FEF08A; color: #854D0E; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+.bench-body { display: flex; flex-direction: column; gap: 16px; }
+.bench-body.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 768px) { .bench-body.two-col { grid-template-columns: 1fr; } }
+.panel-card { background: var(--surf3); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.ctrl-label { display: block; font-size: 13px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+input[type="range"] { width: 100%; accent-color: var(--primary); margin-bottom: 8px; }
+select { width: 100%; font-family: inherit; font-size: 13px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line2); background: #fff; color: var(--ink); }
+.ctrl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+@media (max-width: 560px) { .ctrl-row { grid-template-columns: 1fr; } }
+.ctrl-value { display: block; font-family: var(--mono); font-size: 16px; font-weight: 800; color: var(--primary-d); margin-bottom: 12px; }
+.toggle-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.toggle-btn { flex: 1; font-family: inherit; font-size: 13px; font-weight: 700; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line2); background: #fff; color: var(--muted); cursor: pointer; transition: all .15s; }
+.toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.result-card { display: flex; flex-direction: column; gap: 10px; }
+.result-row { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 8px; padding: 10px 14px; border: 1px solid var(--line); }
+.result-row.highlight { background: var(--primary-l); border-color: var(--primary); }
+.result-row.warn { background: var(--warning-l); border-color: var(--warning); }
+.result-row.danger { background: var(--danger-l); border-color: var(--danger); }
+.result-label { font-size: 12.5px; font-weight: 800; color: var(--navy); }
+.result-label .hint { font-size: 11px; font-weight: 600; color: var(--subtle); display: block; }
+.result-value { font-family: var(--mono); font-size: 14.5px; font-weight: 800; color: var(--primary-d); }
+.result-value.danger { color: var(--danger); }
+.result-value.success { color: var(--success); }
+.code-block { display: block; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; line-height: 1.6; background: var(--navy); color: #E2E8F0; padding: 12px 14px; border-radius: 8px; }
+.mini-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 10px; background: #fff; }
+.mini-table th, .mini-table td { border: 1px solid var(--line); padding: 7px 10px; text-align: center; }
+.mini-table th { background: var(--surf2); color: var(--navy); font-weight: 700; }
+.mini-table td { font-family: var(--mono); color: var(--ink); }
+.mini-table tr.highlight td { background: var(--primary-l); font-weight: 800; color: var(--primary-d); }
+.mini-table tr.cross-day td { background: var(--warning-l); font-weight: 800; color: var(--warning); }
+.mini-table tr.position-day td { background: var(--success-l); font-weight: 800; color: var(--success); }
+.badge { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px; }
+.badge.true { background: var(--success-l); color: var(--success); }
+.badge.false { background: var(--line); color: var(--muted); }
+.badge.golden { background: var(--warning-l); color: var(--warning); }
+.badge.pos { background: var(--primary-l); color: var(--primary-d); }
+.return-link { display: inline-block; margin-top: 18px; font-size: 13px; font-weight: 700; color: var(--primary-d); text-decoration: none; background: var(--primary-l); padding: 8px 16px; border-radius: 20px; transition: background .15s; }
+.return-link:hover { background: #E0E7FF; }
+.flow-diagram { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.flow-step { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; text-align: center; }
+.flow-step.active { border-color: var(--primary); background: var(--primary-l); }
+.flow-step.danger { border-color: var(--danger); background: var(--danger-l); }
+.flow-step .step-time { font-size: 11px; font-weight: 700; color: var(--muted); }
+.flow-step .step-title { font-size: 13px; font-weight: 800; color: var(--navy); margin-top: 2px; }
+.flow-arrow { font-size: 16px; font-weight: 800; color: var(--muted); }
+.viz-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div>
+      <div class="top-title">FD Week 05: 실시간 실험실 인터랙티브 패널</div>
+      <div class="top-sub">재무제표와 가격 흐름은 다른 질문에 답한다 — 20·60일선, 크로스 가설, shift(1) 정렬, API 승인</div>
+    </div>
+    <nav class="bench-nav" aria-label="실험 벤치 탐색">
+      <button type="button" data-target="bench1" class="active">① §100 이동평균 지연</button>
+      <button type="button" data-target="bench2">② §200 신호 vs 크로스</button>
+      <button type="button" data-target="bench3">③ §300 shift(1) 버그</button>
+      <button type="button" data-target="bench4">④ §400 CLI·MCP 거버넌스</button>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<!-- ==========================================
+     BENCH 1: 이동평균 지연과 워밍업 NaN
+     ========================================== -->
+<section id="bench1" class="bench" aria-labelledby="bench1-title">
+  <div class="bench-head">
+    <div class="bench-tag">[§100] 실험 1: 이동평균 계산과 지연</div>
+    <h2 id="bench1-title">평균은 노이즈를 누르지만 항상 늦게 도착한다</h2>
+  </div>
+  <div class="bench-note">
+    <div class="bench-note-title">💡 학습 포인트</div>
+    <ul>
+      <li><strong>이동평균(SMA)의 대가 — <mark class="hl">지연(Lag)</mark></strong>
+        <ul>
+          <li>가격의 일별 출렁임(노이즈)을 완화하여 매끄러운 추세를 보여줍니다.</li>
+          <li>과거 N일의 평균이므로 급격한 가격 전환이나 반등을 <mark class="hl">항상 늦게 반영</mark>합니다.</li>
+        </ul>
+      </li>
+      <li><strong>시작 구간의 숙명 — <mark class="hl">워밍업 결측치(NaN)</mark></strong>
+        <ul>
+          <li>데이터 시작 시점부터 <code>N - 1</code>개 행은 평균을 낼 과거 데이터가 모자랍니다.</li>
+          <li>이 구간에서는 값이 비어 있는 <mark class="hl">정직한 결측치(워밍업 NaN)</mark>가 필연적으로 발생합니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="bench-body two-col">
+    <div class="panel-card">
+      <span class="ctrl-label">이동평균 윈도우 선택 (N)</span>
+      <div class="toggle-row" id="b1WindowToggles">
+        <button type="button" class="toggle-btn" data-win="5">N = 5일 (단기)</button>
+        <button type="button" class="toggle-btn active" data-win="20">N = 20일 (한 달)</button>
+        <button type="button" class="toggle-btn" data-win="60">N = 60일 (한 분기)</button>
+      </div>
+
+      <label class="ctrl-label" for="b1DaySlider">데이터 행(거래일) 탐색 (t일): <output id="b1DayOut" for="b1DaySlider">60</output>일차</label>
+      <input type="range" id="b1DaySlider" min="1" max="100" value="60">
+
+      <div class="viz-box" data-strip="true">
+        <div style="font-size:12px; font-weight:800; color:var(--navy); margin-bottom:6px;">이동평균이 늦게 반응하는 이유</div>
+        <p style="font-size:12.5px; color:var(--ink2); line-height:1.6;">
+          이동평균은 최근 N일 종가의 평균입니다. 가격이 급히 바뀌어도 계산에 이전 날짜의 종가가 계속 포함되므로 평균선은 가격 변화보다 늦게 방향을 바꿉니다. 기간이 길수록 하루 변동은 더 완화되고, 방향 변화도 더 늦게 반영됩니다.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <div class="result-card">
+        <div class="result-row">
+          <div class="result-label">선택된 윈도우 (N)<span class="hint">평균 계산에 필요한 과거 거래일 수</span></div>
+          <div class="result-value" id="b1WinVal">20일</div>
+        </div>
+        <div class="result-row warn">
+          <div class="result-label">워밍업 결측치 (NaN 행 수)<span class="hint">N개 데이터가 모이기 전까지의 빈칸</span></div>
+          <div class="result-value" id="b1NanVal">19행 (0 ~ 18번 인덱스)</div>
+        </div>
+        <div class="result-row highlight">
+          <div class="result-label">첫 이동평균 생성 시점<span class="hint">NaN이 사라지고 숫자가 찍히는 첫 거래일</span></div>
+          <div class="result-value" id="b1FirstVal">20번째 행 (인덱스 19)</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">현재 t일차 상태 판정<span class="hint">슬라이더 위치에서의 값 상태</span></div>
+          <div class="result-value success" id="b1StatusVal">유효한 이동평균 산출 중</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--ink2); line-height:1.6;">
+        <strong>교재 §100 핵심 연계:</strong> 삼성전자 실제 2년 데이터에서 <code>ma60</code>은 앞 59행(59거래일)이 NaN이며 60번째 행부터 첫 값이 생성됩니다. 이 NaN을 0으로 채우거나 신호 없음으로 처리하면 워밍업 구간에 심각한 가짜 신호가 발생합니다.
+      </div>
+    </div>
+  </div>
+
+  <a class="return-link" href="FD-05-web-deck.html#slide-2" target="_blank" rel="noopener">← 덱 §100 (장면 2)로 돌아가기 ↗</a>
+</section>
+
+<!-- ==========================================
+     BENCH 2: 크로스 vs 시그널 & 휩쏘 탐지
+     ========================================== -->
+<section id="bench2" class="bench" hidden aria-labelledby="bench2-title">
+  <div class="bench-head">
+    <div class="bench-tag">[§200] 실험 2: 크로스는 가설 — signal vs cross</div>
+    <h2 id="bench2-title">signal은 매일의 상태이고 cross는 상태가 바뀐 딱 하루다</h2>
+  </div>
+  <div class="bench-note">
+    <div class="bench-note-title">💡 학습 포인트</div>
+    <ul>
+      <li><strong>상태(<code>signal=True</code>) vs 사건(<code>cross=True</code>)의 분리</strong>
+        <ul>
+          <li>20일선이 60일선 위에 머무는 <mark class="hl">상태(signal)</mark>는 수개월간 지속될 수 있습니다.</li>
+          <li>골든크로스는 그 상태가 시작된 <mark class="hl">단 하루(사건)</mark>에만 <code>cross=True</code>가 됩니다.</li>
+        </ul>
+      </li>
+      <li><strong>시장 국면에 따른 유효성과 리스크</strong>
+        <ul>
+          <li><mark class="hl">추세장</mark>: 추세가 이어지는 국면에서는 이 신호가 효과적일 수 있습니다.</li>
+          <li><mark class="hl">박스권 횡보장</mark>: 두 선이 얽히며 계좌를 갉아먹는 <strong>휩쏘(Whipsaw)</strong>가 집중됩니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="bench-body two-col">
+    <div class="panel-card">
+      <span class="ctrl-label">시장 국면 시뮬레이션 선택</span>
+      <div class="toggle-row" id="b2RegimeToggles">
+        <button type="button" class="toggle-btn active" data-regime="trend">📈 추세 구간 (삼성전자 실측)</button>
+        <button type="button" class="toggle-btn" data-regime="box">〰️ 박스권 횡보장 (Whipsaw 다발)</button>
+      </div>
+
+      <div style="font-size:12px; font-weight:800; color:var(--navy); margin-bottom:6px;">삼성전자 2025-02 골든크로스 전후 실측표</div>
+      <table class="mini-table">
+        <thead>
+          <tr>
+            <th>날짜</th>
+            <th>종가</th>
+            <th>ma20</th>
+            <th>ma60</th>
+            <th>signal</th>
+            <th>cross</th>
+          </tr>
+        </thead>
+        <tbody id="b2TableBody">
+          <tr>
+            <td>02-18</td>
+            <td>56,900</td>
+            <td>54,255</td>
+            <td>54,637</td>
+            <td><span class="badge false">False</span></td>
+            <td><span class="badge false">False</span></td>
+          </tr>
+          <tr>
+            <td>02-19</td>
+            <td>58,700</td>
+            <td>54,475</td>
+            <td>54,670</td>
+            <td><span class="badge false">False</span></td>
+            <td><span class="badge false">False</span></td>
+          </tr>
+          <tr class="cross-day">
+            <td>02-20</td>
+            <td>58,400</td>
+            <td>54,710</td>
+            <td>54,705</td>
+            <td><span class="badge true">True</span></td>
+            <td><span class="badge golden">★ 골든</span></td>
+          </tr>
+          <tr class="highlight">
+            <td>02-21</td>
+            <td>58,200</td>
+            <td>54,950</td>
+            <td>54,753</td>
+            <td><span class="badge true">True</span></td>
+            <td><span class="badge false">False</span></td>
+          </tr>
+          <tr class="highlight">
+            <td>02-24</td>
+            <td>57,300</td>
+            <td>55,140</td>
+            <td>54,768</td>
+            <td><span class="badge true">True</span></td>
+            <td><span class="badge false">False</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel-card">
+      <div class="result-card">
+        <div class="result-row">
+          <div class="result-label">총 골든크로스 횟수<span class="hint">20일선이 60일선을 상향 돌파한 일수</span></div>
+          <div class="result-value" id="b2GoldenCount">2회</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">총 데드크로스 횟수<span class="hint">20일선이 60일선을 하향 돌파한 일수</span></div>
+          <div class="result-value" id="b2DeadCount">1회</div>
+        </div>
+        <div class="result-row highlight">
+          <div class="result-label">교차 후 20거래일 방향 판정<span class="hint">크로스 후 20거래일 시점 종가 상승/하락</span></div>
+          <div class="result-value success" id="b2DirectionVal">상승 2회 / 하락 0회</div>
+        </div>
+        <div class="result-row" id="b2WhipsawRow">
+          <div class="result-label">휩쏘(Whipsaw) 발생 위험도<span class="hint">단기 잦은 교차로 인한 헛발질 손실</span></div>
+          <div class="result-value" id="b2WhipsawVal">낮음 (뚜렷한 추세 형성)</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--ink2); line-height:1.6;">
+        <strong>과적합(Overfitting) 경고:</strong> 20/60 대신 18/53을 썼더니 과거 데이터에서 휩쏘가 줄었다고 해서 18/53을 채택하는 것은 과거 노이즈에 파라미터를 끼워 맞춘 과적합입니다. 골든크로스는 예언이 아니라 반증 가능한 가설입니다.
+      </div>
+    </div>
+  </div>
+
+  <a class="return-link" href="FD-05-web-deck.html#slide-6" target="_blank" rel="noopener">← 덱 §200 (장면 6)로 돌아가기 ↗</a>
+</section>
+
+<!-- ==========================================
+     BENCH 3: shift(1) 타임머신 버그 해부
+     ========================================== -->
+<section id="bench3" class="bench" hidden aria-labelledby="bench3-title">
+  <div class="bench-head">
+    <div class="bench-tag">[§300] 실험 3: 신호와 실행의 하루 — shift(1) 해부</div>
+    <h2 id="bench3-title">오늘 종가로 확인한 신호는 내일 장부터만 내 것이다</h2>
+  </div>
+  <div class="bench-note">
+    <div class="bench-note-title">💡 학습 포인트</div>
+    <ul>
+      <li><strong>신호 확정의 시간축</strong>
+        <ul>
+          <li><mark class="hl">t일 15:30</mark> 장 종료 후 당일 종가가 확정되고, 저녁에 골든크로스 계산이 완료됩니다.</li>
+          <li>따라서 포지션을 진입할 수 있는 가장 빠른 시점은 <mark class="hl">다음 거래일(t+1일) 09:00 개장</mark>입니다.</li>
+        </ul>
+      </li>
+      <li><strong><code>signal.shift(1)</code>을 빠뜨리면 — <mark class="hl">미래참조편향(타임머신 매매)</mark></strong>
+        <ul>
+          <li>아직 들고 있지도 않은 크로스 당일의 수익률을 백테스트가 훔쳐먹습니다.</li>
+          <li>결과: 실전에서는 절대 재현할 수 없는 <mark class="hl">가짜 성과</mark>가 기록됩니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="bench-body two-col">
+    <div class="panel-card">
+      <span class="ctrl-label">전략수익률 정렬 모드 비교</span>
+      <div class="toggle-row" id="b3ShiftToggles">
+        <button type="button" class="toggle-btn active" data-mode="correct">✅ 정상: position = signal.shift(1)</button>
+        <button type="button" class="toggle-btn" data-mode="wrong">❌ 버그: position = signal (shift 누락)</button>
+      </div>
+
+      <div class="flow-diagram">
+        <div class="flow-step" id="b3StepT">
+          <div class="step-time">t일 15:30 장마감</div>
+          <div class="step-title">종가 확정</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" id="b3StepCalc">
+          <div class="step-time">t일 저녁</div>
+          <div class="step-title">🔔 신호 계산</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step active" id="b3StepT1">
+          <div class="step-time">t+1일 장개시</div>
+          <div class="step-title">포지션 진입</div>
+        </div>
+      </div>
+
+      <table class="mini-table">
+        <thead>
+          <tr>
+            <th>날짜</th>
+            <th>종가</th>
+            <th>signal</th>
+            <th>position</th>
+            <th>전략 수익률</th>
+          </tr>
+        </thead>
+        <tbody id="b3TableBody">
+          <tr>
+            <td>02-19</td>
+            <td>58,700</td>
+            <td>False</td>
+            <td>False</td>
+            <td>0.00%</td>
+          </tr>
+          <tr class="cross-day">
+            <td>02-20 (크로스)</td>
+            <td>58,400</td>
+            <td><span class="badge true">True</span></td>
+            <td id="b3PosDay20"><span class="badge false">False</span></td>
+            <td id="b3RetDay20">0.00% (정상)</td>
+          </tr>
+          <tr class="position-day">
+            <td>02-21 (보유시작)</td>
+            <td>58,200</td>
+            <td><span class="badge true">True</span></td>
+            <td><span class="badge pos">True</span></td>
+            <td>-0.34%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel-card">
+      <div class="result-card">
+        <div class="result-row highlight">
+          <div class="result-label">삼성전자 2년 누적수익 (실측값)<span class="hint">2024-06 ~ 2026-06 확장 DB 전수 계산</span></div>
+          <div class="result-value success" id="b3CumRetVal">+442.17% (정상 산출)</div>
+        </div>
+        <div class="result-row" id="b3LeakageRow">
+          <div class="result-label">미래정보 누수 오차<span class="hint">크로스 당일 수익 부풀림 여부</span></div>
+          <div class="result-value" id="b3LeakageVal">오차 0.00%p (완전 무결)</div>
+        </div>
+        <div class="result-row warn">
+          <div class="result-label">오차의 부호와 성격<span class="hint">종목과 장세에 따른 결과의 차이</span></div>
+          <div class="result-value" style="font-size:12.5px;" id="b3SignVal">크로스 당일 등락에 따라 부호 가변</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--ink2); line-height:1.6;">
+        <strong>오답 3종 핵심 요약:</strong>
+        <ul style="padding-left:16px; margin-top:4px;">
+          <li><strong>shift 누락:</strong> 아직 사지도 않은 크로스 당일의 수익률을 몰래 가져다 쓰는 타임머신 매매 — 그날이 상승이면 부풀리고 하락이면 오히려 깎습니다.</li>
+          <li><strong>shift(-1):</strong> 내일의 결과를 오늘 장에 당겨오는 정반대의 치명적 누수.</li>
+          <li><strong>fillna(0):</strong> 워밍업 59행의 모르는 상태(NaN)를 '신호 없음'으로 왜곡.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <a class="return-link" href="FD-05-web-deck.html#slide-9" target="_blank" rel="noopener">← 덱 §300 (장면 9)로 돌아가기 ↗</a>
+</section>
+
+<!-- ==========================================
+     BENCH 4: CLI·MCP & KRX 승인 거버넌스
+     ========================================== -->
+<section id="bench4" class="bench" hidden aria-labelledby="bench4-title">
+  <div class="bench-head">
+    <div class="bench-tag">[§400] 실험 4: CLI·MCP와 KRX API 승인</div>
+    <h2 id="bench4-title">에이전트가 무엇을 할 수 있는가는 받은 권한이 결정한다</h2>
+  </div>
+  <div class="bench-note">
+    <div class="bench-note-title">💡 학습 포인트</div>
+    <ul>
+      <li><strong>인터페이스 패러다임의 차이</strong>
+        <ul>
+          <li><mark class="hl">사람</mark>: GUI(마우스 클릭)가 직관적이고 자연스럽습니다.</li>
+          <li><mark class="hl">프로그램·에이전트</mark>: 구조화된 텍스트(CLI/JSON)가 가장 다루기 쉬운 인터페이스입니다.</li>
+        </ul>
+      </li>
+      <li><strong>에이전트의 한계 — <mark class="hl">승인 거버넌스(최소 권한 원칙)</mark></strong>
+        <ul>
+          <li>에이전트가 조회할 수 있는 데이터 범위는 모델의 성능보다 API 키에 승인된 서비스 범위로 결정됩니다.</li>
+          <li><code>Unauthorized API Call</code>(에러 6): 해당 서비스 승인이 없는 API 요청은 거절됩니다.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="bench-body two-col">
+    <div class="panel-card">
+      <span class="ctrl-label">인터페이스 모드 선택</span>
+      <div class="toggle-row" id="b4UiToggles">
+        <button type="button" class="toggle-btn" data-ui="gui">🖱️ 사람의 GUI (클릭 5회)</button>
+        <button type="button" class="toggle-btn active" data-ui="cli">⌨️ 에이전트의 CLI (텍스트 파이프)</button>
+        <button type="button" class="toggle-btn" data-ui="mcp">🔌 에이전트의 MCP (자연어 도구)</button>
+      </div>
+
+      <div style="font-size:12px; font-weight:800; color:var(--navy); margin-bottom:6px;">호출 방식 및 출력 형태</div>
+      <div class="code-block" id="b4CodeBox"># CLI 한 줄 명령 (stdout JSON 반환)
+krx stock search 삼성전자
+-> {"code": "005930", "name": "삼성전자", "market": "KOSPI"}</div>
+    </div>
+
+    <div class="panel-card">
+      <span class="ctrl-label">API 승인 거버넌스 시뮬레이터 (최소 권한 원칙)</span>
+      <div class="toggle-row" id="b4ApiToggles">
+        <button type="button" class="toggle-btn" data-api="dart">OpenDART (단일 키 즉시)</button>
+        <button type="button" class="toggle-btn active" data-api="krx">KRX Open API (카테고리별 승인)</button>
+      </div>
+
+      <div id="b4KrxControls" style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:12px;">
+        <span style="font-size:12px; font-weight:800; color:var(--navy); display:block; margin-bottom:6px;">KRX 서비스 신청 권한 토글:</span>
+        <label style="font-size:12.5px; display:flex; align-items:center; gap:6px; cursor:pointer; margin-bottom:4px;">
+          <input type="checkbox" id="b4AuthStock" checked> 주식 시세 서비스 승인 여부: <output for="b4AuthStock" id="b4AuthStockOut" style="font-weight:700; color:var(--success);">승인 완료</output>
+        </label>
+        <label style="font-size:12.5px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" id="b4AuthIndex"> 지수 시세 서비스 승인 여부: <output for="b4AuthIndex" id="b4AuthIndexOut" style="font-weight:700; color:var(--muted);">미승인</output>
+        </label>
+      </div>
+
+      <div class="result-card">
+        <div class="result-row highlight" id="b4ApiStatusRow">
+          <div class="result-label">API 호출 결과 판정<span class="hint">에이전트가 수신한 HTTP 응답</span></div>
+          <div class="result-value success" id="b4ApiStatusVal">200 OK (정상 수신)</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">도구 거버넌스 사실<span class="hint">공식 도구 vs 커뮤니티 래퍼</span></div>
+          <div class="result-value" style="font-size:12px;">krx-cli는 오픈소스 커뮤니티 래퍼</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--ink2); line-height:1.6;">
+        <strong>실무 연계:</strong> KRX 공식 CLI/MCP는 존재하지 않습니다. 미승인 서비스 호출 시 즉시 <code>Unauthorized API Call</code>(에러 6)이 발생하므로, 실무에서는 매번 라이브 API에 의존하기보다 데이터를 로컬 DB(<code>market_data.db</code>)에 먼저 파이프라인으로 적재한 뒤 분석합니다.
+      </div>
+    </div>
+  </div>
+
+  <a class="return-link" href="FD-05-web-deck.html#slide-14" target="_blank" rel="noopener">← 덱 §400 (장면 14)로 돌아가기 ↗</a>
+</section>
+
+</main>
+
+<script>
+// ========================================================
+// HASH ROUTING & TAB SWITCHING (Bi-directional Bridge SSOT)
+// ========================================================
+const benches = ['bench1', 'bench2', 'bench3', 'bench4'];
+const deckSlideForPanel = {
+  bench1: 2,
+  bench2: 6,
+  bench3: 9,
+  bench4: 14
+};
+
+function showBench(id) {
+  if (!benches.includes(id)) id = 'bench1';
+  benches.forEach(bId => {
+    const el = document.getElementById(bId);
+    if (el) el.hidden = (bId !== id);
+  });
+  document.querySelectorAll('.bench-nav button').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-target') === id);
+  });
+
+  // URL hash sync without scrolling
+  if (history.replaceState) {
+    history.replaceState(null, null, '#' + id);
+  } else {
+    location.hash = id;
+  }
+
+  // Update return links href per bench
+  const targetSlide = deckSlideForPanel[id] || 1;
+  const link = document.querySelector('#' + id + ' .return-link');
+  if (link) {
+    link.href = 'FD-05-web-deck.html#slide-' + targetSlide;
+  }
+}
+
+document.querySelectorAll('.bench-nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    showBench(btn.getAttribute('data-target'));
+  });
+});
+
+window.addEventListener('hashchange', () => {
+  const hash = location.hash.replace('#', '');
+  if (benches.includes(hash)) showBench(hash);
+});
+
+// ========================================================
+// BENCH 1 LOGIC: Moving Average Lag & Warmup NaN
+// ========================================================
+let b1Win = 20;
+function updateB1() {
+  const day = parseInt(document.getElementById('b1DaySlider').value, 10);
+  document.getElementById('b1DayOut').textContent = String(day);
+  document.getElementById('b1WinVal').textContent = b1Win + '일';
+  document.getElementById('b1NanVal').textContent = (b1Win - 1) + '행 (0 ~ ' + (b1Win - 2) + '번 인덱스)';
+  document.getElementById('b1FirstVal').textContent = b1Win + '번째 행 (인덱스 ' + (b1Win - 1) + ')';
+
+  const statusEl = document.getElementById('b1StatusVal');
+  if (day < b1Win) {
+    statusEl.textContent = '워밍업 구간 — 결측치(NaN) 상태';
+    statusEl.className = 'result-value danger';
+  } else if (day === b1Win) {
+    statusEl.textContent = '첫 이동평균 산출 완료!';
+    statusEl.className = 'result-value success';
+  } else {
+    statusEl.textContent = '유효한 이동평균 산출 중 (t=' + day + ')';
+    statusEl.className = 'result-value success';
+  }
+}
+
+document.querySelectorAll('#b1WindowToggles button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#b1WindowToggles button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    b1Win = parseInt(btn.getAttribute('data-win'), 10);
+    updateB1();
+  });
+});
+document.getElementById('b1DaySlider').addEventListener('input', updateB1);
+
+// ========================================================
+// BENCH 2 LOGIC: Cross vs Signal & Whipsaw
+// ========================================================
+document.querySelectorAll('#b2RegimeToggles button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#b2RegimeToggles button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const regime = btn.getAttribute('data-regime');
+    const tbody = document.getElementById('b2TableBody');
+    const gCount = document.getElementById('b2GoldenCount');
+    const dCount = document.getElementById('b2DeadCount');
+    const dirVal = document.getElementById('b2DirectionVal');
+    const whipVal = document.getElementById('b2WhipsawVal');
+    const whipRow = document.getElementById('b2WhipsawRow');
+
+    if (regime === 'trend') {
+      gCount.textContent = '2회';
+      dCount.textContent = '1회';
+      dirVal.textContent = '상승 2회 / 하락 0회';
+      whipVal.textContent = '낮음 (뚜렷한 추세 형성)';
+      whipRow.className = 'result-row';
+      tbody.innerHTML = `
+        <tr><td>02-18</td><td>56,900</td><td>54,255</td><td>54,637</td><td><span class="badge false">False</span></td><td><span class="badge false">False</span></td></tr>
+        <tr><td>02-19</td><td>58,700</td><td>54,475</td><td>54,670</td><td><span class="badge false">False</span></td><td><span class="badge false">False</span></td></tr>
+        <tr class="cross-day"><td>02-20</td><td>58,400</td><td>54,710</td><td>54,705</td><td><span class="badge true">True</span></td><td><span class="badge golden">★ 골든</span></td></tr>
+        <tr class="highlight"><td>02-21</td><td>58,200</td><td>54,950</td><td>54,753</td><td><span class="badge true">True</span></td><td><span class="badge false">False</span></td></tr>
+        <tr class="highlight"><td>02-24</td><td>57,300</td><td>55,140</td><td>54,768</td><td><span class="badge true">True</span></td><td><span class="badge false">False</span></td></tr>
+      `;
+    } else {
+      gCount.textContent = '7회';
+      dCount.textContent = '6회';
+      dirVal.textContent = '상승 3회 / 하락 4회 (예측 불가)';
+      whipVal.textContent = '극도로 높음 (잦은 톱질 손실 발생!)';
+      whipRow.className = 'result-row danger';
+      tbody.innerHTML = `
+        <tr class="cross-day"><td>Day 1</td><td>55,000</td><td>55,100</td><td>55,050</td><td><span class="badge true">True</span></td><td><span class="badge golden">★ 골든</span></td></tr>
+        <tr class="cross-day"><td>Day 3</td><td>54,200</td><td>54,900</td><td>55,000</td><td><span class="badge false">False</span></td><td><span class="badge danger">▼ 데드</span></td></tr>
+        <tr class="cross-day"><td>Day 6</td><td>55,400</td><td>55,050</td><td>54,980</td><td><span class="badge true">True</span></td><td><span class="badge golden">★ 골든</span></td></tr>
+        <tr class="cross-day"><td>Day 8</td><td>54,100</td><td>54,850</td><td>54,950</td><td><span class="badge false">False</span></td><td><span class="badge danger">▼ 데드</span></td></tr>
+        <tr style="color:var(--danger); font-weight:700;"><td colspan="6">※ 횡보장에서는 20일선과 60일선이 뒤엉켜 휩쏘 손실 누적</td></tr>
+      `;
+    }
+  });
+});
+
+// ========================================================
+// BENCH 3 LOGIC: shift(1) Time-Machine Bug
+// ========================================================
+document.querySelectorAll('#b3ShiftToggles button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#b3ShiftToggles button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const mode = btn.getAttribute('data-mode');
+    const cumRet = document.getElementById('b3CumRetVal');
+    const leakRow = document.getElementById('b3LeakageRow');
+    const leakVal = document.getElementById('b3LeakageVal');
+    const pos20 = document.getElementById('b3PosDay20');
+    const ret20 = document.getElementById('b3RetDay20');
+    const stepT1 = document.getElementById('b3StepT1');
+
+    if (mode === 'correct') {
+      cumRet.textContent = '+442.17% (정상 산출)';
+      cumRet.className = 'result-value success';
+      leakRow.className = 'result-row';
+      leakVal.textContent = '오차 0.00%p (완전 무결)';
+      leakVal.className = 'result-value';
+      pos20.innerHTML = '<span class="badge false">False</span>';
+      ret20.textContent = '0.00% (정상)';
+      stepT1.className = 'flow-step active';
+      stepT1.querySelector('.step-title').textContent = '포지션 진입';
+    } else {
+      cumRet.textContent = '+445.77% (허위 과대계상)';
+      cumRet.className = 'result-value danger';
+      leakRow.className = 'result-row danger';
+      leakVal.textContent = '+3.60%p 가짜 대박 누수!';
+      leakVal.className = 'result-value danger';
+      pos20.innerHTML = '<span class="badge pos" style="background:#fee2e2; color:#dc2626;">True (버그)</span>';
+      ret20.textContent = '+3.16% (부당 취득)';
+      stepT1.className = 'flow-step danger';
+      stepT1.querySelector('.step-title').textContent = '과거 수익 무단 취득';
+    }
+  });
+});
+
+// ========================================================
+// BENCH 4 LOGIC: CLI / MCP & KRX Governance
+// ========================================================
+document.querySelectorAll('#b4UiToggles button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#b4UiToggles button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const ui = btn.getAttribute('data-ui');
+    const box = document.getElementById('b4CodeBox');
+    if (ui === 'gui') {
+      box.textContent = `# 사람의 GUI 흐름 (마우스 조작)
+1. 증권사 HTS/MTS 앱 실행
+2. 검색창에 '삼성전자' 입력
+3. 차트 탭 클릭
+4. 조회 기간 '2년' 설정
+5. 이동평균선(20/60) 지표 추가 클릭
+-> 총 5회 이상 클릭 소요, 자동화 불가`;
+    } else if (ui === 'cli') {
+      box.textContent = `# CLI 한 줄 명령 (stdout JSON 반환)
+krx stock search 삼성전자
+-> {"code": "005930", "name": "삼성전자", "market": "KOSPI"}
+
+# 파이프라인 결합
+krx stock list --date 20260624 --market kospi | process_signals`;
+    } else {
+      box.textContent = `# 에이전트의 자연어 MCP 도구 호출
+User: "삼성전자 최근 60일 20/60 골든크로스 났는지 확인해줘"
+Agent: openkrx-mcp.get_stock_price(code="005930", period=60)
+-> JSON 반환 -> 에이전트가 pandas로 rolling/shift 즉시 검증`;
+    }
+  });
+});
+
+function updateB4Api() {
+  const activeApiBtn = document.querySelector('#b4ApiToggles button.active');
+  const api = activeApiBtn ? activeApiBtn.getAttribute('data-api') : 'krx';
+  const statusRow = document.getElementById('b4ApiStatusRow');
+  const statusVal = document.getElementById('b4ApiStatusVal');
+  const krxCtrl = document.getElementById('b4KrxControls');
+
+  const authStock = document.getElementById('b4AuthStock').checked;
+  const authIndex = document.getElementById('b4AuthIndex').checked;
+  const stockOut = document.getElementById('b4AuthStockOut');
+  const indexOut = document.getElementById('b4AuthIndexOut');
+  if (stockOut) {
+    stockOut.textContent = authStock ? '승인 완료' : '미승인';
+    stockOut.style.color = authStock ? 'var(--success)' : 'var(--danger)';
+  }
+  if (indexOut) {
+    indexOut.textContent = authIndex ? '승인 완료' : '미승인';
+    indexOut.style.color = authIndex ? 'var(--success)' : 'var(--muted)';
+  }
+
+  if (api === 'dart') {
+    krxCtrl.style.display = 'none';
+    statusRow.className = 'result-row highlight';
+    statusVal.className = 'result-value success';
+    statusVal.textContent = '200 OK (키 1개 즉시 발급·호출 성공)';
+  } else {
+    krxCtrl.style.display = 'block';
+    if (authStock) {
+      statusRow.className = 'result-row highlight';
+      statusVal.className = 'result-value success';
+      statusVal.textContent = '200 OK (주식 서비스 승인 완료)';
+    } else {
+      statusRow.className = 'result-row danger';
+      statusVal.className = 'result-value danger';
+      statusVal.textContent = 'Error 6: Unauthorized API Call (미승인 차단)';
+    }
+  }
+}
+
+document.querySelectorAll('#b4ApiToggles button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#b4ApiToggles button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateB4Api();
+  });
+});
+document.getElementById('b4AuthStock').addEventListener('change', updateB4Api);
+document.getElementById('b4AuthIndex').addEventListener('change', updateB4Api);
+
+// Initialize
+const initialHash = location.hash.replace('#', '');
+showBench(benches.includes(initialHash) ? initialHash : 'bench1');
+updateB1();
+updateB4Api();
+</script>
+
+</body>
+</html>
