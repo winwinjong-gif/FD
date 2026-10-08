@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FD-02-500 시간축을 맞추고, 합치고, 빈칸을 채운다 — 동적 모션그래픽 랩</title>
+<style>
+/* ==========================================================================
+   Design System Contract: Tech Navy & Blue (Explorable Table Motion Lab)
+   100% Standalone, Zero CDN dependencies, 60fps Native CSS Transitions.
+   Focus: Real Pandas DataFrame Transformations & Dynamic Table Animations.
+   ========================================================================== */
+:root {
+  --primary: #2563EB;
+  --primary-d: #1D4ED8;
+  --primary-l: #EFF6FF;
+  --teal: #0D9488;
+  --teal-l: #F0FDFA;
+  
+  --bg: #0A1120;
+  --surface: #0F1D36;
+  --surface-card: #152544;
+  --surface-card2: #1B2F56;
+  --border: #203A63;
+  --border-light: #2D4C7E;
+  
+  --ink: #FFFFFF;
+  --ink-sub: #94A3B8;
+  --ink-muted: #64748B;
+  
+  --success: #10B981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning: #F59E0B;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --danger: #EF4444;
+  --danger-bg: rgba(239, 68, 68, 0.2);
+  --purple: #8B5CF6;
+  --purple-bg: rgba(139, 92, 246, 0.15);
+  
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Sticky Header Nav */
+.header-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(7, 26, 51, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-badge {
+  background: linear-gradient(135deg, var(--primary), var(--teal));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.brand-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F1F5F9;
+}
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+.nav-link {
+  color: var(--ink-sub);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.03);
+}
+.nav-link:hover, .nav-link.active {
+  color: #fff;
+  background: var(--primary);
+}
+
+/* Main Container */
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 40px 24px 120px;
+}
+
+/* Hero Section */
+.hero-box {
+  background: linear-gradient(180deg, #0B2342 0%, var(--surface) 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 38px 44px;
+  margin-bottom: 48px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+}
+.hero-box::after {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+.kicker {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #60A5FA;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.kicker::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+.hero-title {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.25;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+  letter-spacing: -0.8px;
+}
+.hero-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, #60A5FA, #2DD4BF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: 15.5px;
+  color: var(--ink-sub);
+  max-width: 860px;
+  line-height: 1.65;
+}
+
+/* Section Module Styles */
+.motion-module {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 40px;
+  margin-bottom: 48px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+  position: relative;
+}
+.module-header {
+  margin-bottom: 24px;
+}
+.module-title {
+  font-size: 23px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 6px 0 8px;
+  letter-spacing: -0.5px;
+}
+.module-title em {
+  color: #60A5FA;
+  font-style: normal;
+}
+.module-desc {
+  font-size: 14.5px;
+  color: var(--ink-sub);
+  line-height: 1.6;
+}
+
+/* Interactive Canvas Box */
+.canvas-box {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin: 20px 0;
+  position: relative;
+}
+.canvas-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.ctrl-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-sub);
+  margin-right: 4px;
+}
+.btn-act {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+.btn-act:hover {
+  background: var(--primary-d);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+.btn-act.sec {
+  background: var(--surface-card2);
+  color: #E2E8F0;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.btn-act.sec:hover {
+  background: #1C335C;
+  border-color: #60A5FA;
+}
+.btn-act.danger {
+  background: var(--danger);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+.btn-act.danger:hover { background: #DC2626; }
+.btn-act.success {
+  background: var(--success);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.btn-act.success:hover { background: #059669; }
+
+/* Grid Layouts inside modules */
+.grid { display: grid; gap: 20px; }
+.c2 { grid-template-columns: 1fr 1fr; }
+.c3 { grid-template-columns: repeat(3, 1fr); }
+
+.card-info {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.card-info h4 {
+  font-size: 15px;
+  font-weight: 750;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-info p, .card-info li {
+  font-size: 13px;
+  color: var(--ink-sub);
+  line-height: 1.65;
+}
+.card-info ul { padding-left: 18px; margin: 8px 0; }
+
+/* PRE/CODE Syntax Blocks — STRICT PRESERVATION OF NEWLINES */
+pre.code-block {
+  background: #060C17;
+  border: 1px solid #1E2E4A;
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #E2E8F0;
+  line-height: 1.65;
+  white-space: pre;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+pre.code-block code {
+  font-family: inherit;
+}
+.cm { color: #64748B; font-style: italic; }
+.kw { color: #F472B6; font-weight: bold; }
+.fn { color: #60A5FA; }
+.str { color: #34D399; }
+.val { color: #FBBF24; font-weight: bold; }
+
+/* ==========================================================================
+   AUTHENTIC PANDAS DATAFRAME STYLES
+   ========================================================================== */
+.df-table-container {
+  overflow-x: auto;
+  background: #070F1E;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+}
+.df-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+.df-table th {
+  background: #0D1A30;
+  color: #94A3B8;
+  font-weight: 700;
+  padding: 9px 14px;
+  text-align: right;
+  border-bottom: 2px solid #203A63;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+  transition: all 0.4s ease;
+}
+.df-table th.th-index {
+  text-align: left;
+  background: #112340;
+  color: #60A5FA;
+  border-right: 2px solid #3B82F6;
+}
+.df-table td {
+  padding: 8px 14px;
+  text-align: right;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255,255,255,0.04);
+  color: #E2E8F0;
+  transition: all 0.4s var(--ease-spring);
+}
+.df-table td.td-index {
+  text-align: left;
+  background: #0B172A;
+  color: #93C5FD;
+  font-weight: bold;
+  border-right: 2px solid #3B82F6;
+}
+.df-table tr:hover td {
+  background: rgba(37, 99, 235, 0.08);
+}
+.df-table tr.row-holiday td {
+  background: rgba(245, 158, 11, 0.07);
+}
+
+/* Dynamic State Styles for Table Cells */
+.cell-nan {
+  color: #FCD34D !important;
+  background: rgba(245, 158, 11, 0.22) !important;
+  font-weight: 900;
+  animation: pulse-nan 1.5s infinite;
+}
+@keyframes pulse-nan {
+  0%, 100% { background: rgba(245, 158, 11, 0.18); }
+  50% { background: rgba(245, 158, 11, 0.35); }
+}
+.cell-ffill-filled {
+  color: #A7F3D0 !important;
+  background: rgba(16, 185, 129, 0.22) !important;
+  font-weight: bold;
+}
+.cell-pct-bad {
+  color: #fff !important;
+  background: #EF4444 !important;
+  font-weight: 900;
+  animation: shake 0.5s;
+}
+.cell-pct-good {
+  color: #fff !important;
+  background: #10B981 !important;
+  font-weight: 900;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* Callout Alerts */
+.alert-box {
+  padding: 16px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.alert-box.danger {
+  background: var(--danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #FECACA;
+}
+.alert-box.success {
+  background: var(--success-bg);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #A7F3D0;
+}
+.alert-icon { font-size: 20px; flex-shrink: 0; }
+
+/* Dynamic Flow Chart / Bar Chart */
+.chart-box {
+  background: #070F1E;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+.bars-wrap {
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 10px 20px 0;
+  border-bottom: 2px solid #334155;
+  position: relative;
+}
+.zero-line {
+  position: absolute;
+  left: 0; right: 0; bottom: 60px;
+  height: 1px;
+  background: #475569;
+  border-top: 1px dashed #64748B;
+}
+.zero-label {
+  position: absolute;
+  left: 6px; bottom: 64px;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: #94A3B8;
+}
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+}
+.bar-fill {
+  width: 100%;
+  max-width: 48px;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.6s var(--ease-spring);
+  position: relative;
+}
+.bar-tag {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bar-date-label {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #94A3B8;
+}
+
+@media (max-width: 900px) {
+  .hero-title { font-size: 25px; }
+  .grid.c2, .grid.c3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Sticky Header Nav -->
+<header class="header-nav">
+  <div class="brand-group">
+    <span class="brand-badge">FD-02-500</span>
+    <span class="brand-title">재무데이터분석 · 시계열 결합 &amp; 결측치 동적 랩</span>
+  </div>
+  <nav class="nav-links">
+    <a href="#sec-align" class="nav-link">① set_index 모션</a>
+    <a href="#sec-slicing" class="nav-link">② 기간 슬라이싱</a>
+    <a href="#sec-merge" class="nav-link">③ Inner vs Outer</a>
+    <a href="#sec-nan" class="nav-link">④ 8대 휴장일 분석</a>
+    <a href="#sec-ffill" class="nav-link active">⑤ ffill 순서의 함정</a>
+    <a href="#sec-three" class="nav-link">⑥ 3자산 파이프라인</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Hero Header -->
+  <section class="hero-box">
+    <div class="kicker">FD-02-500 · Interactive Table Lab</div>
+    <h1 class="hero-title">여러 종목을 한 표에 — <em>시간축을 맞추고, 합치고, 빈칸을 채운다</em></h1>
+    <p class="hero-sub">
+      단일 종목 분석에서 벗어나 삼성전자, NAVER, 원/달러 환율 등 <strong>서로 다른 시장의 자산들을 하나의 시간축 위에 나란히 도킹</strong>하는 파이프라인입니다.
+      추상적인 다이어그램 대신, <strong>실제 DataFrame 테이블이 인덱스 변환과 병합, ffill에 따라 물리적으로 어떻게 변형되는지</strong>를 직접 눈으로 확인하며 체득합니다.
+    </p>
+  </section>
+
+  <!-- ==========================================================================
+       MODULE 1: set_index('Date') 실제 DataFrame 형태 변형 모션
+       ========================================================================== -->
+  <section class="motion-module" id="sec-align">
+    <div class="module-header">
+      <div class="kicker">§2 시간축의 불일치 · DATAFRAME INDEXING TRANSFORMATION</div>
+      <h2 class="module-title">실제 테이블에서 <em>set_index('Date')</em>가 일어날 때의 물리적 변화</h2>
+      <p class="module-desc">
+        <code>read_csv()</code> 직후에는 <code>Date</code>가 단순한 데이터 열 중 하나에 불과합니다.
+        아래 스텝 버튼을 눌러, 일반 열이었던 <code>Date</code>가 <strong>왼쪽의 행 라벨(Index) 자리로 슬라이딩되어 이동</strong>하고 테이블 형태가 재구조화되는 과정을 확인하세요.
+      </p>
+    </div>
+
+    <div class="canvas-box">
+      <div class="canvas-ctrls">
+        <span class="ctrl-label">DataFrame 변형 단계:</span>
+        <button class="btn-act sec" id="btnTblStep0" onclick="setDfStep(0)">0. read_csv 직후 (RangeIndex 0,1,2...)</button>
+        <button class="btn-act" id="btnTblStep1" onclick="setDfStep(1)">1. pd.to_datetime() (Timestamp 변환)</button>
+        <button class="btn-act success" id="btnTblStep2" onclick="setDfStep(2)">2. set_index('Date') (인덱스로 도킹!)</button>
+        <span id="dfStatusBadge" style="margin-left:auto; font-size:12px; font-weight:bold; padding:4px 10px; border-radius:6px; background:#1E293B; color:#94A3B8;">
+          현재: 일반 DataFrame (RangeIndex)
+        </span>
+      </div>
+
+      <!-- Live Interactive DataFrame Table -->
+      <div class="df-table-container">
+        <div style="font-size: 11.5px; font-weight: bold; color: #60A5FA; margin-bottom: 8px; font-family: var(--mono);" id="dfShapeInfo">
+          samsung = pd.read_csv('samsung_005930.csv') | shape: (120, 3) | Index: RangeIndex(0, 120)
+        </div>
+        <table class="df-table" id="tableStepDf">
+          <thead>
+            <tr id="dfHeaderRow">
+              <th class="th-index" id="th_idx_col">Index</th>
+              <th id="th_date_col" style="color: #FCD34D;">Date (일반 컬럼)</th>
+              <th>Close</th>
+              <th>Volume</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-index" id="idx_val_0">0</td>
+              <td id="date_val_0" style="color: #FCD34D;">'2026-01-02' &lt;str&gt;</td>
+              <td>63,500</td>
+              <td>12,450,000</td>
+            </tr>
+            <tr>
+              <td class="td-index" id="idx_val_1">1</td>
+              <td id="date_val_1" style="color: #FCD34D;">'2026-01-05' &lt;str&gt;</td>
+              <td>63,800</td>
+              <td>10,120,000</td>
+            </tr>
+            <tr>
+              <td class="td-index" id="idx_val_2">2</td>
+              <td id="date_val_2" style="color: #FCD34D;">'2026-01-06' &lt;str&gt;</td>
+              <td>64,100</td>
+              <td>15,300,000</td>
+            </tr>
+            <tr>
+              <td class="td-index" id="idx_val_3">3</td>
+              <td id="date_val_3" style="color: #FCD34D;">'2026-03-04' &lt;str&gt;</td>
+              <td>65,200</td>
+              <td>14,100,000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="dfExplanationBox" style="margin-top: 14px; padding: 12px 16px; background: #070F1E; border-left: 4px solid #60A5FA; border-radius: 4px; font-size: 13px;">
+        <strong>상태 설명:</strong> <code>read_csv()</code> 직후에는 왼쪽 행 번호가 단순 정수(0, 1, 2, 3...)이고, <code>Date</code>는 문자열 타입의 데이터 열 중 하나입니다.
+      </div>
+    </div>
+
+    <!-- Python Code Box with PROPER NEWLINES -->
+    <div class="grid c2">
+      <div class="card-info">
+        <h4>💻 §500-1 ~ §500-2 파이썬 실행 코드</h4>
+        <pre class="code-block"><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="cm"># 1. 파일 읽기 (Date 열은 문자열)</span>
+samsung = pd.<span class="fn">read_csv</span>(<span class="str">'data/samsung_005930.csv'</span>)
+<span class="fn">print</span>(<span class="fn">type</span>(samsung[<span class="str">'Date'</span>].iloc[<span class="val">0</span>]))
+<span class="cm"># 출력: &lt;class 'str'&gt;</span>
+
+<span class="cm"># 2. DatetimeIndex로 승격</span>
+samsung[<span class="str">'Date'</span>] = pd.<span class="fn">to_datetime</span>(samsung[<span class="str">'Date'</span>])
+samsung = samsung.<span class="fn">set_index</span>(<span class="str">'Date'</span>)
+<span class="fn">print</span>(samsung.index[:<span class="val">3</span>])
+<span class="cm"># 출력: DatetimeIndex(['2026-01-02', '2026-01-05', '2026-01-06'])</span></code></pre>
+      </div>
+
+      <div class="card-info">
+        <h4>🔍 테이블 형태 변화의 핵심 요약</h4>
+        <ul>
+          <li><strong>기존 정수 인덱스 소멸:</strong> 의미 없는 숫자 행 번호(0, 1, 2)가 사라지고 실제 날짜가 행의 유일한 식별자가 됩니다.</li>
+          <li><strong>컬럼 수 감소 (3열 → 2열):</strong> <code>Date</code>가 인덱스로 빠져나가면서 데이터 열(Columns)에는 순수한 수치 데이터(Close, Volume)만 남습니다.</li>
+          <li><strong>달력 연산 잠금 해제:</strong> 이제부터 <code>samsung.index.month</code>나 <code>samsung.loc['2026-03']</code> 같은 강력한 날짜 연산이 가능해집니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       MODULE 2: 기간 슬라이싱 .loc['2026-03']
+       ========================================================================== -->
+  <section class="motion-module" id="sec-slicing">
+    <div class="module-header">
+      <div class="kicker">§3 좌표계로서의 날짜 · PERIOD SLICING</div>
+      <h2 class="module-title">날짜를 좌표처럼 쓴다 — <em>.loc 기간 슬라이싱의 테이블 필터링</em></h2>
+      <p class="module-desc">
+        <code>DatetimeIndex</code>가 확립되면, 수십 줄의 조건문 없이 <code>.loc['2026-03']</code> 한 줄로 3월 거래일만 잘라냅니다.
+      </p>
+    </div>
+
+    <div class="canvas-box">
+      <div class="canvas-ctrls">
+        <span class="ctrl-label">슬라이싱 실행:</span>
+        <button class="btn-act" onclick="filterSliceTable('all')">전체 데이터 (120행)</button>
+        <button class="btn-act sec" onclick="filterSliceTable('mar')">.loc['2026-03'] (3월 21행만 추출)</button>
+        <button class="btn-act sec" onclick="filterSliceTable('q2')">.loc['2026-03':'2026-05'] (3~5월 61행)</button>
+      </div>
+
+      <div class="df-table-container">
+        <div style="font-size: 11.5px; font-weight: bold; color: #34D399; margin-bottom: 8px; font-family: var(--mono);" id="sliceTableInfo">
+          samsung.loc['2026-03'] | shape: (21, 2) | 3월 데이터만 테이블에 남음
+        </div>
+        <table class="df-table">
+          <thead>
+            <tr>
+              <th class="th-index">Date (DatetimeIndex)</th>
+              <th>Close</th>
+              <th>Volume</th>
+            </tr>
+          </thead>
+          <tbody id="sliceTableBody">
+            <tr class="slice-row r-jan">
+              <td class="td-index">2026-01-02</td>
+              <td>63,500</td>
+              <td>12,450,000</td>
+            </tr>
+            <tr class="slice-row r-jan">
+              <td class="td-index">2026-01-05</td>
+              <td>63,800</td>
+              <td>10,120,000</td>
+            </tr>
+            <tr class="slice-row r-mar" style="background: rgba(37, 99, 235, 0.15);">
+              <td class="td-index" style="color: #60A5FA; font-weight: 900;">2026-03-03</td>
+              <td>65,100</td>
+              <td>14,500,000</td>
+            </tr>
+            <tr class="slice-row r-mar" style="background: rgba(37, 99, 235, 0.15);">
+              <td class="td-index" style="color: #60A5FA; font-weight: 900;">2026-03-04</td>
+              <td>65,200</td>
+              <td>14,100,000</td>
+            </tr>
+            <tr class="slice-row r-apr" style="background: rgba(13, 148, 136, 0.1);">
+              <td class="td-index" style="color: #2DD4BF;">2026-04-01</td>
+              <td>66,000</td>
+              <td>11,200,000</td>
+            </tr>
+            <tr class="slice-row r-apr" style="background: rgba(13, 148, 136, 0.1);">
+              <td class="td-index" style="color: #2DD4BF;">2026-05-29</td>
+              <td>67,400</td>
+              <td>13,800,000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <pre class="code-block"><code><span class="cm"># §500-4 ~ §500-5: 기간 슬라이싱</span>
+mar = samsung.<span class="fn">loc</span>[<span class="str">'2026-03'</span>]
+<span class="fn">print</span>(mar.shape)  <span class="cm"># (21, 6) → 3월 21개 거래일</span>
+
+q2 = samsung.<span class="fn">loc</span>[<span class="str">'2026-03'</span>:<span class="str">'2026-05'</span>]
+<span class="fn">print</span>(q2.shape)   <span class="cm"># (61, 6) → 3월부터 5월 말일까지 61거래일 (끝점 포함!)</span></code></pre>
+  </section>
+
+  <!-- ==========================================================================
+       MODULE 3: pd.merge() Inner vs Outer 테이블 물리적 결합 모션
+       ========================================================================== -->
+  <section class="motion-module" id="sec-merge">
+    <div class="module-header">
+      <div class="kicker">§4 &amp; §5 두 테이블의 결합 · TABLE MERGE ANIMATION</div>
+      <h2 class="module-title">120일과 128일이 만날 때 — <em>테이블 행(Row)의 결합과 탈락</em></h2>
+      <p class="module-desc">
+        삼성전자(120행)와 환율(128행) 두 테이블이 날짜 인덱스를 기준으로 병합될 때의 물리적 움직임을 시뮬레이션합니다.
+        <strong>Inner Merge 시 8개 행이 테이블에서 튕겨져 나가는 탈락 모션</strong>과 <strong>Outer Merge 시 주황색 NaN 셀이 삽입되는 모션</strong>을 확인하세요.
+      </p>
+    </div>
+
+    <div class="canvas-box">
+      <div class="canvas-ctrls">
+        <span class="ctrl-label">병합 알고리즘 실행:</span>
+        <button class="btn-act danger" id="btnMergeInner" onclick="playTableMerge('inner')">▶ how='inner' 실행 (교집합 120행: 8개 행 탈락!)</button>
+        <button class="btn-act success" id="btnMergeOuter" onclick="playTableMerge('outer')">▶ how='outer' 실행 (합집합 128행: NaN 블록 도킹!)</button>
+        <button class="btn-act sec" onclick="resetTableMerge()">↺ 초기화</button>
+        <span id="mergeTblBadge" style="margin-left:auto; font-size:12px; font-weight:bold; padding:4px 10px; border-radius:6px; background:#1E293B; color:#94A3B8;">
+          준비 상태: 두 테이블 분리 상태
+        </span>
+      </div>
+
+      <!-- Before Merge: Two Tables Side-by-Side -->
+      <div class="grid c2" id="twoTablesSourceView" style="margin-bottom: 20px;">
+        <div class="df-table-container">
+          <div style="font-size: 11px; font-weight: bold; color: #60A5FA; margin-bottom: 6px; font-family: var(--mono);">
+            [테이블 1] samsung[['Close']] (120행)
+          </div>
+          <table class="df-table">
+            <thead>
+              <tr><th class="th-index">Date</th><th>Samsung</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-index">2026-02-13</td><td>63,500.0</td></tr>
+              <tr style="background: rgba(239, 68, 68, 0.1);"><td class="td-index" style="color: #F87171;">2/16 ~ 2/18</td><td style="color: #F87171;">[휴장으로 행 없음]</td></tr>
+              <tr><td class="td-index">2026-02-19</td><td>62,900.0</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="df-table-container">
+          <div style="font-size: 11px; font-weight: bold; color: #A78BFA; margin-bottom: 6px; font-family: var(--mono);">
+            [테이블 2] usdkrw[['Close']] (128행)
+          </div>
+          <table class="df-table">
+            <thead>
+              <tr><th class="th-index">Date</th><th>USDKRW</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-index">2026-02-13</td><td>1,425.57</td></tr>
+              <tr style="background: rgba(167, 139, 250, 0.15);"><td class="td-index" style="color:#C7D2FE;">2026-02-16</td><td>1,430.00</td></tr>
+              <tr style="background: rgba(167, 139, 250, 0.15);"><td class="td-index" style="color:#C7D2FE;">2026-02-17</td><td>1,430.00</td></tr>
+              <tr style="background: rgba(167, 139, 250, 0.15);"><td class="td-index" style="color:#C7D2FE;">2026-02-18</td><td>1,427.63</td></tr>
+              <tr><td class="td-index">2026-02-19</td><td>1,419.64</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Merged Live Output Table -->
+      <div class="df-table-container" style="border: 2px solid #3B82F6;">
+        <div style="font-size: 12px; font-weight: bold; color: #FCD34D; margin-bottom: 8px; font-family: var(--mono);" id="mergedOutputTitle">
+          병합 결과: pd.merge(samsung, usdkrw, left_index=True, right_index=True, how='?')
+        </div>
+        <table class="df-table" id="tableMergedLive">
+          <thead>
+            <tr>
+              <th class="th-index">Date (DatetimeIndex)</th>
+              <th>Samsung</th>
+              <th>USDKRW</th>
+              <th style="text-align: left;">비고 / 행의 운명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-index">2026-02-13</td>
+              <td>63,500.0</td>
+              <td>1,425.57</td>
+              <td style="text-align: left; color:#10B981;">양쪽 모두 정상 존재 (일치)</td>
+            </tr>
+            <tr id="m_row_16">
+              <td class="td-index">2026-02-16</td>
+              <td id="m_s_16">-</td>
+              <td>1,430.00</td>
+              <td id="m_note_16" style="text-align: left; color:#94A3B8;">병합 방식을 선택하세요</td>
+            </tr>
+            <tr id="m_row_17">
+              <td class="td-index">2026-02-17</td>
+              <td id="m_s_17">-</td>
+              <td>1,430.00</td>
+              <td id="m_note_17" style="text-align: left; color:#94A3B8;">병합 방식을 선택하세요</td>
+            </tr>
+            <tr id="m_row_18">
+              <td class="td-index">2026-02-18</td>
+              <td id="m_s_18">-</td>
+              <td>1,427.63</td>
+              <td id="m_note_18" style="text-align: left; color:#94A3B8;">병합 방식을 선택하세요</td>
+            </tr>
+            <tr>
+              <td class="td-index">2026-02-19</td>
+              <td>62,900.0</td>
+              <td>1,419.64</td>
+              <td style="text-align: left; color:#10B981;">양쪽 모두 정상 존재 (일치)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    
+      <!-- ====================================================================
+           SUB-MODULE: 4-WAY JOIN VENN DIAGRAM LAB (inner, left, right, outer)
+           ==================================================================== -->
+      <div class="canvas-box" style="margin-top: 24px; border-color: #3B82F6;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+            <span>🎨</span> 학생을 위한 4대 조인(Join) 벤다이어그램 인터랙티브 랩
+          </h3>
+          <span style="font-size: 12px; color: #94A3B8;">버튼을 클릭하면 결합 영역과 Pandas 데이터프레임의 행 수가 실시간으로 반응합니다</span>
+        </div>
+
+        <div class="canvas-ctrls" style="margin-bottom: 16px;">
+          <span class="ctrl-label">조인 방식(how) 선택:</span>
+          <button class="btn-act" id="btnVennInner" onclick="setVennMode('inner')">how='inner' (교집합)</button>
+          <button class="btn-act sec" id="btnVennLeft" onclick="setVennMode('left')">how='left' (왼쪽 기준)</button>
+          <button class="btn-act sec" id="btnVennRight" onclick="setVennMode('right')">how='right' (오른쪽 기준)</button>
+          <button class="btn-act success" id="btnVennOuter" onclick="setVennMode('outer')">how='outer' (합집합: 권장)</button>
+        </div>
+
+        <div class="grid c2" style="align-items: center;">
+          <!-- Left: SVG Venn Diagram -->
+          <div style="background: #070F1E; border: 1px solid var(--border); border-radius: 10px; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 240px;">
+            <svg viewBox="0 0 440 240" width="100%" height="220" style="overflow: visible;">
+              <!-- Left Crescent (Left Only) -->
+              <path id="venn_left" d="M 220,67.08 A 80 80 0 0 0 220,172.92 A 80 80 0 1 1 220,67.08 Z"
+                    fill="rgba(255,255,255,0.04)" stroke="#334155" stroke-width="2" style="transition: all 0.4s ease; cursor: pointer;" onclick="setVennMode('left')"/>
+              
+              <!-- Center Intersection (Inner) -->
+              <path id="venn_center" d="M 220,67.08 A 80 80 0 0 1 220,172.92 A 80 80 0 0 1 220,67.08 Z"
+                    fill="#2563EB" stroke="#60A5FA" stroke-width="2.5" style="transition: all 0.4s ease; cursor: pointer;" onclick="setVennMode('inner')"/>
+              
+              <!-- Right Crescent (Right Only) -->
+              <path id="venn_right" d="M 220,67.08 A 80 80 0 0 1 220,172.92 A 80 80 0 1 0 220,67.08 Z"
+                    fill="rgba(255,255,255,0.04)" stroke="#334155" stroke-width="2" style="transition: all 0.4s ease; cursor: pointer;" onclick="setVennMode('right')"/>
+
+              <!-- Outlines -->
+              <circle cx="160" cy="120" r="80" fill="none" stroke="rgba(96, 165, 250, 0.35)" stroke-dasharray="4 4" pointer-events="none"/>
+              <circle cx="280" cy="120" r="80" fill="none" stroke="rgba(167, 139, 250, 0.35)" stroke-dasharray="4 4" pointer-events="none"/>
+
+              <!-- Circle Top Labels -->
+              <text x="135" y="38" fill="#93C5FD" font-size="12" font-weight="bold" text-anchor="middle" font-family="var(--font)">Left: 삼성전자</text>
+              <text x="135" y="54" fill="#64748B" font-size="10.5" font-family="var(--mono)" text-anchor="middle">(120거래일)</text>
+
+              <text x="305" y="38" fill="#C7D2FE" font-size="12" font-weight="bold" text-anchor="middle" font-family="var(--font)">Right: USDKRW</text>
+              <text x="305" y="54" fill="#64748B" font-size="10.5" font-family="var(--mono)" text-anchor="middle">(128거래일)</text>
+
+              <!-- Inner Labels -->
+              <text id="venn_center_label" x="220" y="116" fill="#FFFFFF" font-size="11.5" font-weight="900" text-anchor="middle" font-family="var(--mono)">교집합</text>
+              <text id="venn_center_sub" x="220" y="132" fill="#E2E8F0" font-size="10" font-weight="bold" text-anchor="middle" font-family="var(--mono)">120일</text>
+
+              <text id="venn_left_label" x="125" y="125" fill="#64748B" font-size="10.5" font-weight="bold" text-anchor="middle" font-family="var(--mono)">0일</text>
+              <text id="venn_right_label" x="315" y="125" fill="#FCD34D" font-size="10.5" font-weight="bold" text-anchor="middle" font-family="var(--mono)">8일 (외환만)</text>
+            </svg>
+          </div>
+
+          <!-- Right: Dynamic Explanatory Card -->
+          <div class="card-info" id="vennInfoCard" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 240px; border-left: 4px solid var(--primary);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="code-pill" id="vennBadge" style="background:#1E3A8A; color:#93C5FD; font-size:13px; font-weight:bold;">how='inner' (교집합)</span>
+                <span id="vennShapeTag" style="font-family:var(--mono); font-size:12px; font-weight:bold; color:#F59E0B;">shape: (120, 2) | NaN: 0개</span>
+              </div>
+              <h4 id="vennTitle" style="color: #FFFFFF; font-size: 16px; margin-bottom: 6px;">둘 다 존재하는 날짜만 남긴다 (교집합)</h4>
+              <p id="vennDesc" style="font-size: 13px; line-height: 1.6; color: #CBD5E1;">
+                삼성전자와 환율 모두에 존재하는 120일만 남깁니다. 결측치(NaN)는 0개라 겉보기엔 깔끔하지만, <strong>환율만 존재했던 8일의 소중한 외환 데이터가 영구히 소실</strong>됩니다.
+              </p>
+            </div>
+
+            <div style="margin-top: 14px; padding: 10px 12px; background: #070F1E; border-radius: 6px; border: 1px solid var(--border);">
+              <div style="font-size: 11px; color: var(--ink-sub); margin-bottom: 2px;">실행 파이썬 코드:</div>
+              <code id="vennCodeSnippet" style="font-family:var(--mono); font-size: 11.5px; color:#60A5FA;">pd.merge(samsung, usdkrw, left_index=True, right_index=True, how='inner')</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Python Code with STRICT NEWLINES -->
+    <div class="grid c2">
+      <div class="card-info">
+        <h4>💻 §500-7: how='inner' (데이터 유실)</h4>
+        <pre class="code-block"><code>inner = pd.<span class="fn">merge</span>(
+    samsung[[<span class="str">'Close'</span>]].<span class="fn">rename</span>(columns={<span class="str">'Close'</span>: <span class="str">'Samsung'</span>}),
+    usdkrw[[<span class="str">'Close'</span>]].<span class="fn">rename</span>(columns={<span class="str">'Close'</span>: <span class="str">'USDKRW'</span>}),
+    left_index=<span class="kw">True</span>, right_index=<span class="kw">True</span>, how=<span class="str">'inner'</span>
+)
+<span class="fn">print</span>(inner.shape)          <span class="cm"># (120, 2)</span>
+<span class="fn">print</span>(inner.<span class="fn">isnull</span>().<span class="fn">sum</span>())  <span class="cm"># Samsung: 0, USDKRW: 0</span>
+<span class="cm"># NaN은 없지만 환율 8일치 데이터가 완전히 삭제됨!</span></code></pre>
+      </div>
+
+      <div class="card-info">
+        <h4>💻 §500-8: how='outer' (정직한 보존)</h4>
+        <pre class="code-block"><code>outer = pd.<span class="fn">merge</span>(
+    samsung[[<span class="str">'Close'</span>]].<span class="fn">rename</span>(columns={<span class="str">'Close'</span>: <span class="str">'Samsung'</span>}),
+    usdkrw[[<span class="str">'Close'</span>]].<span class="fn">rename</span>(columns={<span class="str">'Close'</span>: <span class="str">'USDKRW'</span>}),
+    left_index=<span class="kw">True</span>, right_index=<span class="kw">True</span>, how=<span class="str">'outer'</span>
+)
+<span class="fn">print</span>(outer.shape)          <span class="cm"># (128, 2)</span>
+<span class="fn">print</span>(outer.<span class="fn">isnull</span>().<span class="fn">sum</span>())  <span class="cm"># Samsung: 8, USDKRW: 0</span>
+<span class="cm"># 128일 모두 살리고, 삼성전자가 쉰 8일만 NaN으로 보존!</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       MODULE 4: 8대 휴장일과 결측치의 정체
+       ========================================================================== -->
+  <section class="motion-module" id="sec-nan">
+    <div class="module-header">
+      <div class="kicker">§6 결측치의 인과적 정체 · 8 GAP DATES</div>
+      <h2 class="module-title">8개의 NaN은 버그가 아니라 <em>"국내 증시 휴장일"</em>이라는 정보다</h2>
+      <p class="module-desc">
+        <code>outer['Samsung'].isnull()</code>로 뽑아낸 8개 날짜는 코스피가 문을 닫았던 날들의 정확한 기록입니다.
+      </p>
+    </div>
+
+    <div class="df-table-container">
+      <div style="font-size: 11.5px; font-weight: bold; color: #FCD34D; margin-bottom: 8px; font-family: var(--mono);">
+        gap_dates = outer[outer['Samsung'].isnull()].index (정확히 8일 전수 일치)
+      </div>
+      <table class="df-table">
+        <thead>
+          <tr>
+            <th class="th-index">날짜 (Date)</th>
+            <th style="text-align: left;">국내 증시(KRX) 공식 캘린더</th>
+            <th>Samsung 종가</th>
+            <th>USDKRW 종가</th>
+            <th style="text-align: left;">시장 해석</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-holiday">
+            <td class="td-index">2026-02-16 ~ 02-18</td>
+            <td style="text-align: left; color:#FCA5A5;">설날 연휴 (3일 연속 휴장)</td>
+            <td class="cell-nan">NaN</td>
+            <td>1,430.00</td>
+            <td style="text-align: left; color:#94A3B8;">코스피는 쉬지만 글로벌 외환시장은 정상 거래</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-03-02</td>
+            <td style="text-align: left; color:#FCA5A5;">삼일절 대체공휴일</td>
+            <td class="cell-nan">NaN</td>
+            <td>1,428.50</td>
+            <td style="text-align: left; color:#94A3B8;">국내 은행·증권사 휴무, 역외 환율은 작동</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-05-01</td>
+            <td style="text-align: left; color:#FCA5A5;">근로자의 날 (증시 휴장)</td>
+            <td class="cell-nan">NaN</td>
+            <td>1,415.20</td>
+            <td style="text-align: left; color:#94A3B8;">증시 전면 휴장</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-05-05</td>
+            <td style="text-align: left; color:#FCA5A5;">어린이날</td>
+            <td class="cell-nan">NaN</td>
+            <td>1,418.90</td>
+            <td style="text-align: left; color:#94A3B8;">국내 공휴일</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-05-25</td>
+            <td style="text-align: left; color:#FCA5A5;">부처님오신날</td>
+            <td class="cell-nan">NaN</td>
+            <td>1,422.10</td>
+            <td style="text-align: left; color:#94A3B8;">국내 공휴일</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-06-03</td>
+            <td style="text-align: left; color:#FCA5A5;">현충일 관련 임시 휴장</td>
+            <td class="cell-nan">NaN</td>
+            <td>1,420.40</td>
+            <td style="text-align: left; color:#94A3B8;">국내 증시 휴장</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre class="code-block" style="margin-top: 14px;"><code>gap_dates = outer[outer[<span class="str">'Samsung'</span>].<span class="fn">isnull</span>()].index
+<span class="fn">print</span>(<span class="fn">list</span>(gap_dates.<span class="fn">strftime</span>(<span class="str">'%Y-%m-%d'</span>)))
+<span class="cm"># ['2026-02-16', '2026-02-17', '2026-02-18', '2026-03-02',</span>
+<span class="cm">#  '2026-05-01', '2026-05-05', '2026-05-25', '2026-06-03']</span></code></pre>
+  </section>
+
+  <!-- ==========================================================================
+       MODULE 5: ffill 순서의 함정 (Cell-by-Cell Interactive Animation)
+       ========================================================================== -->
+  <section class="motion-module" id="sec-ffill" style="border-color: #3B82F6; box-shadow: 0 0 35px rgba(37, 99, 235, 0.2);">
+    <div class="module-header">
+      <div class="kicker">§7 결측치 채우기의 함정 · CELL-BY-CELL SIMULATOR</div>
+      <h2 class="module-title">가격 ffill은 상식이고, <em>수익률 ffill은 위험한 조작이다</em></h2>
+      <p class="module-desc">
+        초보자가 가장 많이 틀리는 순서의 오류! 실제 테이블의 셀 단위로 값이 어떻게 복제되고 계산되는지 스텝 바이 스텝으로 확인하세요.
+      </p>
+    </div>
+
+    <div class="canvas-box">
+      <div class="canvas-ctrls">
+        <span class="ctrl-label">파이프라인 순서 선택:</span>
+        <button class="btn-act danger" id="btnModeWrong" onclick="runCellFfillSim('wrong')">❌ 틀린 순서: pct_change() 먼저 → ffill()</button>
+        <button class="btn-act success" id="btnModeRight" onclick="runCellFfillSim('right')">✅ 맞는 순서: 가격 ffill() 먼저 → pct_change()</button>
+        <span id="badgeFfillMode" style="margin-left:auto; font-size:12px; font-weight:800; padding:4px 12px; border-radius:6px; background:rgba(239, 68, 68, 0.2); color:#FCA5A5;">
+          현재 모드: ❌ 잘못된 순서 (가짜 랠리 날조 위험)
+        </span>
+      </div>
+
+      <div class="grid c2">
+        <!-- Live DataFrame Table Transformation -->
+        <div class="df-table-container">
+          <div style="font-size: 11.5px; font-weight: bold; color: #60A5FA; margin-bottom: 8px; font-family: var(--mono);" id="tblTransformTitle">
+            [결측 상태] outer.loc['2026-02-13':'2026-02-19']
+          </div>
+          <table class="df-table" id="ffillLiveTable">
+            <thead>
+              <tr>
+                <th class="th-index">Date</th>
+                <th>원시 가격</th>
+                <th id="col_header_proc">처리 후 가격</th>
+                <th>일간 수익률 (pct_change)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-index">2026-02-13</td>
+                <td>63,500.0</td>
+                <td id="cell_p_13">63,500.0</td>
+                <td id="cell_r_13" style="color:#60A5FA; font-weight:bold;">+0.012759 (+1.28%)</td>
+              </tr>
+              <tr class="row-holiday">
+                <td class="td-index">2026-02-16 (설)</td>
+                <td style="color:#FCD34D;">NaN</td>
+                <td id="cell_p_16" class="cell-nan">NaN</td>
+                <td id="cell_r_16" class="cell-pct-bad">+0.012759 (+1.28%)</td>
+              </tr>
+              <tr class="row-holiday">
+                <td class="td-index">2026-02-17 (설)</td>
+                <td style="color:#FCD34D;">NaN</td>
+                <td id="cell_p_17" class="cell-nan">NaN</td>
+                <td id="cell_r_17" class="cell-pct-bad">+0.012759 (+1.28%)</td>
+              </tr>
+              <tr class="row-holiday">
+                <td class="td-index">2026-02-18 (설)</td>
+                <td style="color:#FCD34D;">NaN</td>
+                <td id="cell_p_18" class="cell-nan">NaN</td>
+                <td id="cell_r_18" class="cell-pct-bad">+0.012759 (+1.28%)</td>
+              </tr>
+              <tr>
+                <td class="td-index">2026-02-19 (개장)</td>
+                <td>62,900.0</td>
+                <td id="cell_p_19">62,900.0</td>
+                <td id="cell_r_19" class="cell-pct-bad">+0.012759 (+1.28%)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Dynamic Chart Bars -->
+        <div class="chart-box">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:12.5px; font-weight:bold;">
+            <span>일간 수익률 차트</span>
+            <span id="chartLabelMode" style="color:#EF4444;">🚨 4일 연속 허위 랠리 발생!</span>
+          </div>
+
+          <div class="bars-wrap">
+            <div class="zero-line"></div>
+            <span class="zero-label">0%</span>
+
+            <div class="bar-col">
+              <div class="bar-fill" style="height: 55px; background: #3B82F6;">
+                <span class="bar-tag" style="color: #60A5FA;">+1.28%</span>
+              </div>
+              <span class="bar-date-label">2/13</span>
+            </div>
+
+            <div class="bar-col">
+              <div class="bar-fill" id="bar16" style="height: 55px; background: #EF4444;">
+                <span class="bar-tag" id="tag16" style="color: #F87171;">+1.28%</span>
+              </div>
+              <span class="bar-date-label">2/16</span>
+            </div>
+
+            <div class="bar-col">
+              <div class="bar-fill" id="bar17" style="height: 55px; background: #EF4444;">
+                <span class="bar-tag" id="tag17" style="color: #F87171;">+1.28%</span>
+              </div>
+              <span class="bar-date-label">2/17</span>
+            </div>
+
+            <div class="bar-col">
+              <div class="bar-fill" id="bar18" style="height: 55px; background: #EF4444;">
+                <span class="bar-tag" id="tag18" style="color: #F87171;">+1.28%</span>
+              </div>
+              <span class="bar-date-label">2/18</span>
+            </div>
+
+            <div class="bar-col">
+              <div class="bar-fill" id="bar19" style="height: 55px; background: #EF4444;">
+                <span class="bar-tag" id="tag19" style="color: #F87171;">+1.28%</span>
+              </div>
+              <span class="bar-date-label">2/19</span>
+            </div>
+          </div>
+
+          <div id="boxFfillAlert" class="alert-box danger" style="margin-top:14px;">
+            <span class="alert-icon">🚨</span>
+            <div>
+              <strong>치명적 허위 데이터 날조:</strong><br>
+              2/13의 수익률(+1.28%)이 설 연휴 3일 동안 복사되어 <strong>"휴장일에도 돈을 벌었다"</strong>는 가짜 랠리가 만들어졌습니다.<br>
+              2/19 주가는 62,900원으로 떨어졌는데도(+1.28%) 올랐다고 왜곡되었습니다!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Python Code with EXACT NEWLINES -->
+    <div class="grid c2">
+      <div class="card-info">
+        <h4>❌ §500-11: 틀린 순서 (수익률 ffill)</h4>
+        <pre class="code-block"><code><span class="cm"># 결측 상태에서 pct_change 후 ffill</span>
+returns_wrong = outer.<span class="fn">pct_change</span>()
+returns_wrong_filled = returns_wrong.<span class="fn">ffill</span>()
+<span class="fn">print</span>(returns_wrong_filled.<span class="fn">loc</span>[<span class="str">'2026-02-13'</span>:<span class="str">'2026-02-19'</span>, [<span class="str">'Samsung'</span>]])
+
+<span class="cm"># 출력:</span>
+<span class="cm">#             Samsung</span>
+<span class="cm"># Date</span>
+<span class="cm"># 2026-02-13  0.012759</span>
+<span class="cm"># 2026-02-16  0.012759  ← 설 연휴에 매일 1.28% 상승?!</span>
+<span class="cm"># 2026-02-17  0.012759  ← 거짓 데이터!</span>
+<span class="cm"># 2026-02-18  0.012759  ← 거짓 데이터!</span>
+<span class="cm"># 2026-02-19  0.012759  ← 2/19 하락했는데 상승으로 조작!</span></code></pre>
+      </div>
+
+      <div class="card-info">
+        <h4>✅ §500-12: 맞는 순서 (가격 ffill)</h4>
+        <pre class="code-block"><code><span class="cm"># 가격을 먼저 채우고, 그 다음에 pct_change</span>
+returns_right = outer.<span class="fn">ffill</span>().<span class="fn">pct_change</span>()
+<span class="fn">print</span>(returns_right.<span class="fn">loc</span>[<span class="str">'2026-02-13'</span>:<span class="str">'2026-02-19'</span>, [<span class="str">'Samsung'</span>]])
+
+<span class="cm"># 출력:</span>
+<span class="cm">#             Samsung</span>
+<span class="cm"># Date</span>
+<span class="cm"># 2026-02-13  0.012759</span>
+<span class="cm"># 2026-02-16  0.000000  ← 휴장일엔 가격 불변(0%) 정직!</span>
+<span class="cm"># 2026-02-17  0.000000  ← 가격 불변(0%)!</span>
+<span class="cm"># 2026-02-18  0.000000  ← 가격 불변(0%)!</span>
+<span class="cm"># 2026-02-19 -0.009449  ← 진짜 하락률(-0.94%) 정상 산출!</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       MODULE 6: 세 자산 한 표 결합 파이프라인
+       ========================================================================== -->
+  <section class="motion-module" id="sec-three">
+    <div class="module-header">
+      <div class="kicker">§8 다중 자산 통합 파이프라인 · THREE ASSET JOIN</div>
+      <h2 class="module-title">세 자산을 한 표 위에 — <em>(128, 3) 통합 마스터 테이블</em></h2>
+      <p class="module-desc">
+        삼성전자, NAVER, 환율 3개 자산을 2회 연속 <code>merge(how='outer')</code>로 도킹합니다.
+        국내 두 주식(삼성, NAVER)은 동일한 거래소 휴장일을 따르므로 <strong>정확히 같은 날짜에 나란히 NaN</strong>이 발생합니다.
+      </p>
+    </div>
+
+    <div class="df-table-container">
+      <div style="font-size: 12px; font-weight: bold; color: #34D399; margin-bottom: 8px; font-family: var(--mono);">
+        three = samsung.merge(naver, how='outer').merge(usdkrw, how='outer') | shape: (128, 3)
+      </div>
+      <table class="df-table">
+        <thead>
+          <tr>
+            <th class="th-index">Date (DatetimeIndex)</th>
+            <th>Samsung (KRX)</th>
+            <th>Naver (KRX)</th>
+            <th>USDKRW (외환)</th>
+            <th style="text-align: left;">특징</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-index">2026-02-13</td>
+            <td>63,500.0</td>
+            <td>388,900.0</td>
+            <td>1,425.57</td>
+            <td style="text-align: left; color:#10B981;">3개 자산 모두 정상 거래</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-02-16</td>
+            <td class="cell-nan">NaN</td>
+            <td class="cell-nan">NaN</td>
+            <td style="color:#A78BFA; font-weight:bold;">1,430.00</td>
+            <td style="text-align: left; color:#FCA5A5;">국내 2종목 동시 NaN 발생!</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-02-17</td>
+            <td class="cell-nan">NaN</td>
+            <td class="cell-nan">NaN</td>
+            <td style="color:#A78BFA; font-weight:bold;">1,430.00</td>
+            <td style="text-align: left; color:#FCA5A5;">국내 2종목 동시 NaN 발생!</td>
+          </tr>
+          <tr class="row-holiday">
+            <td class="td-index">2026-02-18</td>
+            <td class="cell-nan">NaN</td>
+            <td class="cell-nan">NaN</td>
+            <td style="color:#A78BFA; font-weight:bold;">1,427.63</td>
+            <td style="text-align: left; color:#FCA5A5;">국내 2종목 동시 NaN 발생!</td>
+          </tr>
+          <tr>
+            <td class="td-index">2026-02-19</td>
+            <td>62,900.0</td>
+            <td>390,600.0</td>
+            <td>1,419.64</td>
+            <td style="text-align: left; color:#10B981;">코스피 개장으로 전원 정상 거래</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Python Code with EXACT NEWLINES -->
+    <pre class="code-block" style="margin-top: 14px;"><code><span class="cm"># §500-13: 세 자산 마스터 파이프라인</span>
+three = (
+    samsung[[<span class="str">'Close'</span>]].<span class="fn">rename</span>(columns={<span class="str">'Close'</span>: <span class="str">'Samsung'</span>})
+    .<span class="fn">merge</span>(naver[[<span class="str">'Close'</span>]].<span class="fn">rename</span>(columns={<span class="str">'Close'</span>: <span class="str">'Naver'</span>}), left_index=<span class="kw">True</span>, right_index=<span class="kw">True</span>, how=<span class="str">'outer'</span>)
+    .<span class="fn">merge</span>(usdkrw[[<span class="str">'Close'</span>]].<span class="fn">rename</span>(columns={<span class="str">'Close'</span>: <span class="str">'USDKRW'</span>}), left_index=<span class="kw">True</span>, right_index=<span class="kw">True</span>, how=<span class="str">'outer'</span>)
+)
+
+<span class="cm"># 올바른 순서로 완성: 가격 ffill 후 pct_change</span>
+returns_final = three.<span class="fn">ffill</span>().<span class="fn">pct_change</span>()
+<span class="fn">print</span>(returns_final.<span class="fn">loc</span>[<span class="str">'2026-02-13'</span>:<span class="str">'2026-02-19'</span>])</code></pre>
+  </section>
+
+</div>
+
+<script>
+/* ==========================================================================
+   INTERACTIVE LOGIC: REAL DATAFRAME TRANSFORMATIONS
+   ========================================================================== */
+
+// 1. DataFrame Index Transformation
+function setDfStep(step) {
+  const shapeInfo = document.getElementById('dfShapeInfo');
+  const badge = document.getElementById('dfStatusBadge');
+  const thIdx = document.getElementById('th_idx_col');
+  const thDate = document.getElementById('th_date_col');
+  const expl = document.getElementById('dfExplanationBox');
+
+  const idxVals = [document.getElementById('idx_val_0'), document.getElementById('idx_val_1'), document.getElementById('idx_val_2'), document.getElementById('idx_val_3')];
+  const dateVals = [document.getElementById('date_val_0'), document.getElementById('date_val_1'), document.getElementById('date_val_2'), document.getElementById('date_val_3')];
+
+  if (step === 0) {
+    badge.textContent = "0단계: read_csv 직후 (RangeIndex 0,1,2,3)";
+    badge.style.background = "#1E293B";
+    badge.style.color = "#94A3B8";
+    shapeInfo.textContent = "samsung = pd.read_csv('samsung_005930.csv') | shape: (120, 3) | Index: RangeIndex(0, 120)";
+
+    thIdx.textContent = "Index";
+    thIdx.className = "th-index";
+    thIdx.style.background = "#112340";
+    thDate.style.display = "";
+    thDate.textContent = "Date (일반 컬럼)";
+    thDate.style.color = "#FCD34D";
+
+    const dates = ["'2026-01-02' <str>", "'2026-01-05' <str>", "'2026-01-06' <str>", "'2026-03-04' <str>"];
+    idxVals.forEach((el, i) => {
+      el.textContent = i;
+      el.className = "td-index";
+      el.style.background = "#0B172A";
+      el.style.color = "#93C5FD";
+    });
+    dateVals.forEach((el, i) => {
+      el.style.display = "";
+      el.textContent = dates[i];
+      el.style.color = "#FCD34D";
+      el.style.background = "transparent";
+    });
+
+    expl.innerHTML = "<strong>0단계 상태:</strong> <code>read_csv()</code> 직후에는 왼쪽 행 번호가 단순 정수(0, 1, 2, 3...)이고, <code>Date</code>는 문자열(str) 타입의 일반 데이터 열입니다. 아직 날짜 연산이 불가능합니다.";
+  } else if (step === 1) {
+    badge.textContent = "1단계: pd.to_datetime() 변환 완료";
+    badge.style.background = "rgba(37, 99, 235, 0.25)";
+    badge.style.color = "#93C5FD";
+    shapeInfo.textContent = "samsung['Date'] = pd.to_datetime(samsung['Date']) | Date 열이 datetime64[us]로 정규화됨";
+
+    thDate.textContent = "Date (datetime64[us])";
+    thDate.style.color = "#60A5FA";
+
+    const timestamps = ["2026-01-02", "2026-01-05", "2026-01-06", "2026-03-04"];
+    dateVals.forEach((el, i) => {
+      el.innerHTML = `<span style="background:#2563EB; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">Timestamp</span> ${timestamps[i]}`;
+      el.style.color = "#fff";
+      el.style.background = "rgba(37, 99, 235, 0.1)";
+    });
+
+    expl.innerHTML = "<strong>1단계 상태:</strong> <code>pd.to_datetime()</code>을 거쳐 제각각이던 문자열 날짜가 나노초 단위 날짜 객체(<code>Timestamp</code>)로 파싱되었습니다. 이제 인덱스로 승격될 준비가 끝났습니다.";
+  } else if (step === 2) {
+    badge.textContent = "2단계: set_index('Date') 인덱스 승격 완료!";
+    badge.style.background = "rgba(16, 185, 129, 0.25)";
+    badge.style.color = "#A7F3D0";
+    shapeInfo.textContent = "samsung = samsung.set_index('Date') | shape: (120, 2) | Index: DatetimeIndex(120)";
+
+    // TRANSFORMATION: Date becomes the Index column!
+    thIdx.textContent = "Date (DatetimeIndex)";
+    thIdx.style.background = "#1D4ED8";
+    thIdx.style.color = "#FFFFFF";
+    thDate.style.display = "none"; // Date column merged into index!
+
+    const dates = ["2026-01-02", "2026-01-05", "2026-01-06", "2026-03-04"];
+    idxVals.forEach((el, i) => {
+      el.textContent = dates[i];
+      el.style.background = "rgba(37, 99, 235, 0.25)";
+      el.style.color = "#FFFFFF";
+      el.style.fontWeight = "900";
+    });
+    dateVals.forEach((el) => {
+      el.style.display = "none"; // Hide redundant column
+    });
+
+    expl.innerHTML = "<strong>2단계 물리적 변화 (핵심!):</strong><br>1. 숫자 번호(0, 1, 2)가 완전히 소멸하고, <code>Date</code> 열이 <strong>왼쪽 인덱스(행 라벨) 자리로 이동</strong>했습니다!<br>2. 컬럼이 3개에서 2개(Close, Volume)로 줄어들었습니다.<br>3. 이제 <code>.loc['2026-03']</code>을 실행하면 이 인덱스를 기준으로 행을 초고속으로 잘라냅니다!";
+  }
+}
+
+// 2. Period Slicing Filter
+function filterSliceTable(mode) {
+  const rows = document.querySelectorAll('.slice-row');
+  const info = document.getElementById('sliceTableInfo');
+
+  if (mode === 'all') {
+    rows.forEach(r => r.style.display = "");
+    info.textContent = "samsung 전체 보기 | shape: (120, 2) | 전체 120거래일 표시";
+    info.style.color = "#60A5FA";
+  } else if (mode === 'mar') {
+    rows.forEach(r => {
+      if (r.classList.contains('r-mar')) {
+        r.style.display = "";
+      } else {
+        r.style.display = "none";
+      }
+    });
+    info.textContent = "samsung.loc['2026-03'] | shape: (21, 2) | 3월 21개 거래일만 테이블에 남김!";
+    info.style.color = "#34D399";
+  } else if (mode === 'q2') {
+    rows.forEach(r => {
+      if (r.classList.contains('r-mar') || r.classList.contains('r-apr')) {
+        r.style.display = "";
+      } else {
+        r.style.display = "none";
+      }
+    });
+    info.textContent = "samsung.loc['2026-03':'2026-05'] | shape: (61, 2) | 3월부터 5월 말일까지 61거래일 슬라이싱!";
+    info.style.color = "#FBBF24";
+  }
+}
+
+// 3. Table Merge Simulation (Inner vs Outer)
+function playTableMerge(mode) {
+  const badge = document.getElementById('mergeTblBadge');
+  const title = document.getElementById('mergedOutputTitle');
+  const r16 = document.getElementById('m_row_16');
+  const r17 = document.getElementById('m_row_17');
+  const r18 = document.getElementById('m_row_18');
+  const s16 = document.getElementById('m_s_16');
+  const s17 = document.getElementById('m_s_17');
+  const s18 = document.getElementById('m_s_18');
+  const n16 = document.getElementById('m_note_16');
+  const n17 = document.getElementById('m_note_17');
+  const n18 = document.getElementById('m_note_18');
+
+  if (mode === 'inner') {
+    badge.textContent = "how='inner' 실행 완료 (120행 교집합)";
+    badge.style.background = "rgba(239, 68, 68, 0.25)";
+    badge.style.color = "#FCA5A5";
+    title.textContent = "inner 머지 결과: shape = (120, 2) | 결측치 없음 | 8개 휴장일 행이 테이블에서 탈락!";
+
+    // Hide or fade out gap rows
+    [r16, r17, r18].forEach(row => {
+      row.style.background = "rgba(239, 68, 68, 0.2)";
+      row.style.opacity = "0.2";
+      row.style.transform = "scale(0.95)";
+    });
+    s16.textContent = "탈락";
+    s17.textContent = "탈락";
+    s18.textContent = "탈락";
+    n16.textContent = "❌ 삼성이 없어 행 전체 삭제됨 (환율 유실)";
+    n17.textContent = "❌ 삼성이 없어 행 전체 삭제됨 (환율 유실)";
+    n18.textContent = "❌ 삼성이 없어 행 전체 삭제됨 (환율 유실)";
+    n16.style.color = "#EF4444";
+    n17.style.color = "#EF4444";
+    n18.style.color = "#EF4444";
+  } else {
+    badge.textContent = "how='outer' 실행 완료 (128행 합집합)";
+    badge.style.background = "rgba(16, 185, 129, 0.25)";
+    badge.style.color = "#A7F3D0";
+    title.textContent = "outer 머지 결과: shape = (128, 2) | 128일 모두 보존 | Samsung 자리에 8개 NaN 도킹!";
+
+    [r16, r17, r18].forEach(row => {
+      row.style.display = "";
+      row.style.background = "rgba(245, 158, 11, 0.1)";
+      row.style.opacity = "1";
+      row.style.transform = "scale(1)";
+    });
+    [s16, s17, s18].forEach(cell => {
+      cell.className = "cell-nan";
+      cell.textContent = "NaN";
+    });
+    n16.textContent = "✅ 코스피 휴장 정보 보존 (외환은 유지)";
+    n17.textContent = "✅ 코스피 휴장 정보 보존 (외환은 유지)";
+    n18.textContent = "✅ 코스피 휴장 정보 보존 (외환은 유지)";
+    n16.style.color = "#10B981";
+    n17.style.color = "#10B981";
+    n18.style.color = "#10B981";
+  }
+}
+
+function resetTableMerge() {
+  const badge = document.getElementById('mergeTblBadge');
+  const title = document.getElementById('mergedOutputTitle');
+  const r16 = document.getElementById('m_row_16');
+  const r17 = document.getElementById('m_row_17');
+  const r18 = document.getElementById('m_row_18');
+  const s16 = document.getElementById('m_s_16');
+  const s17 = document.getElementById('m_s_17');
+  const s18 = document.getElementById('m_s_18');
+  const n16 = document.getElementById('m_note_16');
+  const n17 = document.getElementById('m_note_17');
+  const n18 = document.getElementById('m_note_18');
+
+  badge.textContent = "준비 상태: 두 테이블 분리 상태";
+  badge.style.background = "#1E293B";
+  badge.style.color = "#94A3B8";
+  title.textContent = "병합 결과: pd.merge(samsung, usdkrw, left_index=True, right_index=True, how='?')";
+
+  [r16, r17, r18].forEach(row => {
+    row.style.display = "";
+    row.style.background = "transparent";
+    row.style.opacity = "1";
+    row.style.transform = "none";
+  });
+  [s16, s17, s18].forEach(cell => {
+    cell.className = "";
+    cell.textContent = "-";
+  });
+  [n16, n17, n18].forEach(cell => {
+    cell.textContent = "병합 방식을 선택하세요";
+    cell.style.color = "#94A3B8";
+  });
+}
+
+// 4. Cell-by-Cell FFILL Simulator
+function runCellFfillSim(mode) {
+  const badge = document.getElementById('badgeFfillMode');
+  const tblTitle = document.getElementById('tblTransformTitle');
+  const p16 = document.getElementById('cell_p_16');
+  const p17 = document.getElementById('cell_p_17');
+  const p18 = document.getElementById('cell_p_18');
+  const r16 = document.getElementById('cell_r_16');
+  const r17 = document.getElementById('cell_r_17');
+  const r18 = document.getElementById('cell_r_18');
+  const r19 = document.getElementById('cell_r_19');
+
+  const b16 = document.getElementById('bar16');
+  const b17 = document.getElementById('bar17');
+  const b18 = document.getElementById('bar18');
+  const b19 = document.getElementById('bar19');
+  const t16 = document.getElementById('tag16');
+  const t17 = document.getElementById('tag17');
+  const t18 = document.getElementById('tag18');
+  const t19 = document.getElementById('tag19');
+
+  const chartLbl = document.getElementById('chartLabelMode');
+  const alertBox = document.getElementById('boxFfillAlert');
+
+  if (mode === 'wrong') {
+    badge.textContent = "현재 모드: ❌ 잘못된 순서 (수익률 ffill)";
+    badge.style.background = "rgba(239, 68, 68, 0.2)";
+    badge.style.color = "#FCA5A5";
+    tblTitle.textContent = "❌ outer.pct_change().ffill() → 4일 연속 허위 랠리 발생!";
+
+    // Table Cells: prices stay NaN
+    p16.className = "cell-nan"; p16.textContent = "NaN";
+    p17.className = "cell-nan"; p17.textContent = "NaN";
+    p18.className = "cell-nan"; p18.textContent = "NaN";
+
+    // Returns get duplicated +0.012759
+    r16.className = "cell-pct-bad"; r16.textContent = "+0.012759 (+1.28%)";
+    r17.className = "cell-pct-bad"; r17.textContent = "+0.012759 (+1.28%)";
+    r18.className = "cell-pct-bad"; r18.textContent = "+0.012759 (+1.28%)";
+    r19.className = "cell-pct-bad"; r19.textContent = "+0.012759 (+1.28%)";
+
+    // Chart
+    chartLbl.textContent = "🚨 4일 연속 허위 랠리 발생!";
+    chartLbl.style.color = "#EF4444";
+
+    [b16, b17, b18, b19].forEach(b => {
+      b.style.height = "55px";
+      b.style.background = "#EF4444";
+      b.style.transform = "translateY(0)";
+    });
+    [t16, t17, t18, t19].forEach(t => {
+      t.textContent = "+1.28%";
+      t.style.color = "#F87171";
+      t.style.top = "-22px";
+    });
+
+    alertBox.className = "alert-box danger";
+    alertBox.innerHTML = `
+      <span class="alert-icon">🚨</span>
+      <div>
+        <strong>치명적 허위 데이터 날조:</strong><br>
+        2/13의 수익률(+1.28%)이 설 연휴 3일 동안 복제되어 <strong>"휴장일에도 돈을 벌었다"</strong>는 가짜 랠리가 만들어졌습니다.<br>
+        심지어 2/19 개장일 주가는 62,900원으로 떨어졌는데도(+1.28%) 올랐다고 거짓 기록되었습니다!
+      </div>
+    `;
+  } else {
+    badge.textContent = "현재 모드: ✅ 올바른 순서 (가격 ffill 후 pct_change)";
+    badge.style.background = "rgba(16, 185, 129, 0.2)";
+    badge.style.color = "#A7F3D0";
+    tblTitle.textContent = "✅ outer.ffill().pct_change() → 완벽한 정상 계산 완료!";
+
+    // Table Cells: prices filled with 63,500
+    p16.className = "cell-ffill-filled"; p16.textContent = "63,500.0 (ffill)";
+    p17.className = "cell-ffill-filled"; p17.textContent = "63,500.0 (ffill)";
+    p18.className = "cell-ffill-filled"; p18.textContent = "63,500.0 (ffill)";
+
+    // Returns: holidays 0.0, 2/19 real return -0.009449
+    r16.className = "cell-pct-good"; r16.textContent = "0.000000 (0.00%)";
+    r17.className = "cell-pct-good"; r17.textContent = "0.000000 (0.00%)";
+    r18.className = "cell-pct-good"; r18.textContent = "0.000000 (0.00%)";
+    r19.className = ""; r19.style.color = "#93C5FD"; r19.style.fontWeight = "bold"; r19.textContent = "-0.009449 (-0.94%)";
+
+    // Chart
+    chartLbl.textContent = "✨ 휴장일 변동 0% + 2/19 진짜 수익률 산출!";
+    chartLbl.style.color = "#10B981";
+
+    // Flatten holiday bars to 0
+    [b16, b17, b18].forEach(b => {
+      b.style.height = "2px";
+      b.style.background = "#10B981";
+      b.style.transform = "translateY(-60px)";
+    });
+    [t16, t17, t18].forEach(t => {
+      t.textContent = "0.00%";
+      t.style.color = "#34D399";
+      t.style.top = "-20px";
+    });
+
+    // 2/19 drops below zero line
+    b19.style.height = "42px";
+    b19.style.background = "#3B82F6";
+    b19.style.transform = "translateY(0)";
+    t19.textContent = "-0.94%";
+    t19.style.color = "#93C5FD";
+    t19.style.top = "44px";
+
+    alertBox.className = "alert-box success";
+    alertBox.innerHTML = `
+      <span class="alert-icon">✨</span>
+      <div>
+        <strong>완벽한 금융 계산 완료:</strong><br>
+        1. 설 연휴 3일 동안 직전 종가(63,500원)로 가격을 동결시켰기 때문에 일간 수익률은 <strong>0.00%</strong>로 정직하게 산출되었습니다.<br>
+        2. 2/19 개장일에는 동결된 가격(63,500원) 대비 62,900원의 <strong>진짜 하락률(-0.94%)</strong>이 정확히 계산되었습니다!
+      </div>
+    `;
+  }
+}
+
+// Initial view setup
+setDfStep(0);
+filterSliceTable('all');
+
+// 5. Interactive Venn Diagram Controller (4-Way Join)
+function setVennMode(mode) {
+  const pL = document.getElementById('venn_left');
+  const pC = document.getElementById('venn_center');
+  const pR = document.getElementById('venn_right');
+  const badge = document.getElementById('vennBadge');
+  const shape = document.getElementById('vennShapeTag');
+  const title = document.getElementById('vennTitle');
+  const desc = document.getElementById('vennDesc');
+  const code = document.getElementById('vennCodeSnippet');
+  const card = document.getElementById('vennInfoCard');
+
+  const btnInner = document.getElementById('btnVennInner');
+  const btnLeft = document.getElementById('btnVennLeft');
+  const btnRight = document.getElementById('btnVennRight');
+  const btnOuter = document.getElementById('btnVennOuter');
+
+  [btnInner, btnLeft, btnRight, btnOuter].forEach(b => {
+    b.className = 'btn-act sec';
+  });
+
+  if (mode === 'inner') {
+    btnInner.className = 'btn-act';
+    pL.setAttribute('fill', 'rgba(255,255,255,0.04)');
+    pL.setAttribute('stroke', '#334155');
+    pC.setAttribute('fill', '#2563EB');
+    pC.setAttribute('stroke', '#60A5FA');
+    pR.setAttribute('fill', 'rgba(255,255,255,0.04)');
+    pR.setAttribute('stroke', '#334155');
+
+    badge.textContent = "how='inner' (교집합)";
+    badge.style.background = "#1E3A8A";
+    badge.style.color = "#93C5FD";
+    shape.textContent = "shape: (120, 2) | NaN: 0개";
+    shape.style.color = "#F59E0B";
+    title.textContent = "둘 다 존재하는 날짜만 남긴다 (교집합)";
+    desc.innerHTML = "삼성전자와 환율 모두에 존재하는 120일만 남깁니다. 결측치(NaN)는 0개라 겉보기엔 깔끔하지만, <strong>환율만 존재했던 8일의 소중한 외환 데이터가 영구히 소실</strong>됩니다.";
+    code.textContent = "pd.merge(samsung, usdkrw, left_index=True, right_index=True, how='inner')";
+    card.style.borderLeftColor = "#2563EB";
+  } else if (mode === 'left') {
+    btnLeft.className = 'btn-act';
+    pL.setAttribute('fill', '#3B82F6');
+    pL.setAttribute('stroke', '#93C5FD');
+    pC.setAttribute('fill', '#3B82F6');
+    pC.setAttribute('stroke', '#93C5FD');
+    pR.setAttribute('fill', 'rgba(255,255,255,0.04)');
+    pR.setAttribute('stroke', '#334155');
+
+    badge.textContent = "how='left' (왼쪽 삼성전자 기준)";
+    badge.style.background = "rgba(59, 130, 246, 0.25)";
+    badge.style.color = "#93C5FD";
+    shape.textContent = "shape: (120, 2) | NaN: 0개";
+    shape.style.color = "#93C5FD";
+    title.textContent = "왼쪽(삼성전자) 날짜는 100% 보존, 오른쪽만 버림";
+    desc.innerHTML = "왼쪽 테이블인 삼성전자(120일)의 모든 날짜를 무조건 살립니다. 삼성에 없는 환율의 8일은 버려지므로, <strong>이 데이터셋에서는 결과가 inner와 완전히 같습니다</strong>.";
+    code.textContent = "pd.merge(samsung, usdkrw, left_index=True, right_index=True, how='left')";
+    card.style.borderLeftColor = "#3B82F6";
+  } else if (mode === 'right') {
+    btnRight.className = 'btn-act';
+    pL.setAttribute('fill', 'rgba(255,255,255,0.04)');
+    pL.setAttribute('stroke', '#334155');
+    pC.setAttribute('fill', '#8B5CF6');
+    pC.setAttribute('stroke', '#C7D2FE');
+    pR.setAttribute('fill', '#8B5CF6');
+    pR.setAttribute('stroke', '#C7D2FE');
+
+    badge.textContent = "how='right' (오른쪽 환율 기준)";
+    badge.style.background = "rgba(139, 92, 246, 0.25)";
+    badge.style.color = "#C7D2FE";
+    shape.textContent = "shape: (128, 2) | Samsung NaN: 8개";
+    shape.style.color = "#FCD34D";
+    title.textContent = "오른쪽(환율) 날짜는 100% 보존, 삼성에 NaN 발생";
+    desc.innerHTML = "오른쪽 테이블인 USDKRW 환율(128일)의 모든 날짜를 살립니다. 환율에는 있지만 삼성전자에는 없는 8일 자리에 <strong>Samsung 열에 NaN이 생성</strong>됩니다.";
+    code.textContent = "pd.merge(samsung, usdkrw, left_index=True, right_index=True, how='right')";
+    card.style.borderLeftColor = "#8B5CF6";
+  } else if (mode === 'outer') {
+    btnOuter.className = 'btn-act success';
+    pL.setAttribute('fill', '#10B981');
+    pL.setAttribute('stroke', '#6EE7B7');
+    pC.setAttribute('fill', '#10B981');
+    pC.setAttribute('stroke', '#6EE7B7');
+    pR.setAttribute('fill', '#10B981');
+    pR.setAttribute('stroke', '#6EE7B7');
+
+    badge.textContent = "how='outer' (합집합: 추천)";
+    badge.style.background = "rgba(16, 185, 129, 0.25)";
+    badge.style.color = "#A7F3D0";
+    shape.textContent = "shape: (128, 2) | Samsung NaN: 8개 (유실 0%)";
+    shape.style.color = "#10B981";
+    title.textContent = "있는 날짜는 전부 살린다 (합집합)";
+    desc.innerHTML = "어느 한쪽에라도 존재하는 날짜(128일)를 모두 보존합니다. <strong>데이터 유실이 전혀 발생하지 않으며</strong>, 삼성전자가 쉰 8일만 정직하게 NaN으로 남겨 휴장 사실을 보존합니다.";
+    code.textContent = "pd.merge(samsung, usdkrw, left_index=True, right_index=True, how='outer')";
+    card.style.borderLeftColor = "#10B981";
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>재무데이터분석 Week 02 — 단위가 다른 주식을 하나의 자로 재는 법</title>
+<style>
+/* ==========================================================================
+   Blue Editorial Sidebar — 16:9 Deck Style System
+   Theme: Restrained Dark Navy App Shell + Crisp White Canvas + Blue Accent
+   ========================================================================== */
+
+:root {
+  /* Dark Navy Outer Shell */
+  --shell: #071a33;
+  --shell-surface: #0b2342;
+  --shell-line: #17385f;
+  --shell-hover: #122c4f;
+  --shell-active: #1b385d;
+  
+  /* Slide Canvas (Paper & Typography) */
+  --paper: #fbfbfa;
+  --ink: #111820;
+  --ink2: #2e3846;
+  --muted: #68727d;
+  --subtle: #94a3b8;
+  --line: #cfd5db;
+  --line-light: #e5e9ed;
+  
+  /* Blue Accent */
+  --blue: #2d63c8;
+  --blue-soft: #e8eef9;
+  --blue-bright: #5b8ee9;
+  --accent: #2d63c8;
+  --accent-soft: #e8eef9;
+  --accent-bright: #5b8ee9;
+  
+  --navy: #071a33;
+  --navy2: #0b2342;
+  
+  /* Semantic Accent Colors */
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --gold: #d97706;
+  
+  --sg: #ecfdf5;
+  --sb: #e8eef9;
+  --sr: #fef2f2;
+  --sw: #fffbeb;
+  --st: #f0fdfa;
+  
+  /* Fonts */
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", Roboto, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Segoe UI", Roboto, sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  
+  /* Animation Timing */
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font);
+  background: var(--shell);
+  color: var(--ink);
+  line-height: 1.5;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- App Shell Layout ---------------------------------------------------- */
+.app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  background: var(--shell);
+}
+
+/* --- Left Sidebar (TOC) -------------------------------------------------- */
+.sidebar {
+  width: 300px;
+  background: var(--shell);
+  color: #bdc9d8;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--shell-line);
+  flex-shrink: 0;
+  transition: transform var(--dur-base) ease, margin var(--dur-base) ease;
+  z-index: 100;
+}
+.sidebar.collapsed { margin-left: -300px; }
+
+.sb-header {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--shell-line);
+  background: var(--shell-surface);
+}
+.sb-search-box { position: relative; }
+.sb-search-box input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--shell-line);
+  border-radius: 6px;
+  padding: 8px 10px 8px 30px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.sb-search-box input:focus {
+  border-color: var(--blue-bright);
+  background: rgba(255,255,255,0.1);
+}
+.sb-search-box .icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: #6f86a7; pointer-events: none;
+}
+
+.sb-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px 30px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.sb-list::-webkit-scrollbar { width: 5px; }
+.sb-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+.sb-section-group { margin-bottom: 16px; }
+.sb-section-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6f86a7;
+  padding: 8px 10px 4px;
+}
+
+.sb-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #a0b3c6;
+  transition: background var(--dur-fast), color var(--dur-fast);
+  margin-bottom: 2px;
+}
+.sb-item:hover {
+  background: var(--shell-hover);
+  color: #fff;
+}
+.sb-item.active {
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+}
+.sb-item .num {
+  font-family: var(--mono);
+  font-size: 11px;
+  opacity: 0.7;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.sb-item .title { flex: 1; }
+
+.sb-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--shell-line);
+  background: var(--shell-surface);
+  font-size: 11.5px;
+  color: #6f86a7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* --- Main Slide Stage ---------------------------------------------------- */
+.stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #020813;
+  position: relative;
+  overflow: hidden;
+}
+
+.stage-topbar {
+  height: 44px;
+  background: var(--shell-surface);
+  border-bottom: 1px solid var(--shell-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  color: #bdc9d8;
+  font-size: 13px;
+  z-index: 50;
+}
+.stage-topbar .left { display: flex; align-items: center; gap: 12px; }
+.toggle-sidebar-btn {
+  background: transparent;
+  border: 1px solid var(--shell-line);
+  color: #bdc9d8;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.toggle-sidebar-btn:hover { background: var(--shell-hover); color: #fff; }
+
+.deck-title { font-weight: 700; color: #fff; font-size: 13.5px; }
+
+.stage-topbar .right { display: flex; align-items: center; gap: 14px; }
+.nav-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--shell-line);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s;
+}
+.nav-btn:hover { background: var(--blue); }
+.slide-indicator { font-family: var(--mono); font-size: 12px; color: #8fa6c5; }
+
+/* 16:9 Slide Canvas Container */
+.slide-viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.slide-canvas {
+  width: 100%;
+  max-width: 1200px;
+  aspect-ratio: 16 / 9;
+  background: var(--paper);
+  border-radius: 10px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  color: var(--ink);
+}
+
+/* Individual Slide Visibility */
+.slide {
+  display: none;
+  width: 100%;
+  height: 100%;
+  padding: 34px 44px;
+  flex-direction: column;
+  justify-content: space-between;
+  position: absolute;
+  top: 0; left: 0;
+}
+.slide.active { display: flex; }
+
+/* --- Slide Anatomy Components ------------------------------------------- */
+.slide-header { flex-shrink: 0; }
+.kicker {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--blue);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.atitle {
+  font-size: 28px;
+  font-weight: 850;
+  color: var(--navy);
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+.atitle em {
+  font-style: normal;
+  color: var(--blue);
+}
+.asub {
+  font-size: 14.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+.rule {
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue) 0%, rgba(45,99,200,0.2) 60%, transparent 100%);
+  margin: 10px 0 14px;
+}
+
+.slide-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.slide-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line-light);
+  padding-top: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--subtle);
+}
+
+/* --- Layout Grids -------------------------------------------------------- */
+.grid { display: grid; gap: 20px; flex: 1; min-height: 0; align-items: stretch; }
+.grid.c2 { grid-template-columns: 1fr 1fr; }
+.grid.c2.code-split { grid-template-columns: 46% 54%; gap: 22px; }
+.grid.c3 { grid-template-columns: repeat(3, 1fr); }
+.grid.c4 { grid-template-columns: repeat(4, 1fr); }
+
+/* --- Stripe Code Split Styling ------------------------------------------- */
+.code-window {
+  background: #070D1E;
+  border: 1px solid #1E293B;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  font-family: var(--mono);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  height: 100%;
+}
+.window-header {
+  background: rgba(255,255,255,0.05);
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #94A3B8;
+}
+.dots { display: flex; gap: 5px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.d-red { background: #EF4444; } .d-yel { background: #F59E0B; } .d-grn { background: #10B981; }
+
+.code-copy-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.code-copy-btn:hover { background: var(--blue); color: #fff; }
+
+.code-body {
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  overflow-y: auto;
+  flex: 1;
+}
+.code-body table { border-collapse: collapse; width: 100%; }
+.code-body td { padding: 1px 0; vertical-align: top; }
+.code-ln {
+  width: 24px;
+  color: #475569;
+  text-align: right;
+  padding-right: 12px;
+  user-select: none;
+  font-size: 11.5px;
+}
+.code-txt { white-space: pre; }
+.tok-kw { color: #f43f5e; font-weight: 600; }
+.tok-fn { color: #38bdf8; font-weight: 600; }
+.tok-str { color: #34d399; }
+.tok-num { color: #fbbf24; }
+.tok-cm { color: #64748b; font-style: italic; }
+.tok-op { color: #94a3b8; }
+.tok-hl { background: rgba(56,189,248,0.15); border-left: 2px solid #38bdf8; color: #fff; font-weight: bold; }
+
+.terminal-trace {
+  background: #020617;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: #34D399;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* --- Cards and Callouts -------------------------------------------------- */
+.card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.card.accent {
+  border-left: 4px solid var(--blue);
+  background: #ffffff;
+}
+.card-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-desc {
+  font-size: 13.5px;
+  color: var(--ink2);
+  line-height: 1.55;
+}
+
+/* ELI5 Metaphor Card */
+.eli5-box {
+  background: #FFFBEB;
+  border: 1.5px dashed #F59E0B;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.eli5-badge {
+  font-size: 11px;
+  font-weight: 850;
+  color: #B45309;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.eli5-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #92400E;
+  margin-bottom: 4px;
+}
+.eli5-text {
+  font-size: 13px;
+  color: #78350F;
+  line-height: 1.5;
+}
+
+/* Step Rows / Points */
+.step-list { display: flex; flex-direction: column; gap: 8px; }
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.step-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--blue-soft);
+  color: var(--blue);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Tables */
+table.t {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+table.t thead th {
+  background: var(--navy);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+table.t td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-light);
+  color: var(--ink);
+}
+table.t tbody tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
+table.t .n { text-align: right; font-family: var(--mono); font-weight: 600; }
+table.t tr.hl td { background: var(--blue-soft) !important; font-weight: 700; color: var(--navy); }
+table.t tr.danger td { background: var(--sr) !important; color: var(--danger); font-weight: 700; }
+
+.statrow { display: grid; gap: 14px; margin-bottom: 12px; }
+.statrow.c4 { grid-template-columns: repeat(4, 1fr); }
+.stat-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+  text-align: center;
+}
+.stat-card .val {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 850;
+  color: var(--navy);
+}
+.stat-card .lbl { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+.takeaway {
+  background: var(--navy);
+  color: #fff;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.takeaway .tg {
+  background: var(--blue);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* Warnings */
+.warn-box {
+  background: var(--sr);
+  border-left: 4px solid var(--danger);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  color: #991b1b;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+/* --- Dynamic Widgets Styling --------------------------------------------- */
+.widget-panel {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.widget-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line-light);
+  padding-bottom: 8px;
+}
+.tab-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.15s;
+}
+.tab-btn.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+}
+
+/* Speaker Notes Drawer */
+.notes-drawer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(7, 26, 51, 0.96);
+  border-top: 2px solid var(--blue-bright);
+  color: #e2e8f0;
+  padding: 14px 24px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  max-height: 180px;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--dur-base) var(--ease-spring);
+  z-index: 80;
+  backdrop-filter: blur(10px);
+}
+.notes-drawer.open { transform: translateY(0); }
+.notes-title { font-weight: 800; font-size: 11px; color: var(--blue-bright); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Left Sidebar (TOC) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div class="sb-search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="sbSearch" placeholder="슬라이드 / 개념 실시간 검색 (/)">
+      </div>
+    </div>
+    <div class="sb-list" id="sbList">
+      <!-- Generated Dynamically via JS -->
+    </div>
+    <div class="sb-footer">
+      <span>재무데이터분석 FD-02</span>
+      <span>2026-2</span>
+    </div>
+  </aside>
+
+  <!-- Main Slide Stage -->
+  <main class="stage">
+    <header class="stage-topbar">
+      <div class="left">
+        <button class="toggle-sidebar-btn" id="toggleSbBtn" title="목차 토글 (T)">☰ TOC</button>
+        <span class="deck-title">FD-02 · pandas & FinanceDataReader</span>
+      </div>
+      <div class="right">
+        <button class="nav-btn" id="prevBtn" title="이전 (←, J)">◀ 이전</button>
+        <span class="slide-indicator" id="slideIndicator">01 / 22</span>
+        <button class="nav-btn" id="nextBtn" title="다음 (→, K, Space)">다음 ▶</button>
+        <button class="nav-btn" id="notesToggleBtn" title="발표자 노트 (N)">📝 Note</button>
+      </div>
+    </header>
+
+    <div class="slide-viewport">
+      <div class="slide-canvas" id="slideCanvas">
+
+        <!-- =================================================================
+             막 0 · 왜 pandas인가 (Slide 01 ~ 04)
+             ================================================================= -->
+
+        <!-- Slide 01: Cover -->
+        <!-- scene: title hero; reference: 03-layouts/01-1col-hero -->
+        <section class="slide active" data-section="막 0 · 왜 pandas인가" data-title="단위가 다른 주식을 하나의 자로 재는 법" data-notes="오늘은 pandas 문법을 암기하는 날이 아니라, 가격 단위가 제각각인 금융 데이터를 하나의 공통 자(수익률)로 재는 파이프라인을 완성하는 날입니다. 100번에서 던진 세 줄이 600번에서 그대로 회수됩니다.">
+          <div class="slide-header">
+            <div class="kicker">재무데이터분석 2주차 · 서사적 도입</div>
+            <h1 class="atitle">단위가 다른 주식을 <em>하나의 자</em>로 재는 법</h1>
+            <div class="asub">pandas와 FinanceDataReader로 주가 데이터를 받아 일별 수익률 표까지 완성하는 데이터 전처리</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2" style="align-items: center;">
+              <div class="card accent" style="padding: 24px;">
+                <div class="card-title" style="font-size: 18px;">🎯 오늘 우리가 도달할 종착점</div>
+                <p class="card-desc" style="font-size: 14.5px; margin-top: 8px;">
+                  삼성전자 5만원과 NAVER 38만원은 <strong>같은 1,000원이 올라도 완전히 다른 의미</strong>를 갖습니다.<br/>
+                  엑셀의 한계를 넘어, 950개 종목을 통째로 다루고 일별 수익률 표로 표준화하는 과정을 완성합니다.
+                </p>
+                <div class="takeaway" style="margin-top: 16px;">
+                  <span class="tg">심장 한 줄</span>
+                  <span>"pandas 문법을 배우는 게 아니라, 서로 다른 주식을 같은 자로 비교하는 법을 배운다."</span>
+                </div>
+              </div>
+              <div class="card" style="padding: 20px;">
+                <div class="card-title">🗺️ 4개 막(Act) 진행 로드맵</div>
+                <div class="step-list" style="margin-top: 10px;">
+                  <div class="step-item"><span class="step-num">막 0</span><span><strong>왜 pandas인가</strong> — 엑셀의 한계, for-loop vs 벡터 연산</span></div>
+                  <div class="step-item"><span class="step-num">막 1</span><span><strong>표를 채우고 세운다</strong> — FDR 수집, Series, DataFrame 3종 세트</span></div>
+                  <div class="step-item"><span class="step-num">막 2</span><span><strong>원하는 행을 꺼내고 거른다</strong> — loc vs iloc, Boolean 마스크</span></div>
+                  <div class="step-item"><span class="step-num">막 3</span><span><strong>세 줄 해독과 수익률 표</strong> — shift(1), pct_change(), 원환 완결</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>Financial Data Analytics · Week 02</span>
+            <span>Slide 01</span>
+          </div>
+        </section>
+
+        <!-- Slide 02: 엑셀이 멈추는 자리 -->
+        <!-- scene: equal comparison; reference: 03-layouts/02-2col-contrast -->
+        <section class="slide" data-section="막 0 · 왜 pandas인가" data-title="엑셀이 멈추는 자리 — 950개 종목 수작업의 한계" data-notes="투자 리서치팀에서 950개 종목 시총 상위 10개를 뽑아달라는 요청이 올 때, 엑셀은 매일 수작업으로 반복해야 하지만 코드는 한 줄로 끝납니다. 표를 눈으로 보며 손으로 옮기는 대신, 표에게 말로 시키는 도구입니다.">
+          <div class="slide-header">
+            <div class="kicker">막 0 · 왜 pandas인가 · §100</div>
+            <h1 class="atitle">엑셀이 멈추는 자리 — <em>950개 종목</em> 수작업의 한계</h1>
+            <div class="asub">"KOSPI 전체 종목 중 시가총액 상위 10개를 지금 뽑아줄 수 있나요?"</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2">
+              <div class="card">
+                <div class="card-title" style="color: var(--danger);">😵 엑셀 수작업의 한계</div>
+                <div class="step-list" style="margin-top: 8px;">
+                  <div class="step-item"><span class="step-num">1</span><span>다운로드한 950개 종목 파일을 열고 스크롤</span></div>
+                  <div class="step-item"><span class="step-num">2</span><span>시가총액 컬럼 정렬 버튼 클릭 후 상위 10개 복사</span></div>
+                  <div class="step-item"><span class="step-num">3</span><span>내일 요청이 오면 <strong>처음부터 전 과정 수동 반복</strong></span></div>
+                  <div class="step-item"><span class="step-num">4</span><span>조건 변경(상위 20개, 코스닥 포함) 시 손으로 다시 자름</span></div>
+                </div>
+              </div>
+              <div class="card accent">
+                <div class="card-title" style="color: var(--blue);">⚡ 코드 한 줄의 확장성</div>
+                <div class="step-list" style="margin-top: 8px;">
+                  <div class="step-item"><span class="step-num">1</span><span><code>kospi.nlargest(10, 'Marcap')</code></span></div>
+                  <div class="step-item"><span class="step-num">2</span><span>내일 새 데이터가 들어와도 같은 코드 <strong>재실행 1초</strong></span></div>
+                  <div class="step-item"><span class="step-num">3</span><span>숫자 10을 20으로 바꾸면 즉시 20개 종목 슬라이싱</span></div>
+                  <div class="step-item"><span class="step-num">4</span><span>조건이 10단계로 늘어나도 점(.)으로 연결(체이닝)</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="takeaway">
+              <span class="tg">핵심 전환</span>
+              <span>표를 눈으로 보며 마우스로 옮기는 대신, <strong>표에게 규칙을 말로 시키는 도구</strong>가 바로 pandas입니다.</span>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-100__wow-hook</span>
+            <span>Slide 02</span>
+          </div>
+        </section>
+
+        <!-- Slide 03: for-loop vs pandas -->
+        <!-- scene: system architecture; reference: 03-layouts/04-full-diagram -->
+        <section class="slide" data-section="막 0 · 왜 pandas인가" data-title="for-loop vs pandas — 하나씩 처리 vs 통째로 벡터 연산" data-notes="for-loop이 틀린 것이 아닙니다. 다만 for-loop은 원소를 하나씩 꺼내 순차 처리하지만, pandas는 950개 데이터를 통째로 메모리 상에서 동시 연산(벡터화)합니다. 코드가 데이터 개수에 비례해 길어지지 않습니다.">
+          <div class="slide-header">
+            <div class="kicker">막 0 · 왜 pandas인가 · §100</div>
+            <h1 class="atitle">for-loop vs pandas — 하나씩 처리 vs <em>통째로 벡터 연산</em></h1>
+            <div class="asub">속도 차이 이전에, 데이터를 다루는 사고방식(패러다임) 자체가 완전히 다릅니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2" style="align-items: center;">
+              <!-- Left SVG Diagram -->
+              <div class="card" style="padding: 16px; display: flex; align-items: center; justify-content: center; background: #fff;">
+                <svg viewBox="0 0 420 200" style="width: 100%; height: 180px;">
+                  <rect x="10" y="20" width="100" height="40" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+                  <text x="60" y="44" fill="#991b1b" font-size="12" font-weight="bold" text-anchor="middle">종목 950개</text>
+                  
+                  <path d="M 110 40 L 160 40" stroke="#ef4444" stroke-width="2"/>
+                  
+                  <rect x="160" y="10" width="130" height="60" rx="6" fill="#fff3e0" stroke="#f59e0b" stroke-width="1.5"/>
+                  <text x="225" y="35" fill="#92400e" font-size="12" font-weight="bold" text-anchor="middle">for-loop</text>
+                  <text x="225" y="55" fill="#b45309" font-size="11" text-anchor="middle">1개씩 950번 반복</text>
+
+                  <path d="M 290 40 L 340 40" stroke="#64748b" stroke-width="2"/>
+                  <rect x="340" y="20" width="70" height="40" rx="6" fill="#e2e8f0" stroke="#94a3b8"/>
+                  <text x="375" y="44" fill="#334155" font-size="12" font-weight="bold" text-anchor="middle">결과</text>
+
+                  <rect x="10" y="120" width="100" height="40" rx="6" fill="#e3f2fd" stroke="#3b82f6" stroke-width="1.5"/>
+                  <text x="60" y="144" fill="#1e40af" font-size="12" font-weight="bold" text-anchor="middle">종목 950개</text>
+
+                  <path d="M 110 140 L 160 140" stroke="#3b82f6" stroke-width="2"/>
+
+                  <rect x="160" y="110" width="130" height="60" rx="6" fill="#e8f5e9" stroke="#10b981" stroke-width="2"/>
+                  <text x="225" y="135" fill="#065f46" font-size="12" font-weight="bold" text-anchor="middle">pandas Series</text>
+                  <text x="225" y="155" fill="#047857" font-size="11" text-anchor="middle">통째로 벡터 연산 (1줄)</text>
+
+                  <path d="M 290 140 L 340 140" stroke="#10b981" stroke-width="2"/>
+                  <rect x="340" y="120" width="70" height="40" rx="6" fill="#27AE60" stroke="#10b981"/>
+                  <text x="375" y="144" fill="#fff" font-size="12" font-weight="bold" text-anchor="middle">결과</text>
+                </svg>
+              </div>
+              <!-- Right Description -->
+              <div class="card accent">
+                <div class="card-title">💡 통째로 다룬다는 것의 본질</div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <span class="step-num">A</span>
+                    <span><strong>for-loop</strong>: 원소를 하나 꺼내 계산하고 리스트에 append하는 과정을 사람이 지켜봐야 함.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">B</span>
+                    <span><strong>pandas</strong>: 5개든 950개든 수식은 동일한 <code>s * 1.1</code> 한 줄로 처리 (C-Level 벡터화).</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">C</span>
+                    <span><strong>기원</strong>: 2008년 월스트리트 헤지펀드(AQR) Wes McKinney가 금융 패널(panel) 데이터를 다루기 위해 창안.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-100__wow-hook</span>
+            <span>Slide 03</span>
+          </div>
+        </section>
+
+        <!-- Slide 04: 오늘 해독할 세 줄 & 원환 로드맵 (Dynamic Stepper) -->
+        <!-- scene: interactive stepper; reference: 02-domains/academic/08-distill-explorable-canvas -->
+        <section class="slide" data-section="막 0 · 왜 pandas인가" data-title="오늘 해독할 세 줄 & 주간 원환 로드맵" data-notes="100번에서 던지는 이 세 줄 코드는 지금 이해하라고 주는 것이 아닙니다. 110에서 fdr을 배우고, 300에서 DataReader의 반환 구조를 보고, 600에서 pct_change()를 만납니다. 600번에서 이 코드가 글자 단위로 그대로 회수됩니다.">
+          <div class="slide-header">
+            <div class="kicker">막 0 · 왜 pandas인가 · §100 원환 설계</div>
+            <h1 class="atitle">오늘 해독할 세 줄과 <em>주간 원환 로드맵</em></h1>
+            <div class="asub">지금은 암호처럼 보여도 됩니다. 오늘 600번 마지막 노트에서 이 세 줄을 1:1로 해독합니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>today_target.py (아래 단어를 클릭해 보세요)</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr onclick="showStep(1)" style="cursor: pointer;" id="codeL1">
+                      <td class="code-ln">1</td>
+                      <td class="code-txt"><span class="tok-kw">import</span> FinanceDataReader <span class="tok-kw">as</span> <span class="tok-fn" style="text-decoration: underline;">fdr</span></td>
+                    </tr>
+                    <tr onclick="showStep(2)" style="cursor: pointer;" id="codeL2">
+                      <td class="code-ln">2</td>
+                      <td class="code-txt">df = <span class="tok-fn">fdr</span>.<span class="tok-fn" style="text-decoration: underline;">DataReader</span>(<span class="tok-str">'005930'</span>, <span class="tok-str">'2026-01-02'</span>, <span class="tok-str">'2026-06-30'</span>)</td>
+                    </tr>
+                    <tr onclick="showStep(3)" style="cursor: pointer;" id="codeL3">
+                      <td class="code-ln">3</td>
+                      <td class="code-txt">df[<span class="tok-str">'Close'</span>].<span class="tok-fn" style="text-decoration: underline;">pct_change</span>()</td>
+                    </tr>
+                  </table>
+                </div>
+                <div class="terminal-trace">
+                  <span>⚡ Interactive Ring Stepper</span>
+                  <span>단어를 클릭하면 주차별 노트와 연결됩니다</span>
+                </div>
+              </div>
+
+              <div class="widget-panel" id="stepperExplainBox">
+                <div class="card-title" id="stepperTitle">📍 [110 노트] 외부 라이브러리 호출</div>
+                <p class="card-desc" id="stepperDesc" style="font-size: 14px;">
+                  <code>import FinanceDataReader as fdr</code><br/>
+                  네이버·KRX 웹페이지를 직접 긁지 않고, 파이썬에서 금융 시계열 데이터를 한 줄로 불러오는 라이브러리를 단축명 <code>fdr</code>로 가져옵니다.
+                </p>
+                <div class="takeaway" style="margin-top: 10px;">
+                  <span class="tg">원환 회수 규칙</span>
+                  <span id="stepperTag">100번에서 던진 코드는 600번에서 정확히 글자 단위로 일치해야 합니다.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-100__wow-hook</span>
+            <span>Slide 04</span>
+          </div>
+        </section>
+
+        <!-- =================================================================
+             막 1 · 표를 채우고 세운다 (Slide 05 ~ 11)
+             ================================================================= -->
+
+        <!-- Slide 05: DataReader & OHLCV -->
+        <!-- scene: data strip & table; reference: 03-layouts/03-3col-pillars -->
+        <section class="slide" data-section="막 1 · 표를 채우고 세운다" data-title="데이터를 어디서 받나 — FinanceDataReader와 OHLCV" data-notes="FinanceDataReader는 KRX 상장종목과 가격 데이터를 표준 DataFrame으로 돌려줍니다. 수업에서는 채점 일관성과 오프라인 재현을 위해 스냅샷 CSV를 사용합니다. DataReader가 주는 6대 컬럼 OHLCV의 의미를 확인합니다.">
+          <div class="slide-header">
+            <div class="kicker">막 1 · 표를 채우고 세운다 · §110</div>
+            <h1 class="atitle">데이터를 어디서 받나 — <em>FinanceDataReader와 OHLCV</em></h1>
+            <div class="asub">네이버 금융·KRX 수작업 다운로드를 단축하고 표준화된 금융 표를 생성합니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="statrow c4">
+              <div class="stat-card"><div class="val">950+</div><div class="lbl">KOSPI 상장 종목수</div></div>
+              <div class="stat-card"><div class="val">40</div><div class="lbl">수업 실습 스냅샷 종목수</div></div>
+              <div class="stat-card"><div class="val">120</div><div class="lbl">삼성전자 거래일수 (상반기)</div></div>
+              <div class="stat-card"><div class="val">6개</div><div class="lbl">반환 컬럼 (OHLCV+등락률)</div></div>
+            </div>
+
+            <div class="card" style="padding: 12px 16px;">
+              <table class="t">
+                <thead>
+                  <tr><th>컬럼명</th><th>금융 용어</th><th>의미 및 특징</th><th>강의 활용 포인트</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>Open</code></td><td>시가</td><td>그날 처음 거래된 가격</td><td>장 시작 시점 시장 반응</td></tr>
+                  <tr><td><code>High</code> / <code>Low</code></td><td>고가 / 저가</td><td>그날 가장 높았던 / 낮았던 가격</td><td>하루 중 가격 변동폭(노이즈)</td></tr>
+                  <tr class="hl"><td><code>Close</code></td><td>종가</td><td>그날 마지막 체결 가격</td><td><strong>수익률 계산의 기준점</strong> (오늘의 핵심)</td></tr>
+                  <tr><td><code>Volume</code></td><td>거래량</td><td>하루 동안 거래된 주식 수</td><td>시장 유동성 및 신뢰도 판단</td></tr>
+                  <tr><td><code>Change</code></td><td>전일 대비 등락률</td><td>FDR이 제공하는 단순 변동률</td><td>600번 pct_change()와 일치 검증용</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-110__fdr</span>
+            <span>Slide 05</span>
+          </div>
+        </section>
+
+        <!-- Slide 06: 실무 함정 - 종목코드는 문자열 -->
+        <!-- scene: code split; reference: 02-domains/tech/02-stripe-code-split -->
+        <section class="slide" data-section="막 1 · 표를 채우고 세운다" data-title="[실무 함정] 종목코드는 숫자가 아니라 문자열이다" data-notes="종목코드는 숫자처럼 생겼지만 계산 대상이 아니라 이름표(식별자)입니다. dtype 지정 없이 읽으면 005930이 정수 5930으로 바뀌어 선행 0이 유실되고 다른 종목으로 조회되거나 에러가 납니다.">
+          <div class="slide-header">
+            <div class="kicker">막 1 · 표를 채우고 세운다 · §110 실무 함정</div>
+            <h1 class="atitle">종목코드는 숫자가 아니라 <em>문자열('005930')</em>이다</h1>
+            <div class="asub">dtype 옵션 없이 읽는 순간 선행 0이 영구히 소실되어 종목 조회가 불가능해집니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>dtype_trap_check.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt"><span class="tok-cm"># ❌ 잘못된 방식: 선행 0 유실</span></td></tr>
+                    <tr><td class="code-ln">2</td><td class="code-txt">wrong = pd.read_csv(<span class="tok-str">'data/kospi_listing.csv'</span>)</td></tr>
+                    <tr><td class="code-ln">3</td><td class="code-txt">print(wrong[<span class="tok-str">'Code'</span>].head(1))</td></tr>
+                    <tr><td class="code-ln">4</td><td class="code-txt"><span class="tok-cm"># 출력: 5930  (int64) ➡️ 삼성전자 조회 실패!</span></td></tr>
+                    <tr><td class="code-ln">5</td><td class="code-txt"></td></tr>
+                    <tr><td class="code-ln">6</td><td class="code-txt"><span class="tok-cm"># ✅ 올바른 방식: 문자열 강제 지정</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">7</td><td class="code-txt">kospi = pd.read_csv(<span class="tok-str">'data/kospi_listing.csv'</span>,</td></tr>
+                    <tr class="tok-hl"><td class="code-ln">8</td><td class="code-txt">                    dtype={<span class="tok-str">'Code'</span>: <span class="tok-fn">str</span>})</td></tr>
+                    <tr><td class="code-ln">9</td><td class="code-txt">print(kospi[<span class="tok-str">'Code'</span>].head(1))</td></tr>
+                    <tr><td class="code-ln">10</td><td class="code-txt"><span class="tok-cm"># 출력: '005930'  (str) ➡️ 정상 조회!</span></td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>⚠️ CRITICAL FAILURE: 선행 0 소실 방어</span><span>dtype={'Code': str} 필수</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🚨 식별자(Identifier) vs 계산 대상(Value)</div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <span class="step-num">1</span>
+                    <span><strong>식별자</strong>: 종목코드, 전화번호, 우편번호, 주민번호는 더하거나 곱할 수 없는 고유 라벨입니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">2</span>
+                    <span><strong>파이썬 정수 변환의 함정</strong>: 정수 <code>005930</code>은 컴퓨터 메모리에서 앞자리 0을 무의미한 숫자로 보고 <code>5930</code>으로 저장합니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">3</span>
+                    <span><strong>철칙</strong>: 금융 데이터를 CSV/DB에서 읽을 때 종목코드는 반드시 <code>dtype={'Code': str}</code>를 못 박습니다.</span>
+                  </div>
+                </div>
+                <div class="warn-box">
+                  <strong>실무 경고</strong>: '5930'으로 KRX에 조회하면 존재하지 않는 코드이거나 전혀 다른 상장 폐지 기업을 가리킵니다.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-110__fdr</span>
+            <span>Slide 06</span>
+          </div>
+        </section>
+
+        <!-- Slide 07: 번호표 리스트 vs 이름표 Series -->
+        <!-- scene: eli5 metaphor; reference: 03-layouts/05-eli5-metaphor -->
+        <section class="slide" data-section="막 1 · 표를 채우고 세운다" data-title="번호표만 있는 리스트 vs 이름표(인덱스) 달린 Series" data-notes="리스트의 prices[2]는 60000원을 돌려주지만 이게 1월인지 3월인지 모릅니다. Series는 값 옆에 인덱스(이름표)를 붙여 s['3월']로 직접 질의할 수 있는 1차원 자료구조입니다.">
+          <div class="slide-header">
+            <div class="kicker">막 1 · 표를 채우고 세운다 · §200</div>
+            <h1 class="atitle">번호표만 있는 리스트 vs <em>이름표(인덱스) 달린 Series</em></h1>
+            <div class="asub">prices[2] = 60,000원은 언제 데이터인가? 값 옆에 날짜/라벨이 붙어야 금융 데이터가 됩니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="eli5-box">
+              <div class="eli5-badge">💡 ELI5 직관 비유 #1</div>
+              <div class="eli5-title">목욕탕 번호표 vs 이름표 달린 사물함</div>
+              <div class="eli5-text">
+                파이썬 리스트는 <strong>[0], [1], [2] 번호표</strong>만 있어서 "2번 사물함에 든 게 누구 것인지"를 사람이 따로 외워야 합니다.<br/>
+                pandas Series는 값에 <strong>['1월', '2월', '3월'] 또는 ['005930', '035420'] 이름표(Index)</strong>를 영구히 부착합니다.
+              </div>
+            </div>
+
+            <div class="grid c2">
+              <div class="card">
+                <div class="card-title">📦 파이썬 리스트 (위치만 존재)</div>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; font-family:var(--mono); font-size:13px;">
+                  prices = [50000, 55000, 60000]<br/>
+                  prices[2] ➡️ <strong>60000</strong> <span style="color:var(--danger);">(이게 언제 값인가?)</span>
+                </div>
+                <p class="card-desc" style="margin-top:6px;">데이터가 950개로 늘어나면 몇 번째인지 기억할 수 없습니다.</p>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🏷️ pandas Series (인덱스 결합)</div>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; font-family:var(--mono); font-size:13px;">
+                  s = pd.Series(prices, index=['1월', '2월', '3월'])<br/>
+                  s['3월'] ➡️ <strong>60000</strong> <span style="color:var(--success);">(3월 종가 확정!)</span>
+                </div>
+                <p class="card-desc" style="margin-top:6px;">인덱스를 종목코드나 날짜로 쓰면 직접 이름으로 질의합니다.</p>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-200__series</span>
+            <span>Slide 07</span>
+          </div>
+        </section>
+
+        <!-- Slide 08: for-loop 5줄이 1줄이 되는 벡터 연산 -->
+        <!-- scene: code split; reference: 02-domains/tech/02-stripe-code-split -->
+        <section class="slide" data-section="막 1 · 표를 채우고 세운다" data-title="for-loop 5줄이 1줄이 되는 벡터 연산" data-notes="100번에서 접어두었던 5줄짜리 for-loop이 Series에서는 한 줄로 끝납니다. 원소가 5개든 950개든 코드는 늘어나지 않으며, 전체 원소에 브로드캐스팅됩니다.">
+          <div class="slide-header">
+            <div class="kicker">막 1 · 표를 채우고 세운다 · §200</div>
+            <h1 class="atitle">for-loop 5줄이 1줄이 되는 <em>벡터 연산</em></h1>
+            <div class="asub">s * 1.1과 (s - buy_price) / buy_price — 원소가 늘어나도 코드는 늘어나지 않습니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>vectorized_calc.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt">s = pd.Series([50000, 55000, 60000, 58000, 62000],</td></tr>
+                    <tr><td class="code-ln">2</td><td class="code-txt">              index=[<span class="tok-str">'1월'</span>, <span class="tok-str">'2월'</span>, <span class="tok-str">'3월'</span>, <span class="tok-str">'4월'</span>, <span class="tok-str">'5월'</span>])</td></tr>
+                    <tr><td class="code-ln">3</td><td class="code-txt"></td></tr>
+                    <tr><td class="code-ln">4</td><td class="code-txt"><span class="tok-cm"># 10% 상승 시나리오 일괄 적용 (1줄)</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">5</td><td class="code-txt">print(s * <span class="tok-num">1.1</span>)</td></tr>
+                    <tr><td class="code-ln">6</td><td class="code-txt"></td></tr>
+                    <tr><td class="code-ln">7</td><td class="code-txt"><span class="tok-cm"># 매수가 50,000원 대비 수익률 계산 (1줄)</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">8</td><td class="code-txt">buy_price = <span class="tok-num">50000</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">9</td><td class="code-txt">returns = (s - buy_price) / buy_price</td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>1월: 0.00 | 2월: 0.10 | 3월: 0.20 | 4월: 0.16 | 5월: 0.24</span><span>dtype: float64</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">📊 Series 주요 통계량 요약</div>
+                <table class="t dense">
+                  <thead><tr><th>메서드</th><th>하는 일</th><th>실행 결과</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>s.max()</code></td><td>최댓값 단일 반환</td><td class="n">62,000원</td></tr>
+                    <tr><td><code>s.mean()</code></td><td>평균값 단일 반환</td><td class="n">57,000.0원</td></tr>
+                    <tr class="hl"><td><code>s.describe()</code></td><td>개수·평균·표준편차·사분위수 종합</td><td class="n">8대 통계표 반환</td></tr>
+                  </tbody>
+                </table>
+                <div class="takeaway" style="margin-top:10px;">
+                  <span class="tg">원환 회수 포인트</span>
+                  <span>100번에서 보았던 for-loop 5줄의 복잡성이 여기서 완벽히 한 줄로 압축되었습니다.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-200__series</span>
+            <span>Slide 08</span>
+          </div>
+        </section>
+
+        <!-- Slide 09: DataFrame 개념 모델 -->
+        <!-- scene: data matrix; reference: 03-layouts/03-3col-pillars -->
+        <section class="slide" data-section="막 1 · 표를 채우고 세운다" data-title="엑셀 시트 한 장 — DataFrame의 개념 모델" data-notes="종가, 거래량, 시가총액 Series를 따로 들고 다니면 매번 세 곳을 따로 고쳐야 합니다. 이 Series들을 옆으로 붙인 것이 DataFrame이며, 개념 모델은 엑셀 시트 한 장(행=종목, 열=속성)입니다.">
+          <div class="slide-header">
+            <div class="kicker">막 1 · 표를 채우고 세운다 · §300</div>
+            <h1 class="atitle">엑셀 시트 한 장 — <em>DataFrame의 개념 모델</em></h1>
+            <div class="asub">Series 여러 개를 옆으로 나란히 붙인 2차원 표 (행=종목 × 열=속성)</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2">
+              <div class="card">
+                <div class="card-title">🧩 Series 결합 모델</div>
+                <p class="card-desc">종목코드, 종목명, 시가총액이 흩어져 있으면 관리가 불가능합니다. 공통 인덱스를 기준으로 하나로 결합합니다.</p>
+                <div style="margin-top: 10px;">
+                  <table class="t">
+                    <thead><tr><th>행 (인덱스)</th><th>Code</th><th>Name</th><th>Marcap(원)</th></tr></thead>
+                    <tbody>
+                      <tr><td>0</td><td>'005930'</td><td>삼성전자</td><td class="n">1,464,492,791,304,000</td></tr>
+                      <tr><td>1</td><td>'000660'</td><td>SK하이닉스</td><td class="n">1,178,284,184,745,000</td></tr>
+                      <tr><td>2</td><td>'005935'</td><td>삼성전자우</td><td class="n">148,839,858,156,500</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🔨 생성 방식: 컬럼 중심 vs 행 중심</div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <span class="step-num">컬럼</span>
+                    <span><code>pd.DataFrame({'ticker': [...], 'Marcap': [...]})</code><br/>컬럼 단위로 데이터를 가공할 때 직관적입니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">행</span>
+                    <span><code>pd.DataFrame([{'ticker': '005930', ...}, ...])</code><br/>API 응답 등 JSON 레코드 단위로 수신할 때 편리합니다.</span>
+                  </div>
+                </div>
+                <div class="takeaway" style="margin-top:10px;">
+                  <span class="tg">결론</span>
+                  <span>두 방식 모두 최종적으로 메모리 상에서 완벽히 동일한 DataFrame으로 귀결됩니다.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-300__dataframe</span>
+            <span>Slide 09</span>
+          </div>
+        </section>
+
+        <!-- Slide 10: 표를 받으면 가장 먼저 하는 탐색 3종 세트 -->
+        <!-- scene: process rail & code; reference: 02-domains/tech/03-stripe-pipeline-rail -->
+        <section class="slide" data-section="막 1 · 표를 채우고 세운다" data-title="표를 받으면 가장 먼저 하는 탐색 3종 세트" data-notes="데이터를 받자마자 계산 코드를 작성하면 나중에 어디서 틀렸는지 알 수 없습니다. shape(크기) -> columns(열목록) -> dtypes(타입) -> head(3) 확인 습관이 12주 내내 반복됩니다.">
+          <div class="slide-header">
+            <div class="kicker">막 1 · 표를 채우고 세운다 · §300</div>
+            <h1 class="atitle">표를 받으면 가장 먼저 하는 <em>탐색 3종 세트</em></h1>
+            <div class="asub">데이터를 안 보고 코드부터 쓰지 마세요. shape ➡️ columns ➡️ dtypes 확인 습관</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>dataframe_inspect.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt">df = pd.read_csv(<span class="tok-str">'data/kospi_listing.csv'</span>, dtype={<span class="tok-str">'Code'</span>: <span class="tok-fn">str</span>})</td></tr>
+                    <tr class="tok-hl"><td class="code-ln">2</td><td class="code-txt">print(df.shape)</td></tr>
+                    <tr><td class="code-ln">3</td><td class="code-txt"><span class="tok-cm"># 출력: (40, 5) ➡️ 40종목, 5개 속성</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">4</td><td class="code-txt">print(df.columns)</td></tr>
+                    <tr><td class="code-ln">5</td><td class="code-txt"><span class="tok-cm"># 출력: ['Code', 'Name', 'Market', 'Sector', 'Marcap']</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">6</td><td class="code-txt">print(df.dtypes)</td></tr>
+                    <tr><td class="code-ln">7</td><td class="code-txt"><span class="tok-cm"># Code: str(문자), Marcap: int64(숫자)</span></td></tr>
+                    <tr><td class="code-ln">8</td><td class="code-txt">print(df.head(<span class="tok-num">3</span>))</td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>Check 1: Shape | Check 2: Cols | Check 3: Types</span><span>head(3)로 값 최종 육안 검증</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🔍 무엇을 판단하기 위해 찍는가?</div>
+                <table class="t">
+                  <thead><tr><th>메서드</th><th>반환형</th><th>핵심 판단 목적</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>df.shape</code></td><td>(행, 열)</td><td>데이터 누락 없이 온전한 크기인가?</td></tr>
+                    <tr><td><code>df.columns</code></td><td>Index 리스트</td><td>내가 계산에 쓸 컬럼명이 정확한가?</td></tr>
+                    <tr class="hl"><td><code>df.dtypes</code></td><td>열별 타입</td><td><strong>Code가 문자인가? Marcap이 숫자인가?</strong></td></tr>
+                    <tr><td><code>df.head(3)</code></td><td>앞 3행</td><td>실제 값이 기대한 모양인가?</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-300__dataframe</span>
+            <span>Slide 10</span>
+          </div>
+        </section>
+
+        <!-- Slide 11: 대괄호의 갈림길 Series vs DataFrame -->
+        <!-- scene: code split; reference: 02-domains/tech/02-stripe-code-split -->
+        <section class="slide" data-section="막 1 · 표를 채우고 세운다" data-title="대괄호의 갈림길 — Series vs DataFrame" data-notes="대괄호 안에 문자열 하나를 넣으면 Series가 반환되고, 리스트로 감싸 넣으면 DataFrame으로 유지됩니다. Series가 되는 순간 200번에서 배운 .mean(), .max()가 그대로 작동합니다.">
+          <div class="slide-header">
+            <div class="kicker">막 1 · 표를 채우고 세운다 · §300</div>
+            <h1 class="atitle">대괄호의 갈림길 — <em>Series vs DataFrame</em></h1>
+            <div class="asub">df['Marcap'](Series)과 df[['Name', 'Marcap']](DataFrame) — 대괄호 개수로 타입이 갈립니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>bracket_syntax_split.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt"><span class="tok-cm"># 단일 대괄호: 1차원 Series 반환</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">2</td><td class="code-txt">s = df[<span class="tok-str">'Marcap'</span>]</td></tr>
+                    <tr><td class="code-ln">3</td><td class="code-txt">print(type(s))  <span class="tok-cm"># &lt;class 'pandas.Series'&gt;</span></td></tr>
+                    <tr><td class="code-ln">4</td><td class="code-txt">print(s.mean()) <span class="tok-cm"># 200번의 Series 메서드 그대로 작동!</span></td></tr>
+                    <tr><td class="code-ln">5</td><td class="code-txt"></td></tr>
+                    <tr><td class="code-ln">6</td><td class="code-txt"><span class="tok-cm"># 이중 대괄호: 2차원 DataFrame 유지</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">7</td><td class="code-txt">sub_df = df[[<span class="tok-str">'Name'</span>, <span class="tok-str">'Marcap'</span>]]</td></tr>
+                    <tr><td class="code-ln">8</td><td class="code-txt">print(type(sub_df))  <span class="tok-cm"># &lt;class 'pandas.DataFrame'&gt;</span></td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>df['Col'] ➡️ Series</span><span>df[['Col1', 'Col2']] ➡️ DataFrame</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🔗 200번과 300번의 유기적 결합</div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <span class="step-num">1</span>
+                    <span>DataFrame은 Series 여러 개를 옆으로 붙인 것이므로, <strong>컬럼 하나를 뽑으면 다시 Series</strong>가 됩니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">2</span>
+                    <span>따라서 200번에서 배운 <code>.mean()</code>, <code>.max()</code>, <code>.describe()</code>가 <code>df['Marcap']</code>에 100% 동일하게 적용됩니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">3</span>
+                    <span>새로운 메서드를 외우는 것이 아니라, 이미 배운 Series 도구를 꺼내 쓰는 것입니다.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-300__dataframe</span>
+            <span>Slide 11</span>
+          </div>
+        </section>
+
+        <!-- =================================================================
+             막 2 · 원하는 행을 꺼내고 거른다 (Slide 12 ~ 16)
+             ================================================================= -->
+
+        <!-- Slide 12: loc vs iloc 니모닉 -->
+        <!-- scene: eli5 metaphor & code; reference: 03-layouts/05-eli5-metaphor -->
+        <section class="slide" data-section="막 2 · 원하는 행을 꺼내고 거른다" data-title="이름표로 꺼내기(loc) vs 물리적 번호로 꺼내기(iloc)" data-notes="삼성전자 행을 찾을 때 이름을 알고 찾는 것(loc)과 순서를 세어 첫 번째 행을 찾는 것(iloc)은 기준이 다릅니다. Loc = Label, iloc = integer position 니모닉을 기억합니다.">
+          <div class="slide-header">
+            <div class="kicker">막 2 · 원하는 행을 꺼내고 거른다 · §400</div>
+            <h1 class="atitle">이름표로 꺼내기(loc) vs <em>물리적 번호로 꺼내기(iloc)</em></h1>
+            <div class="asub">L = Label(이름표 검색), i = integer(정수 순번 세기) — 같은 행을 가리켜도 기준이 다릅니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="eli5-box">
+              <div class="eli5-badge">💡 ELI5 직관 비유 #2</div>
+              <div class="eli5-title">도서관 책 제목 검색 vs 1번 서가 맨 윗줄 책 꺼내기</div>
+              <div class="eli5-text">
+                <code>df.loc['005930']</code>은 '삼성전자'라는 <strong>이름표(Label)</strong>를 찾아갑니다. 서가 순서가 바뀌어도 항상 같은 책이 나옵니다.<br/>
+                <code>df.iloc[0]</code>은 서가 맨 앞의 <strong>물리적 위치(0번)</strong>를 클릭합니다. 맨 앞에 새 책이 꽂히면 다른 책이 나옵니다.
+              </div>
+            </div>
+
+            <div class="grid c2">
+              <div class="card">
+                <div class="card-title">🏷️ .loc[] — Label 기준 검색</div>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; font-family:var(--mono); font-size:13px;">
+                  df_indexed = df.set_index('Code')<br/>
+                  df_indexed.loc['005930', 'Name'] ➡️ <strong>삼성전자</strong>
+                </div>
+                <p class="card-desc" style="margin-top:6px;">인덱스 이름표가 일치하는 행을 정확히 반환합니다.</p>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🔢 .iloc[] — Integer Position 기준</div>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; font-family:var(--mono); font-size:13px;">
+                  df_indexed.iloc[0]['Name'] ➡️ <strong>삼성전자</strong><br/>
+                  (현재 0번째 행이 삼성전자이므로 지금은 결과가 같습니다)
+                </div>
+                <p class="card-desc" style="margin-top:6px;">표의 물리적 순서(0번째, 1번째)를 정수로 세어 접근합니다.</p>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-400__indexing-filter</span>
+            <span>Slide 12</span>
+          </div>
+        </section>
+
+        <!-- Slide 13: 행 추가 시 loc vs iloc 변동 -->
+        <!-- scene: dynamic contrast; reference: 03-layouts/02-2col-contrast -->
+        <section class="slide" data-section="막 2 · 원하는 행을 꺼내고 거른다" data-title="행이 추가되면 무슨 일이 일어나는가? (loc 불변 vs iloc 변동)" data-notes="맨 위에 신규 상장 종목이 추가되면 iloc[0]은 신규상장A를 가리키게 되지만, loc['005930']은 여전히 삼성전자를 찾습니다. 이 차이를 눈으로 보아야 두 도구를 올바르게 구분해 씁니다.">
+          <div class="slide-header">
+            <div class="kicker">막 2 · 원하는 행을 꺼내고 거른다 · §400</div>
+            <h1 class="atitle">행이 추가되면 무슨 일이 일어나는가? (<em>loc 불변 vs iloc 변동</em>)</h1>
+            <div class="asub">표의 맨 위에 새 행이 추가되는 순간, iloc[0]의 주인이 바뀝니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>insert_row_test.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt"><span class="tok-cm"># 맨 위에 신규 종목 '999999' 추가</span></td></tr>
+                    <tr><td class="code-ln">2</td><td class="code-txt">new_row = pd.DataFrame([{<span class="tok-str">'Name'</span>: <span class="tok-str">'신규상장A'</span>}], index=[<span class="tok-str">'999999'</span>])</td></tr>
+                    <tr><td class="code-ln">3</td><td class="code-txt">df2 = pd.concat([new_row, df_indexed])</td></tr>
+                    <tr><td class="code-ln">4</td><td class="code-txt"></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">5</td><td class="code-txt">print(df2.loc[<span class="tok-str">'005930'</span>, <span class="tok-str">'Name'</span>])</td></tr>
+                    <tr><td class="code-ln">6</td><td class="code-txt"><span class="tok-cm"># ➡️ 출력: 삼성전자 (라벨 검색 불변!)</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">7</td><td class="code-txt">print(df2.iloc[<span class="tok-num">0</span>][<span class="tok-str">'Name'</span>])</td></tr>
+                    <tr><td class="code-ln">8</td><td class="code-txt"><span class="tok-cm"># ➡️ 출력: 신규상장A (0번째 주인이 바뀜!)</span></td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>loc['005930'] ➡️ 삼성전자 (불변)</span><span>iloc[0] ➡️ 신규상장A (변동)</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">⚖️ 도구 선택 기준</div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <span class="step-num">loc</span>
+                    <span><strong>특정 종목/특정 날짜의 데이터</strong>를 정확히 조회할 때 사용 (데이터 순서가 바뀌어도 안전).</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">iloc</span>
+                    <span><strong>상위 N개 행, 최근 5일치 데이터</strong> 등 물리적 위치나 슬라이싱이 목적일 때 사용.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-400__indexing-filter</span>
+            <span>Slide 13</span>
+          </div>
+        </section>
+
+        <!-- Slide 14: 범위를 자를 때 loc 끝 포함 vs iloc 끝 미포함 -->
+        <!-- scene: range table; reference: 03-layouts/02-2col-contrast -->
+        <section class="slide" data-section="막 2 · 원하는 행을 꺼내고 거른다" data-title="범위를 자를 때 — loc 끝 포함 vs iloc 끝 미포함" data-notes="loc은 양 끝 라벨을 모두 포함하지만, iloc은 파이썬 리스트 슬라이싱 규칙 그대로 끝을 포함하지 않습니다. 이 슬라이싱 규칙 차이를 숙지해야 데이터 누락을 방지합니다.">
+          <div class="slide-header">
+            <div class="kicker">막 2 · 원하는 행을 꺼내고 거른다 · §400</div>
+            <h1 class="atitle">범위를 자를 때 — <em>loc 끝 포함 vs iloc 끝 미포함</em></h1>
+            <div class="asub">loc['005930':'005935']는 3행 반환, iloc[0:2]는 파이썬 슬라이싱 규칙 그대로 2행 반환</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2">
+              <div class="card" style="padding:16px;">
+                <div class="card-title">🏷️ loc['005930':'005935'] ➡️ 3행 반환</div>
+                <p class="card-desc">이름표가 붙은 <strong>구간 전체를 포함 [시작, 끝]</strong></p>
+                <div style="margin-top:10px;">
+                  <table class="t dense">
+                    <thead><tr><th>Code (Index)</th><th>Name</th><th>포함 여부</th></tr></thead>
+                    <tbody>
+                      <tr class="hl"><td>'005930'</td><td>삼성전자</td><td>시작 포함</td></tr>
+                      <tr class="hl"><td>'000660'</td><td>SK하이닉스</td><td>중간 포함</td></tr>
+                      <tr class="hl"><td>'005935'</td><td>삼성전자우</td><td><strong>끝 라벨 포함!</strong></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card accent" style="padding:16px;">
+                <div class="card-title">🔢 iloc[0:2] ➡️ 2행 반환</div>
+                <p class="card-desc">파이썬 리스트 규칙과 동일한 <strong>반열림 구간 [시작, 끝)</strong></p>
+                <div style="margin-top:10px;">
+                  <table class="t dense">
+                    <thead><tr><th>위치 (Index)</th><th>Name</th><th>포함 여부</th></tr></thead>
+                    <tbody>
+                      <tr class="hl"><td>0</td><td>삼성전자</td><td>0번 포함</td></tr>
+                      <tr class="hl"><td>1</td><td>SK하이닉스</td><td>1번 포함</td></tr>
+                      <tr class="danger"><td>2</td><td>삼성전자우</td><td><strong>2번 미포함 (제외)</strong></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="takeaway">
+              <span class="tg">주의</span>
+              <span>과거에 쓰이던 <code>df.ix[]</code>는 pandas 0.20에서 사용 중단 예고된 뒤 pandas 1.0(2020년)에서 완전히 제거되었으므로 절대 사용하지 않습니다.</span>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-400__indexing-filter</span>
+            <span>Slide 14</span>
+          </div>
+        </section>
+
+        <!-- Slide 15: Boolean 마스크 필터 시뮬레이터 (Dynamic Widget) -->
+        <!-- scene: dynamic simulator; reference: 02-domains/academic/08-distill-explorable-canvas -->
+        <section class="slide" data-section="막 2 · 원하는 행을 꺼내고 거른다" data-title="조건으로 행 꺼내기 — Boolean 마스크의 원리" data-notes="시가총액 50조 이상 조건을 컬럼에 적용하면 True/False로 채워진 Series(마스크)가 생성됩니다. df[mask]는 True인 행만 통과시킵니다. 40개 종목 중 13개가 걸러지는 과정을 시뮬레이터로 확인합니다.">
+          <div class="slide-header">
+            <div class="kicker">막 2 · 원하는 행을 꺼내고 거른다 · §400 Dynamic</div>
+            <h1 class="atitle">조건으로 행 꺼내기 — <em>Boolean 마스크의 원리</em></h1>
+            <div class="asub">조건식을 컬럼에 걸면 True/False Series가 나오고, df[mask]가 True 행만 통과시킵니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2">
+              <div class="card" style="padding:14px;">
+                <div class="widget-tabs">
+                  <button class="tab-btn active" id="btnFilterAll" onclick="applyMaskFilter('all')">전체 40개 보기</button>
+                  <button class="tab-btn" id="btnFilter50" onclick="applyMaskFilter('50t')">시총 50조 이상 (13개)</button>
+                  <button class="tab-btn" id="btnFilter50_150" onclick="applyMaskFilter('50_150t')">50조~150조 (11개)</button>
+                </div>
+                <div style="overflow-y: auto; max-height: 210px;">
+                  <table class="t dense" id="maskTable">
+                    <thead><tr><th>Code</th><th>Name</th><th>Marcap(조원)</th><th>Mask (T/F)</th></tr></thead>
+                    <tbody id="maskTableBody">
+                      <!-- Dynamically rendered via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card accent" style="padding:16px;">
+                <div class="card-title">💡 대괄호 안에서 일어나는 일</div>
+                <div style="background:#f8fafc; padding:10px; border-radius:6px; font-family:var(--mono); font-size:12.5px; margin-bottom:8px;">
+                  mask = df['Marcap'] >= 50_000_000_000_000<br/>
+                  result = df[mask]  <span style="color:var(--blue); font-weight:bold;"># 40행 ➡️ 13행</span>
+                </div>
+                <p class="card-desc" style="font-size:13px;">
+                  순서를 뒤집어 <code>df[df['Marcap'] >= 50_000_000_000_000]</code>부터 외우면 대괄호 안에서 무슨 일이 벌어지는지 모릅니다. 마스크 변수가 True/False Series라는 것을 먼저 눈으로 봅니다.
+                </p>
+                <div class="takeaway" style="margin-top:8px;">
+                  <span class="tg">실측 결과</span>
+                  <span id="maskResultText">전체 40개 종목 중 조건에 맞는 행이 실시간 필터링됩니다.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-400__indexing-filter</span>
+            <span>Slide 15</span>
+          </div>
+        </section>
+
+        <!-- Slide 16: 실무 함정 - 복합 조건 괄호 필수 -->
+        <!-- scene: code split; reference: 02-domains/tech/02-stripe-code-split -->
+        <section class="slide" data-section="막 2 · 원하는 행을 꺼내고 거른다" data-title="[실무 함정] 복합 조건에서 괄호가 없으면 터지는 이유" data-notes="&와 |는 비교 연산자(>=, <=)보다 연산자 우선순위가 높습니다. 괄호 없이 쓰면 파이썬이 조건을 잘못 묶어 ValueError가 발생합니다. and/or를 써 본 학생일수록 더 자주 걸리는 함정입니다.">
+          <div class="slide-header">
+            <div class="kicker">막 2 · 원하는 행을 꺼내고 거른다 · §400 실무 함정</div>
+            <h1 class="atitle">복합 조건에서 <em>괄호가 없으면 터지는 이유</em></h1>
+            <div class="asub">&와 |는 비교 연산자보다 우선순위가 높습니다 — (cond1) & (cond2) 괄호 필수</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>boolean_compound_trap.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt"><span class="tok-cm"># ❌ 괄호 없이 & 쓴 경우: 런타임 에러 발생!</span></td></tr>
+                    <tr><td class="code-ln">2</td><td class="code-txt">df[df[<span class="tok-str">'Marcap'</span>] >= 50_000_000_000_000 & df[<span class="tok-str">'Marcap'</span>] <= 150_000_000_000_000]</td></tr>
+                    <tr><td class="code-ln">3</td><td class="code-txt"><span class="tok-cm"># ➡️ ValueError: The truth value of a Series is ambiguous.</span></td></tr>
+                    <tr><td class="code-ln">4</td><td class="code-txt"></td></tr>
+                    <tr><td class="code-ln">5</td><td class="code-txt"><span class="tok-cm"># ✅ 조건마다 괄호로 완벽히 격리</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">6</td><td class="code-txt">cond1 = (df[<span class="tok-str">'Marcap'</span>] >= 50_000_000_000_000)</td></tr>
+                    <tr class="tok-hl"><td class="code-ln">7</td><td class="code-txt">cond2 = (df[<span class="tok-str">'Marcap'</span>] <= 150_000_000_000_000)</td></tr>
+                    <tr class="tok-hl"><td class="code-ln">8</td><td class="code-txt">result = df[cond1 & cond2]  <span class="tok-cm"># 11행 반환!</span></td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>⚠️ ValueError 방어</span><span>반드시 (cond1) & (cond2) 괄호 작성</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🚨 왜 아는 학생이 더 자주 틀리는가?</div>
+                <p class="card-desc">
+                  파이썬 기초에서 <code>and</code>, <code>or</code>를 능숙하게 쓰던 사람일수록 자연스럽게 괄호 없이 <code>&</code>를 적습니다.<br/>
+                  비트 연산자 <code>&</code>는 <code>>=</code>보다 먼저 계산되므로 파이썬이 <code>50조 & df['Marcap']</code>을 먼저 묶어버립니다.
+                </p>
+                <div class="warn-box">
+                  <strong>규칙</strong>: pandas에서 <code>&</code>(AND)와 <code>|</code>(OR)를 쓸 때는 <strong>무조건 조건마다 소괄호 ()</strong>를 씌웁니다.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-400__indexing-filter</span>
+            <span>Slide 16</span>
+          </div>
+        </section>
+
+        <!-- =================================================================
+             막 3 · 세 줄 해독과 수익률 표 (Slide 17 ~ 22)
+             ================================================================= -->
+
+        <!-- Slide 17: 정렬과 메서드 체이닝 -->
+        <!-- scene: pipeline rail; reference: 02-domains/tech/03-stripe-pipeline-rail -->
+        <section class="slide" data-section="막 3 · 세 줄 해독과 수익률 표" data-title="정렬과 메서드 체이닝 — sort_values와 nlargest" data-notes="sort_values와 nlargest로 시총 상위 10개를 뽑는 것은 작년의 종착점이었지만, 이번 주엔 다음 절로 넘어가는 중간 관문입니다. 메서드를 점(.)으로 연결하는 체이닝 파이프라인을 확인합니다.">
+          <div class="slide-header">
+            <div class="kicker">막 3 · 세 줄 해독과 수익률 표 · §600</div>
+            <h1 class="atitle">정렬과 메서드 체이닝 — <em>sort_values와 nlargest</em></h1>
+            <div class="asub">필터 ➡️ 정렬 ➡️ 컬럼 선택이 점(.) 하나로 이어지는 파이프라인</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>method_chaining.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt"><span class="tok-cm"># 정렬 후 상위 10개 슬라이싱 체이닝</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">2</td><td class="code-txt">top10 = (kospi.sort_values(<span class="tok-str">'Marcap'</span>, ascending=<span class="tok-kw">False</span>)</td></tr>
+                    <tr class="tok-hl"><td class="code-ln">3</td><td class="code-txt">              [[<span class="tok-str">'Name'</span>, <span class="tok-str">'Marcap'</span>]]</td></tr>
+                    <tr class="tok-hl"><td class="code-ln">4</td><td class="code-txt">              .head(<span class="tok-num">10</span>))</td></tr>
+                    <tr><td class="code-ln">5</td><td class="code-txt"></td></tr>
+                    <tr><td class="code-ln">6</td><td class="code-txt"><span class="tok-cm"># 정렬+자르기 단축: nlargest()</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">7</td><td class="code-txt">top10_fast = kospi.nlargest(<span class="tok-num">10</span>, <span class="tok-str">'Marcap'</span>)[[<span class="tok-str">'Name'</span>, <span class="tok-str">'Marcap'</span>]]</td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>1위 삼성전자 | 2위 SK하이닉스 | 3위 삼성전자우</span><span>시총 Top 10 추출</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🏆 KOSPI 시가총액 상위 5개사</div>
+                <table class="t dense">
+                  <thead><tr><th>순위</th><th>종목명</th><th>시가총액 (원)</th></tr></thead>
+                  <tbody>
+                    <tr class="hl"><td>1</td><td>삼성전자</td><td class="n">1,464,492,791,304,000</td></tr>
+                    <tr><td>2</td><td>SK하이닉스</td><td class="n">1,178,284,184,745,000</td></tr>
+                    <tr><td>3</td><td>삼성전자우</td><td class="n">148,839,858,156,500</td></tr>
+                    <tr><td>4</td><td>SK스퀘어</td><td class="n">129,549,366,036,000</td></tr>
+                    <tr><td>5</td><td>삼성전기</td><td class="n">104,571,174,400,000</td></tr>
+                  </tbody>
+                </table>
+                <div class="takeaway" style="margin-top:8px;">
+                  <span class="tg">서사 전환</span>
+                  <span>시총 상위 10개 추출은 종착점이 아니라, 수익률 표를 만들기 위한 중간 관문입니다.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-600__returns-pipeline</span>
+            <span>Slide 17</span>
+          </div>
+        </section>
+
+        <!-- Slide 18: 100번의 세 줄, 한 단어씩 완전 해독 (원환 완결) -->
+        <!-- scene: table unpack; reference: 02-domains/tech/02-stripe-code-split -->
+        <section class="slide" data-section="막 3 · 세 줄 해독과 수익률 표" data-title="100번의 세 줄, 한 단어씩 완전 해독" data-notes="100번에서 던졌던 그 세 줄을 다시 띄우고 글자 단위로 매핑합니다. fdr은 110에서, DataReader와 df['Close']는 110/300에서 배웠습니다. 낯선 것은 pct_change() 하나뿐이며, 원환이 닫힙니다.">
+          <div class="slide-header">
+            <div class="kicker">막 3 · 세 줄 해독과 수익률 표 · §600 원환 완결</div>
+            <h1 class="atitle">100번의 세 줄, <em>한 단어씩 완전 해독</em></h1>
+            <div class="asub">오늘 시작할 때 보았던 그 암호 같던 코드가 완벽히 해독되어 회수됩니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="card" style="padding:16px;">
+              <table class="t">
+                <thead><tr><th>코드 구문</th><th>배운 노트</th><th>해독된 금융/데이터 개념</th></tr></thead>
+                <tbody>
+                  <tr class="hl">
+                    <td><code>import FinanceDataReader as fdr</code></td>
+                    <td>110</td>
+                    <td>KRX/글로벌 금융 시계열 데이터를 파이썬 표로 수집하는 라이브러리 호출</td>
+                  </tr>
+                  <tr class="hl">
+                    <td><code>df = fdr.DataReader('005930', ...)</code></td>
+                    <td>110 + 300</td>
+                    <td>종목코드(문자열)와 기간을 전달받아 <strong>날짜 인덱스가 붙은 120행 6열 DataFrame</strong> 생성</td>
+                  </tr>
+                  <tr class="hl">
+                    <td><code>df['Close']</code></td>
+                    <td>300</td>
+                    <td>2차원 DataFrame에서 종가(Close) 컬럼을 대괄호 하나로 꺼내어 <strong>1차원 Series</strong>로 변환</td>
+                  </tr>
+                  <tr class="hl" style="background:#e8f5e9 !important;">
+                    <td><code>.pct_change()</code></td>
+                    <td><strong>600 (지금!)</strong></td>
+                    <td>단위가 다른 종가를 <strong>일별 단순수익률((오늘-어제)/어제)</strong>로 변환하는 최종 연산자</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="takeaway" style="margin-top:14px;">
+                <span class="tg">원환 완결</span>
+                <span>100번에서 시작된 긴장이 600번에서 완벽히 해소되었습니다. 이제 가격이 아닌 수익률의 세계로 진입합니다.</span>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-600__returns-pipeline</span>
+            <span>Slide 18</span>
+          </div>
+        </section>
+
+        <!-- Slide 19: 왜 가격으로는 비교가 안 되나 (Dynamic Switcher) -->
+        <!-- scene: dynamic scale switcher; reference: 02-domains/academic/08-distill-explorable-canvas -->
+        <section class="slide" data-section="막 3 · 세 줄 해독과 수익률 표" data-title="왜 가격으로는 비교가 안 되나 — 1,000원 상승의 서로 다른 무게" data-notes="삼성전자 5만원짜리와 NAVER 38만원짜리가 똑같이 1000원 올랐을 때 절대 변화는 같지만 수익률은 2.0% vs 0.26%로 8배 차이납니다. 단위가 다른 자산을 하나의 자로 재는 방법이 바로 수익률입니다.">
+          <div class="slide-header">
+            <div class="kicker">막 3 · 세 줄 해독과 수익률 표 · §600 핵심 직관</div>
+            <h1 class="atitle">왜 가격으로는 비교가 안 되나 — <em>1,000원 상승의 서로 다른 무게</em></h1>
+            <div class="asub">삼성전자와 NAVER가 똑같이 1,000원 올랐다? 절대 금액은 같지만 수익률은 8배 차이납니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="eli5-box">
+              <div class="eli5-badge">💡 ELI5 직관 비유 #4</div>
+              <div class="eli5-title">키 50cm 아이의 1cm 성장 vs 키 180cm 어른의 1cm 성장</div>
+              <div class="eli5-text">
+                같은 1cm라도 50cm 아이에게는 +2%의 거대한 성장이지만, 180cm 어른에게는 미미한 변동입니다.<br/>
+                주가도 마찬가지입니다. <strong>출발점이 다른 자산은 절대 가격으로 비교할 수 없습니다.</strong>
+              </div>
+            </div>
+
+            <div class="grid c2">
+              <div class="card" style="padding:14px;">
+                <div class="widget-tabs">
+                  <button class="tab-btn active" id="btnScalePrice" onclick="switchScaleView('price')">절대 가격 변화 보기</button>
+                  <button class="tab-btn" id="btnScaleReturn" onclick="switchScaleView('return')">수익률 기준 보기 (하나의 자)</button>
+                </div>
+                <div id="scaleCanvasArea" style="background:#f8fafc; padding:14px; border-radius:6px; min-height:120px;">
+                  <!-- Dynamically toggled -->
+                </div>
+              </div>
+
+              <div class="card accent" style="padding:16px;">
+                <div class="card-title">📊 실제 상반기 1월 데이터 실측 비교</div>
+                <table class="t dense">
+                  <thead><tr><th>종목</th><th>1/8 종가</th><th>1/9 종가</th><th>절대 변화</th><th>실제 수익률</th></tr></thead>
+                  <tbody>
+                    <tr class="hl"><td>삼성전자</td><td>61,100원</td><td>62,100원</td><td>+1,000원</td><td class="n"><strong>+1.64%</strong></td></tr>
+                    <tr><td>NAVER</td><td>383,400원</td><td>387,400원</td><td>+4,000원</td><td class="n"><strong>+1.04%</strong></td></tr>
+                  </tbody>
+                </table>
+                <div class="takeaway" style="margin-top:10px;">
+                  <span class="tg">심장 한 줄</span>
+                  <span>단위가 다른 주식을 하나의 공통된 자로 재는 방법이 바로 <strong>수익률</strong>입니다.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-600__returns-pipeline</span>
+            <span>Slide 19</span>
+          </div>
+        </section>
+
+        <!-- Slide 20: shift(1) 타임머신 인터랙션 (Dynamic Shift) -->
+        <!-- scene: dynamic shift animator; reference: 02-domains/academic/08-distill-explorable-canvas -->
+        <section class="slide" data-section="막 3 · 세 줄 해독과 수익률 표" data-title="어제 값을 오늘 행으로 — shift(1)과 첫 행 NaN" data-notes="pct_change()를 바로 쓰기 전에 shift(1)로 전날 종가를 옆으로 끌어오는 원리를 눈으로 봅니다. 첫 행에는 '어제'가 없으므로 NaN이 발생하는 것은 오류가 아니라 자연의 법칙입니다.">
+          <div class="slide-header">
+            <div class="kicker">막 3 · 세 줄 해독과 수익률 표 · §600</div>
+            <h1 class="atitle">어제 값을 오늘 행으로 — <em>shift(1)과 첫 행 NaN</em></h1>
+            <div class="asub">pct_change()를 쓰기 전, 전날 종가를 오늘 옆 칸으로 밀어 놓는 과정을 시각화합니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2">
+              <div class="card" style="padding:14px;">
+                <div class="widget-tabs">
+                  <button class="tab-btn active" id="btnShiftRaw" onclick="toggleShiftAnimation(false)">원본 종가 (Close)</button>
+                  <button class="tab-btn" id="btnShiftApply" onclick="toggleShiftAnimation(true)">shift(1) 적용 (Close_어제)</button>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="t dense" id="shiftTable">
+                    <thead><tr><th>Date</th><th>Close</th><th id="thShiftYesterday">Close_어제 (shift(1))</th></tr></thead>
+                    <tbody id="shiftTableBody">
+                      <!-- Rendered via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card accent" style="padding:16px;">
+                <div class="card-title">💡 첫 행 NaN은 오류가 아니라 사실이다</div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <span class="step-num">1</span>
+                    <span>1월 2일은 분석 기간의 <strong>첫 번째 날이므로 '어제(전날)'가 존재하지 않습니다.</strong></span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">2</span>
+                    <span>따라서 첫 행의 <code>Close_어제</code>와 <code>Return</code>이 비어 있는(NaN) 것은 정상적인 사실입니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">3</span>
+                    <span>이 그림을 먼저 이해해야 다음 절에서 만날 NaN 처리 규칙이 자연스럽게 납득됩니다.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-600__returns-pipeline</span>
+            <span>Slide 20</span>
+          </div>
+        </section>
+
+        <!-- Slide 21: 일별 수익률 표 완성 pct_change() & NaN 정책 -->
+        <!-- scene: code split & warning; reference: 02-domains/tech/02-stripe-code-split -->
+        <section class="slide" data-section="막 3 · 세 줄 해독과 수익률 표" data-title="일별 수익률 표 완성 — pct_change()와 NaN 정책" data-notes="pct_change()는 (오늘-어제)/어제를 한 번에 계산합니다. 첫 행 NaN을 0으로 채우면 누적수익률이 왜곡되므로 절대 0으로 채우지 않고 dropna()하거나 그대로 둡니다.">
+          <div class="slide-header">
+            <div class="kicker">막 3 · 세 줄 해독과 수익률 표 · §600 종착점</div>
+            <h1 class="atitle">일별 수익률 표 완성 — <em>pct_change()와 NaN 정책</em></h1>
+            <div class="asub">수익률 = (오늘 종가 - 어제 종가) / 어제 종가 ➡️ 첫 행 NaN을 0으로 채우지 않습니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2 code-split">
+              <div class="code-window">
+                <div class="window-header">
+                  <div class="dots"><span class="dot d-red"></span><span class="dot d-yel"></span><span class="dot d-grn"></span></div>
+                  <span>returns_pipeline_final.py</span>
+                  <button class="code-copy-btn">Copy</button>
+                </div>
+                <div class="code-body">
+                  <table>
+                    <tr><td class="code-ln">1</td><td class="code-txt">samsung = pd.read_csv(<span class="tok-str">'data/samsung_005930.csv'</span>, index_col=<span class="tok-str">'Date'</span>)</td></tr>
+                    <tr class="tok-hl"><td class="code-ln">2</td><td class="code-txt">samsung[<span class="tok-str">'Return'</span>] = samsung[<span class="tok-str">'Close'</span>].<span class="tok-fn">pct_change</span>()</td></tr>
+                    <tr><td class="code-ln">3</td><td class="code-txt">print(samsung[[<span class="tok-str">'Close'</span>, <span class="tok-str">'Return'</span>]].head(<span class="tok-num">4</span>))</td></tr>
+                    <tr><td class="code-ln">4</td><td class="code-txt"></td></tr>
+                    <tr><td class="code-ln">5</td><td class="code-txt"><span class="tok-cm"># ⚠️ 절대 0으로 채우지 않는다 (fillna(0) 금지!)</span></td></tr>
+                    <tr class="tok-hl"><td class="code-ln">6</td><td class="code-txt">clean_returns = samsung[<span class="tok-str">'Return'</span>].<span class="tok-fn">dropna</span>()</td></tr>
+                  </table>
+                </div>
+                <div class="terminal-trace"><span>2026-01-02: NaN | 2026-01-05: -0.003226</span><span>일별 수익률 표 완성</span></div>
+              </div>
+
+              <div class="card accent">
+                <div class="card-title">🚨 NaN을 0으로 채우면 왜 안 되는가?</div>
+                <div class="step-list">
+                  <div class="step-item">
+                    <span class="step-num">1</span>
+                    <span><strong>왜곡 발생</strong>: 1월 2일의 수익률을 0%로 강제 채우면, 실제로는 알 수 없는 첫날에 "수익률 0%로 거래를 마쳤다"는 가짜 데이터가 주입됩니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">2</span>
+                    <span><strong>누적수익률 오차</strong>: 향후 복리 계산(Cumulative Returns) 시 기간 전체의 복리 성과가 어긋납니다.</span>
+                  </div>
+                  <div class="step-item">
+                    <span class="step-num">3</span>
+                    <span><strong>올바른 처리</strong>: <code>dropna()</code>로 첫 행을 날리거나, NaN 상태 그대로 보존합니다.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>FD-02-600__returns-pipeline</span>
+            <span>Slide 21</span>
+          </div>
+        </section>
+
+        <!-- Slide 22: 이번 주 도착점과 다음 연결 -->
+        <!-- scene: takeaway anchor; reference: 03-layouts/01-1col-hero -->
+        <section class="slide" data-section="막 3 · 세 줄 해독과 수익률 표" data-title="이번 주 도착점과 다음 연결 — 포트폴리오 프로젝트의 첫 조각" data-notes="오늘 완성한 수익률 표는 기말 포트폴리오 프로젝트의 첫 조각입니다. 3주차에는 매번 다운로드하지 않고 내 컴퓨터 로컬 SQLite 데이터베이스에 적재하는 파이프라인을 배웁니다.">
+          <div class="slide-header">
+            <div class="kicker">재무데이터분석 2주차 · 마무리 및 연결</div>
+            <h1 class="atitle">이번 주 도착점과 <em>다음 연결</em></h1>
+            <div class="asub">오늘 만든 일별 수익률 표는 12주차 기말 포트폴리오 프로젝트의 첫 조각입니다.</div>
+            <div class="rule"></div>
+          </div>
+          <div class="slide-body">
+            <div class="grid c2">
+              <div class="card" style="padding:20px;">
+                <div class="card-title">🏆 오늘 우리가 달성한 4대 역량</div>
+                <div class="step-list" style="margin-top:10px;">
+                  <div class="step-item"><span class="step-num">1</span><span>FDR로 상장종목/주가 수집 및 <code>dtype={'Code': str}</code> 방어</span></div>
+                  <div class="step-item"><span class="step-num">2</span><span>Series 인덱스 이름표와 1줄 벡터 연산(<code>s * 1.1</code>) 체화</span></div>
+                  <div class="step-item"><span class="step-num">3</span><span><code>loc</code> vs <code>iloc</code> 구분 및 Boolean 복합 조건 괄호 필수 방어</span></div>
+                  <div class="step-item"><span class="step-num">4</span><span>100번 세 줄 완전 해독 및 <code>pct_change()</code> 일별 수익률 표 완성</span></div>
+                </div>
+              </div>
+
+              <div class="card accent" style="padding:20px;">
+                <div class="card-title">🚀 다음 주차 예고 (Week 03)</div>
+                <div class="step-list" style="margin-top:10px;">
+                  <div class="step-item"><span class="step-num">W03</span><span><strong>금융 시계열 파이프라인 & 로컬 SQLite DB 구축</strong></span></div>
+                  <div class="step-item"><span class="step-num">질문</span><span>"API에서 매번 받지 않고 내 컴퓨터 DB에 어떻게 저장해 쓰나?"</span></div>
+                  <div class="step-item"><span class="step-num">기술</span><span><code>DatetimeIndex</code>, 비동기 거래일 결측 처리, <code>df.to_sql()</code></span></div>
+                </div>
+                <div class="takeaway" style="margin-top:16px;">
+                  <span class="tg">실전 연결</span>
+                  <span>증권사/자산운용사 신입의 첫 업무가 바로 오늘 만든 데이터 표를 시스템에 적재하는 일입니다.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="slide-footer">
+            <span>Financial Data Analytics · Week 02</span>
+            <span>Slide 22</span>
+          </div>
+        </section>
+
+      </div><!-- /.slide-canvas -->
+    </div><!-- /.slide-viewport -->
+
+    <!-- Speaker Notes Drawer -->
+    <div class="notes-drawer" id="notesDrawer">
+      <div class="notes-title">SPEAKER NOTES (단축키 N으로 토글)</div>
+      <div id="notesContent">발표자 노트가 여기에 표시됩니다.</div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ==========================================================================
+   Deck Controller & Interactive Widgets Engine (Vanilla JS, Zero-CDN)
+   ========================================================================== */
+
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let currentSlide = 0;
+  
+  const sbList = document.getElementById('sbList');
+  const slideIndicator = document.getElementById('slideIndicator');
+  const notesDrawer = document.getElementById('notesDrawer');
+  const notesContent = document.getElementById('notesContent');
+  const sidebar = document.getElementById('sidebar');
+  const searchInput = document.getElementById('sbSearch');
+
+  // Build Sidebar TOC from Slides
+  function buildTOC() {
+    sbList.innerHTML = '';
+    let currentSection = '';
+    let sectionGroup = null;
+
+    slides.forEach((slide, idx) => {
+      const section = slide.getAttribute('data-section') || '기본';
+      const title = slide.getAttribute('data-title') || `슬라이드 ${idx + 1}`;
+
+      if (section !== currentSection) {
+        currentSection = section;
+        sectionGroup = document.createElement('div');
+        sectionGroup.className = 'sb-section-group';
+        
+        const secTitle = document.createElement('div');
+        secTitle.className = 'sb-section-title';
+        secTitle.textContent = currentSection;
+        sectionGroup.appendChild(secTitle);
+        sbList.appendChild(sectionGroup);
+      }
+
+      const item = document.createElement('div');
+      item.className = `sb-item ${idx === 0 ? 'active' : ''}`;
+      item.dataset.slideIndex = idx;
+      item.innerHTML = `<span class="num">${String(idx + 1).padStart(2, '0')}</span><span class="title">${title}</span>`;
+      item.addEventListener('click', () => goToSlide(idx));
+      sectionGroup.appendChild(item);
+    });
+  }
+
+  function updateSlideView() {
+    slides.forEach((s, i) => {
+      s.classList.toggle('active', i === currentSlide);
+    });
+
+    // Update TOC highlight
+    const items = sbList.querySelectorAll('.sb-item');
+    items.forEach((item, i) => {
+      item.classList.toggle('active', i === currentSlide);
+    });
+
+    // Update indicator
+    slideIndicator.textContent = `${String(currentSlide + 1).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+
+    // Update Speaker Notes
+    const currentNotes = slides[currentSlide].getAttribute('data-notes') || '작성된 발표자 노트가 없습니다.';
+    notesContent.textContent = currentNotes;
+  }
+
+  function goToSlide(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= totalSlides) idx = totalSlides - 1;
+    currentSlide = idx;
+    updateSlideView();
+  }
+
+  function nextSlide() { goToSlide(currentSlide + 1); }
+  function prevSlide() { goToSlide(currentSlide - 1); }
+
+  // Keyboard navigation
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'k' || e.key === 'K') {
+      e.preventDefault(); nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'j' || e.key === 'J') {
+      e.preventDefault(); prevSlide();
+    } else if (e.key === 'Home') {
+      e.preventDefault(); goToSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault(); goToSlide(totalSlides - 1);
+    } else if (e.key === 'n' || e.key === 'N') {
+      notesDrawer.classList.toggle('open');
+    } else if (e.key === 't' || e.key === 'T') {
+      sidebar.classList.toggle('collapsed');
+    } else if (e.key === '/') {
+      e.preventDefault(); searchInput.focus();
+    }
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', nextSlide);
+  document.getElementById('prevBtn').addEventListener('click', prevSlide);
+  document.getElementById('toggleSbBtn').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+  document.getElementById('notesToggleBtn').addEventListener('click', () => notesDrawer.classList.toggle('open'));
+
+  // Search in TOC
+  searchInput.addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+    const items = sbList.querySelectorAll('.sb-item');
+    items.forEach(item => {
+      const txt = item.textContent.toLowerCase();
+      item.style.display = txt.includes(q) ? 'flex' : 'none';
+    });
+  });
+
+  // Copy buttons
+  document.querySelectorAll('.code-copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.closest('.code-window').querySelector('.code-body').innerText;
+      navigator.clipboard.writeText(code);
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  });
+
+  buildTOC();
+  updateSlideView();
+})();
+
+/* --- Dynamic Widget 1: Ring Stepper (Slide 04) ---------------------------- */
+const stepData = {
+  1: {
+    title: "📍 [110 노트] 외부 라이브러리 호출",
+    desc: "<code>import FinanceDataReader as fdr</code><br/>네이버·KRX 웹페이지를 직접 긁지 않고, 파이썬에서 금융 시계열 데이터를 한 줄로 불러오는 라이브러리를 단축명 <code>fdr</code>로 가져옵니다.",
+    tag: "100번에서 던진 코드는 600번에서 정확히 글자 단위로 일치해야 합니다."
+  },
+  2: {
+    title: "📍 [110 + 300 노트] DataReader와 DataFrame 구조",
+    desc: "<code>fdr.DataReader('005930', '2026-01-02', '2026-06-30')</code><br/>종목코드(문자열)와 기간을 주면 날짜가 인덱스인 120행 6열 DataFrame을 돌려받습니다.",
+    tag: "300번 탐색 3종 세트(shape, columns, dtypes)로 표를 즉시 점검합니다."
+  },
+  3: {
+    title: "📍 [300 + 600 노트] 컬럼 추출과 일별 수익률 표",
+    desc: "<code>df['Close'].pct_change()</code><br/>대괄호로 종가 Series를 뽑아낸 뒤, <code>pct_change()</code>로 어제 대비 일별 수익률을 통째로 계산합니다.",
+    tag: "600번에서 일별 수익률 표로 원환을 닫고 기말 포트폴리오 프로젝트로 연결됩니다."
+  }
+};
+
+window.showStep = function(step) {
+  document.getElementById('stepperTitle').innerHTML = stepData[step].title;
+  document.getElementById('stepperDesc').innerHTML = stepData[step].desc;
+  document.getElementById('stepperTag').innerText = stepData[step].tag;
+  
+  [1, 2, 3].forEach(i => {
+    const el = document.getElementById('codeL' + i);
+    if (el) el.classList.toggle('tok-hl', i === step);
+  });
+};
+
+/* --- Dynamic Widget 2: Boolean Mask Simulator (Slide 15) ------------------ */
+const rawStocks = [
+  { code: '005930', name: '삼성전자', marcap: 1464 },
+  { code: '000660', name: 'SK하이닉스', marcap: 1178 },
+  { code: '005935', name: '삼성전자우', marcap: 148 },
+  { code: '034730', name: 'SK스퀘어', marcap: 129 },
+  { code: '009150', name: '삼성전기', marcap: 104 },
+  { code: '373220', name: 'LG에너지솔루션', marcap: 81 },
+  { code: '005380', name: '현대차', marcap: 77 },
+  { code: '207940', name: '삼성바이오로직스', marcap: 69 },
+  { code: '028260', name: '삼성물산', marcap: 60 },
+  { code: '105560', name: 'KB금융', marcap: 59 },
+  { code: '032830', name: '삼성생명', marcap: 58 },
+  { code: '012450', name: '한화에어로스페이스', marcap: 52 },
+  { code: '055550', name: '신한지주', marcap: 51 },
+  { code: '035420', name: 'NAVER', marcap: 42 },
+  { code: '003550', name: 'LG', marcap: 38 },
+  { code: '035720', name: '카카오', marcap: 24 }
+];
+
+window.applyMaskFilter = function(mode) {
+  const tbody = document.getElementById('maskTableBody');
+  const resText = document.getElementById('maskResultText');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+  document.querySelectorAll('.widget-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+
+  let filtered = [];
+  if (mode === 'all') {
+    document.getElementById('btnFilterAll').classList.add('active');
+    filtered = rawStocks.map(s => ({ ...s, match: true }));
+    resText.textContent = "전체 40개 종목 중 상위 16개사 표시 중입니다.";
+  } else if (mode === '50t') {
+    document.getElementById('btnFilter50').classList.add('active');
+    filtered = rawStocks.map(s => ({ ...s, match: s.marcap >= 50 }));
+    resText.textContent = "시가총액 50조 이상 조건: 40개 중 13개 종목 통과 (True).";
+  } else if (mode === '50_150t') {
+    document.getElementById('btnFilter50_150').classList.add('active');
+    filtered = rawStocks.map(s => ({ ...s, match: (s.marcap >= 50 && s.marcap <= 150) }));
+    resText.textContent = "50조 이상 150조 이하: 11개 종목 통과 (삼성전자, SK하이닉스 제외).";
+  }
+
+  filtered.forEach(s => {
+    const tr = document.createElement('tr');
+    if (s.match) tr.className = 'hl';
+    tr.innerHTML = `<td>'${s.code}'</td><td>${s.name}</td><td class="n">${s.marcap}조</td><td><strong style="color:${s.match ? 'var(--success)' : 'var(--subtle)'}">${s.match ? 'True' : 'False'}</strong></td>`;
+    tbody.appendChild(tr);
+  });
+};
+
+// Initial load for filter table
+setTimeout(() => window.applyMaskFilter('50t'), 100);
+
+/* --- Dynamic Widget 3: Scale Switcher (Slide 19) --------------------------- */
+window.switchScaleView = function(view) {
+  const area = document.getElementById('scaleCanvasArea');
+  if (!area) return;
+
+  document.getElementById('btnScalePrice').classList.toggle('active', view === 'price');
+  document.getElementById('btnScaleReturn').classList.toggle('active', view === 'return');
+
+  if (view === 'price') {
+    area.innerHTML = `
+      <div style="font-size:13px; font-weight:bold; color:var(--navy); margin-bottom:8px;">[절대 가격 기준] 똑같이 +1,000원 상승한 경우</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:12px;"><span>삼성전자 (50,000원 ➡️ 51,000원)</span><span>+1,000원</span></div>
+          <div style="background:#e2e8f0; height:18px; border-radius:4px; overflow:hidden;"><div style="background:var(--blue); width:50%; height:100%;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:12px;"><span>NAVER (380,000원 ➡️ 381,000원)</span><span>+1,000원</span></div>
+          <div style="background:#e2e8f0; height:18px; border-radius:4px; overflow:hidden;"><div style="background:var(--blue); width:50%; height:100%;"></div></div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--muted); margin-top:8px;">착시: 두 막대의 길이가 완전히 같아 보여 같은 성과로 오판하게 됩니다.</div>
+    `;
+  } else {
+    area.innerHTML = `
+      <div style="font-size:13px; font-weight:bold; color:var(--navy); margin-bottom:8px;">[수익률 기준] 하나의 자로 잰 실제 투자 성과</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:12px;"><span>삼성전자 수익률</span><span style="color:var(--success); font-weight:bold;">+2.00% (8배 차이!)</span></div>
+          <div style="background:#e2e8f0; height:18px; border-radius:4px; overflow:hidden;"><div style="background:var(--success); width:80%; height:100%;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:12px;"><span>NAVER 수익률</span><span style="color:var(--blue); font-weight:bold;">+0.26%</span></div>
+          <div style="background:#e2e8f0; height:18px; border-radius:4px; overflow:hidden;"><div style="background:var(--blue); width:10.4%; height:100%;"></div></div>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--success); font-weight:bold; margin-top:8px;">진실: 같은 1,000원이라도 삼성전자의 자산 증식 효과가 8배 큽니다!</div>
+    `;
+  }
+};
+setTimeout(() => window.switchScaleView('price'), 100);
+
+/* --- Dynamic Widget 4: Shift Animator (Slide 20) --------------------------- */
+const shiftRawData = [
+  { date: '2026-01-02', close: '62,000' },
+  { date: '2026-01-05', close: '61,800' },
+  { date: '2026-01-06', close: '61,600' },
+  { date: '2026-01-07', close: '60,900' },
+  { date: '2026-01-08', close: '61,100' }
+];
+
+window.toggleShiftAnimation = function(applied) {
+  const tbody = document.getElementById('shiftTableBody');
+  const th = document.getElementById('thShiftYesterday');
+  if (!tbody) return;
+
+  document.getElementById('btnShiftRaw').classList.toggle('active', !applied);
+  document.getElementById('btnShiftApply').classList.toggle('active', applied);
+
+  tbody.innerHTML = '';
+  shiftRawData.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    let yesterdayVal = applied ? (i === 0 ? '<span style="color:var(--danger); font-weight:bold; background:var(--sr); padding:1px 6px; border-radius:3px;">NaN (어제 없음)</span>' : shiftRawData[i-1].close) : '<span style="color:#94a3b8;">-</span>';
+    tr.innerHTML = `<td>${row.date}</td><td class="n">${row.close}</td><td class="n">${yesterdayVal}</td>`;
+    tbody.appendChild(tr);
+  });
+};
+setTimeout(() => window.toggleShiftAnimation(true), 100);
+
+</script>
+</body>
+</html>
