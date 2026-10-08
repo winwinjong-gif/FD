@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="lec-html-state-strategy" content="all-reachable">
+<meta name="lec-html-render-check" content="desktop,mobile">
+<title>FD Week 04: 인터랙티브 패널 | 재무데이터분석</title>
+<style>
+:root {
+  --primary: #4F46E5;
+  --primary-d: #3730A3;
+  --primary-l: #EEF2FF;
+  --navy: #0F1E3D;
+  --ink: #161D29;
+  --ink2: #33404F;
+  --muted: #64748B;
+  --subtle: #94A3B8;
+  --line: #E2E8F0;
+  --line2: #CBD5E1;
+  --surface: #FFFFFF;
+  --surf2: #FAF7F0;
+  --surf3: #F1F5F9;
+  --success: #16A34A;
+  --success-l: #E8F5E9;
+  --warning: #D97706;
+  --warning-l: #FFF3E0;
+  --danger: #DC2626;
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; font-family: var(--font); background: var(--surf3); color: var(--ink); line-height: 1.5; font-size: 15px; word-break: keep-all; -webkit-font-smoothing: antialiased; }
+.top-bar { position: sticky; top: 0; z-index: 10; background: var(--navy); color: #fff; padding: 14px 20px; }
+.top-bar-inner { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.top-title { font-size: 16px; font-weight: 800; }
+.top-sub { font-size: 12px; color: #A5B4FC; margin-top: 2px; }
+.bench-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.bench-nav button { font-family: inherit; font-size: 12.5px; font-weight: 700; color: #C7D2FE; background: #1E2A5C; border: 1px solid #312E81; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: background .15s, color .15s; }
+.bench-nav button:hover { background: #312E81; color: #fff; }
+.bench-nav button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+main { max-width: 980px; margin: 0 auto; padding: 22px 20px 60px; }
+.bench { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(15,30,61,.06); }
+.bench[hidden] { display: none; }
+.bench-tag { display: inline-block; font-size: 11px; font-weight: 800; color: var(--primary-d); background: var(--primary-l); padding: 4px 10px; border-radius: 20px; margin-bottom: 8px; }
+.bench-head h2 { font-size: 20px; color: var(--navy); margin-bottom: 8px; }
+.bench-note { font-size: 13px; color: var(--ink2); line-height: 1.6; background: var(--surf2); border-left: 4px solid var(--warning); padding: 10px 14px; border-radius: 6px; margin-bottom: 18px; }
+.bench-note code { font-family: var(--mono); background: #fff; padding: 1px 5px; border-radius: 3px; }
+.bench-body { display: flex; flex-direction: column; gap: 14px; }
+.bench-body.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .bench-body.two-col { grid-template-columns: 1fr; } }
+.panel-card { background: var(--surf3); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.ctrl-label { display: block; font-size: 12.5px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+input[type="range"] { width: 100%; accent-color: var(--primary); margin-bottom: 8px; }
+select { width: 100%; font-family: inherit; font-size: 13px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line2); background: #fff; color: var(--ink); }
+.ctrl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+@media (max-width: 560px) { .ctrl-row { grid-template-columns: 1fr; } }
+.ctrl-value { display: block; font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--primary-d); margin-bottom: 12px; }
+.fixed-box { background: #fff; border: 1px dashed var(--line2); border-radius: 8px; padding: 10px 12px; }
+.fixed-title { font-size: 11.5px; font-weight: 800; color: var(--muted); margin-bottom: 6px; }
+.fixed-list { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink2); }
+.fixed-list strong { color: var(--navy); font-family: var(--mono); }
+.result-card { display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+.result-row { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 8px; padding: 10px 14px; border: 1px solid var(--line); }
+.result-row.dim { opacity: .85; }
+.result-label { font-size: 12.5px; font-weight: 800; color: var(--navy); }
+.result-label .hint { font-size: 10.5px; font-weight: 600; color: var(--subtle); }
+.result-value { font-family: var(--mono); font-size: 15px; font-weight: 800; color: var(--primary-d); }
+.url-box { display: block; font-family: var(--mono); font-size: 12px; line-height: 1.6; word-break: break-all; background: var(--navy); color: #A7F3D0; padding: 12px 14px; border-radius: 8px; margin-bottom: 10px; }
+.bench-caption { font-size: 12px; color: var(--muted); }
+.toggle-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.toggle-btn { flex: 1; font-family: inherit; font-size: 13px; font-weight: 800; padding: 10px; border-radius: 8px; border: 1px solid var(--line2); background: #fff; color: var(--muted); cursor: pointer; transition: all .15s; }
+.toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.code-block { display: block; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; line-height: 1.7; background: var(--navy); color: #E2E8F0; padding: 12px 14px; border-radius: 8px; }
+.run-btn { width: 100%; font-family: inherit; font-size: 13.5px; font-weight: 800; padding: 12px; border-radius: 8px; border: none; background: var(--primary); color: #fff; cursor: pointer; margin-bottom: 16px; transition: background .15s; }
+.run-btn:hover { background: var(--primary-d); }
+.state-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.state-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; text-align: center; }
+.state-label { display: block; font-size: 10.5px; font-weight: 700; color: var(--subtle); margin-bottom: 4px; }
+.state-value { display: block; font-size: 12px; font-weight: 800; color: var(--navy); }
+.mini-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 10px; }
+.mini-table th, .mini-table td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; }
+.mini-table th { background: #fff; color: var(--muted); font-weight: 700; }
+.mini-table td { font-family: var(--mono); color: var(--ink); background: #fff; }
+.counter-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--ink2); }
+.counter-row output { font-family: var(--mono); color: var(--primary-d); font-weight: 800; }
+.return-link { display: inline-block; margin-top: 18px; font-size: 12.5px; font-weight: 700; color: var(--primary-d); text-decoration: none; background: var(--primary-l); padding: 8px 14px; border-radius: 20px; }
+.return-link:hover { background: #E0E7FF; }
+.flow-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.flow-node { flex: 1; min-width: 88px; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--ink2); background: #fff; border: 1px solid var(--line2); border-radius: 8px; padding: 12px 8px; transition: color .2s, background .2s, border-color .2s; }
+.flow-node.active { color: #fff; background: var(--primary); border-color: var(--primary); }
+.flow-arrow { font-size: 18px; font-weight: 800; color: var(--line2); transition: color .2s; }
+.flow-arrow.active { color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div>
+      <div class="top-title">FD Week 04 인터랙티브 패널</div>
+      <div class="top-sub">개념 시연용 5개 벤치 — 실제 데이터 전송 없음</div>
+    </div>
+    <nav class="bench-nav" aria-label="벤치 이동">
+      <button type="button" data-target="bench1" class="active">1 · 종가↔지표</button>
+      <button type="button" data-target="bench2">2 · URL 조립</button>
+      <button type="button" data-target="bench3">3 · GET/POST</button>
+      <button type="button" data-target="bench4">4 · 멱등 적재</button>
+      <button type="button" data-target="bench5">5 · 요청-응답 흐름</button>
+    </nav>
+  </div>
+</div>
+
+<main>
+
+<section id="bench1" class="bench" aria-labelledby="bench1-title">
+  <span class="bench-tag">벤치 1 · 개념 시뮬레이션</span>
+  <div class="bench-head">
+    <h2 id="bench1-title">종가가 바뀌면 지표도 바뀐다</h2>
+  </div>
+  <p class="bench-note">슬라이더는 <strong>가상의 종가</strong>를 움직여보는 개념 시연입니다. 실제 시세가 아니며, 재무제표 값(순이익·자본총계·발행주식수)은 삼성전자 2025 연결 기준으로 고정되어 있습니다.</p>
+  <div class="bench-body two-col">
+    <div class="panel-card">
+      <label for="b1-price" class="ctrl-label">가상 종가 (원)</label>
+      <input type="range" id="b1-price" min="30000" max="110000" step="1" value="67784" data-state-anchor>
+      <output for="b1-price" id="b1-price-out" class="ctrl-value">67,784 원</output>
+      <div class="fixed-box">
+        <div class="fixed-title">고정된 재무제표 값 (2025 연결, 억원)</div>
+        <ul class="fixed-list">
+          <li>당기순이익 <strong>452,068</strong></li>
+          <li>자본총계 <strong>4,363,203</strong></li>
+          <li>보통주 발행주식수 <strong>5,919,637,922</strong>주</li>
+        </ul>
+      </div>
+    </div>
+    <div class="panel-card result-card">
+      <div class="result-row">
+        <span class="result-label">시가총액</span>
+        <output for="b1-price" id="b1-mcap" class="result-value">4,012,567 억원</output>
+      </div>
+      <div class="result-row">
+        <span class="result-label">PER</span>
+        <output for="b1-price" id="b1-per" class="result-value">8.88 배</output>
+      </div>
+      <div class="result-row">
+        <span class="result-label">PBR</span>
+        <output for="b1-price" id="b1-pbr" class="result-value">0.92 배</output>
+      </div>
+      <div class="result-row dim">
+        <span class="result-label">ROE <span class="hint">(종가와 무관 · 항상 고정)</span></span>
+        <output for="b1-price" id="b1-roe" class="result-value">10.4 %</output>
+      </div>
+    </div>
+  </div>
+  <a class="return-link" href="FD-04-week04-deck.html#slide-17" target="_blank" rel="noopener">← 덱으로 돌아가기 (§500 시가총액·세 지표)</a>
+</section>
+
+<section id="bench2" class="bench" hidden aria-labelledby="bench2-title">
+  <span class="bench-tag">벤치 2 · 무(無)전송 시연</span>
+  <div class="bench-head">
+    <h2 id="bench2-title">주소의 빈칸을 채우면 GET 요청이 된다</h2>
+  </div>
+  <p class="bench-note">드롭다운은 URL 뒤에 붙는 파라미터입니다. <strong>실제로 서버에 전송하지 않으며</strong>, 인증키는 어떤 경우에도 <code>●●●●●●●●</code>로 가려집니다.</p>
+  <div class="bench-body">
+    <div class="panel-card">
+      <div class="ctrl-row">
+        <div>
+          <label for="b2-year" class="ctrl-label">bsns_year (사업연도)</label>
+          <select id="b2-year" data-state-anchor="b2-year">
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025" selected>2025</option>
+          </select>
+        </div>
+        <div>
+          <label for="b2-reprt" class="ctrl-label">reprt_code (보고서 종류)</label>
+          <select id="b2-reprt" data-state-anchor="b2-reprt">
+            <option value="11013">11013 · 1분기보고서</option>
+            <option value="11012">11012 · 반기보고서</option>
+            <option value="11014">11014 · 3분기보고서</option>
+            <option value="11011" selected>11011 · 사업보고서(연간)</option>
+          </select>
+        </div>
+      </div>
+      <div class="fixed-box">
+        <div class="fixed-title">고정된 값 (바뀌지 않음)</div>
+        <ul class="fixed-list">
+          <li>corp_code <strong>00126380</strong> (삼성전자 고유번호)</li>
+          <li>crtfc_key <strong>●●●●●●●●●●●●●●●●</strong></li>
+        </ul>
+      </div>
+    </div>
+    <div class="panel-card">
+      <div class="ctrl-label">조립된 GET 요청 주소 (전송되지 않음)</div>
+      <output for="b2-year b2-reprt" id="b2-url" class="url-box">https://opendart.fss.or.kr/api/fnlttSinglAcnt.json?crtfc_key=●●●●●●●●●●●●●●●●&amp;corp_code=00126380&amp;bsns_year=2025&amp;reprt_code=11011</output>
+      <p class="bench-caption">드롭다운을 바꾸면 <code>bsns_year</code>와 <code>reprt_code</code> 부분만 바뀝니다 — 기본주소·crtfc_key·corp_code 세 조각은 그대로입니다.</p>
+    </div>
+  </div>
+  <a class="return-link" href="FD-04-week04-deck.html#slide-9" target="_blank" rel="noopener">← 덱으로 돌아가기 (§300 파라미터 조립의 고통)</a>
+</section>
+
+<section id="bench3" class="bench" hidden aria-labelledby="bench3-title">
+  <span class="bench-tag">벤치 3 · 개념 대비</span>
+  <div class="bench-head">
+    <h2 id="bench3-title">GET은 읽기, POST는 쓰기</h2>
+  </div>
+  <p class="bench-note">DART 실습은 전부 <strong>GET</strong>입니다. 이 벤치는 GET과 POST의 차이를 보여주는 개념 대비이며, 실제 요청은 전송되지 않습니다.</p>
+  <div class="bench-body">
+    <div class="toggle-row" role="radiogroup" aria-label="요청 방식 선택">
+      <button type="button" class="toggle-btn active" id="b3-get" data-state-anchor aria-pressed="true">GET · 조회</button>
+      <button type="button" class="toggle-btn" id="b3-post" data-state-anchor aria-pressed="false">POST · 저장</button>
+    </div>
+    <div class="bench-body two-col">
+      <div class="panel-card">
+        <div class="fixed-title">요청 (Request)</div>
+        <output for="b3-get b3-post" id="b3-request" class="code-block">GET /watchlist?stock=005930 HTTP/1.1
+Host: contest-server.example</output>
+      </div>
+      <div class="panel-card">
+        <div class="fixed-title">응답 (Response)</div>
+        <output for="b3-get b3-post" id="b3-response" class="code-block">200 OK
+{"stock": "005930", "name": "삼성전자"}</output>
+      </div>
+    </div>
+  </div>
+  <a class="return-link" href="FD-04-week04-deck.html#slide-5" target="_blank" rel="noopener">← 덱으로 돌아가기 (§200 GET·POST 두 동작)</a>
+</section>
+
+<section id="bench4" class="bench" hidden aria-labelledby="bench4-title">
+  <span class="bench-tag">벤치 4 · 상태 시연</span>
+  <div class="bench-head">
+    <h2 id="bench4-title">같은 키로 두 번 넣어도 한 행</h2>
+  </div>
+  <p class="bench-note"><code>PRIMARY KEY (code, year)</code>가 걸린 <code>financials</code> 표에 같은 키로 여러 번 적재를 실행해도, 행 개수는 항상 1로 유지됩니다.</p>
+  <div class="bench-body two-col">
+    <div class="panel-card">
+      <button type="button" id="b4-run" class="run-btn" data-state-anchor>UPSERT 실행 (code=005930, year=2025)</button>
+      <div class="state-strip">
+        <div class="state-box"><span class="state-label">실행 전</span><output id="b4-before" class="state-value">행 없음</output></div>
+        <div class="state-box"><span class="state-label">실행</span><output id="b4-action" class="state-value">대기 중</output></div>
+        <div class="state-box"><span class="state-label">실행 후</span><output id="b4-after" class="state-value">행 없음</output></div>
+      </div>
+    </div>
+    <div class="panel-card">
+      <div class="fixed-title">financials 테이블 (code, year 기준)</div>
+      <table class="mini-table">
+        <thead><tr><th>code</th><th>year</th><th>net_income(억원)</th></tr></thead>
+        <tbody id="b4-table"><tr><td colspan="3" style="color:var(--subtle);">행 없음</td></tr></tbody>
+      </table>
+      <div class="counter-row">
+        <span>실행 횟수 <output id="b4-clicks">0</output></span>
+        <span>행 개수 <output id="b4-rowcount">0</output></span>
+      </div>
+    </div>
+  </div>
+  <a class="return-link" href="FD-04-week04-deck.html#slide-16" target="_blank" rel="noopener">← 덱으로 돌아가기 (§500 PRIMARY KEY 멱등 적재)</a>
+</section>
+
+<section id="bench5" class="bench" hidden aria-labelledby="bench5-title">
+  <span class="bench-tag">벤치 5 · 단계별 시연</span>
+  <div class="bench-head">
+    <h2 id="bench5-title">요청 한 번에 번거로움 네 단계가 숨어 있다</h2>
+  </div>
+  <p class="bench-note">버튼을 눌러 학생 코드 → OpenDART API → 금감원 DB로 이어지는 요청-응답을 한 단계씩 확인합니다. <strong>실제로 전송하지 않으며</strong>, 각 단계는 §300의 고통 ①~④와 그대로 대응합니다.</p>
+  <div class="panel-card">
+    <div class="flow-row">
+      <div class="flow-node" id="b5-node-student">학생 코드</div>
+      <div class="flow-arrow" id="b5-arrow-1">→</div>
+      <div class="flow-node" id="b5-node-api">OpenDART API</div>
+      <div class="flow-arrow" id="b5-arrow-2">→</div>
+      <div class="flow-node" id="b5-node-db">금감원 DB</div>
+    </div>
+    <button type="button" id="b5-next" class="run-btn" data-state-anchor>다음 단계 →</button>
+    <div class="fixed-box">
+      <div class="fixed-title" id="b5-step-label">대기 중</div>
+      <div id="b5-step-desc" style="font-size:12.5px; color:var(--ink2); line-height:1.6;">"다음 단계"를 눌러 ①부터 시작합니다.</div>
+    </div>
+  </div>
+  <div class="bench-body two-col" style="margin-top:14px;">
+    <div class="panel-card">
+      <div class="fixed-title">① ② 요청 단계의 번거로움</div>
+      <ul class="fixed-list">
+        <li>① 조립 — 4개 파라미터를 주소에 손으로 채운다</li>
+        <li>② 탐색 — 30행 중 '당기순이익(손실)' 행을 눈으로 찾는다</li>
+      </ul>
+    </div>
+    <div class="panel-card">
+      <div class="fixed-title">③ ④ 응답 이후의 번거로움</div>
+      <ul class="fixed-list">
+        <li>③ 변환 — 쉼표 문자열은 그대로 더할 수 없다</li>
+        <li>④ 환산 — 원을 억원으로 나누지 않으면 지표가 뒤틀린다</li>
+      </ul>
+    </div>
+  </div>
+  <a class="return-link" href="FD-04-week04-deck.html#slide-9" target="_blank" rel="noopener">← 덱으로 돌아가기 (§300 요청-응답과 번거로움 네 단계)</a>
+</section>
+
+</main>
+
+<script>
+// ---- 탭 네비게이션 (state-strategy: all-reachable, 해시로 복귀 가능) ----
+const benches = ['bench1', 'bench2', 'bench3', 'bench4', 'bench5'];
+const navButtons = document.querySelectorAll('.bench-nav button');
+
+function showBench(id) {
+  if (!benches.includes(id)) id = 'bench1';
+  benches.forEach(b => {
+    document.getElementById(b).hidden = (b !== id);
+  });
+  navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.target === id));
+}
+
+function initFromHash() {
+  const id = window.location.hash.replace('#', '');
+  showBench(id || 'bench1');
+}
+
+navButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    window.location.hash = btn.dataset.target;
+  });
+});
+
+window.addEventListener('hashchange', initFromHash);
+window.addEventListener('DOMContentLoaded', initFromHash);
+
+// ---- 벤치 1: 종가 슬라이더 → 시가총액·PER·PBR·ROE ----
+const NET_INCOME_EOK = 452068;
+const EQUITY_EOK = 4363203;
+const SHARES = 5919637922;
+
+function fmt(n, digits) {
+  return n.toLocaleString('ko-KR', { maximumFractionDigits: digits === undefined ? 0 : digits, minimumFractionDigits: digits === undefined ? 0 : digits });
+}
+
+function updateBench1() {
+  const price = Number(document.getElementById('b1-price').value);
+  document.getElementById('b1-price-out').textContent = fmt(price) + ' 원';
+  const mcapEok = Math.round(price * SHARES / 1e8);
+  const per = mcapEok / NET_INCOME_EOK;
+  const pbr = mcapEok / EQUITY_EOK;
+  const roe = (NET_INCOME_EOK / EQUITY_EOK) * 100;
+  document.getElementById('b1-mcap').textContent = fmt(mcapEok) + ' 억원';
+  document.getElementById('b1-per').textContent = fmt(per, 2) + ' 배';
+  document.getElementById('b1-pbr').textContent = fmt(pbr, 2) + ' 배';
+  document.getElementById('b1-roe').textContent = fmt(roe, 1) + ' %';
+}
+document.getElementById('b1-price').addEventListener('input', updateBench1);
+
+// ---- 벤치 2: 파라미터 드롭다운 → GET URL 조립 (전송 없음) ----
+function updateBench2() {
+  const year = document.getElementById('b2-year').value;
+  const reprt = document.getElementById('b2-reprt').value;
+  const url = 'https://opendart.fss.or.kr/api/fnlttSinglAcnt.json?crtfc_key=●●●●●●●●●●●●●●●●&corp_code=00126380&bsns_year=' + year + '&reprt_code=' + reprt;
+  document.getElementById('b2-url').textContent = url;
+}
+document.getElementById('b2-year').addEventListener('change', updateBench2);
+document.getElementById('b2-reprt').addEventListener('change', updateBench2);
+
+// ---- 벤치 3: GET/POST 토글 ----
+const b3get = document.getElementById('b3-get');
+const b3post = document.getElementById('b3-post');
+const b3request = document.getElementById('b3-request');
+const b3response = document.getElementById('b3-response');
+
+function setB3(mode) {
+  const isGet = mode === 'GET';
+  b3get.classList.toggle('active', isGet);
+  b3post.classList.toggle('active', !isGet);
+  b3get.setAttribute('aria-pressed', String(isGet));
+  b3post.setAttribute('aria-pressed', String(!isGet));
+  if (isGet) {
+    b3request.textContent = 'GET /watchlist?stock=005930 HTTP/1.1\nHost: contest-server.example';
+    b3response.textContent = '200 OK\n{"stock": "005930", "name": "삼성전자"}';
+  } else {
+    b3request.textContent = 'POST /watchlist HTTP/1.1\nHost: contest-server.example\nContent-Type: application/json\n\n{"stock": "005930"}';
+    b3response.textContent = '201 Created\n{"saved": true, "stock": "005930"}';
+  }
+}
+b3get.addEventListener('click', () => setB3('GET'));
+b3post.addEventListener('click', () => setB3('POST'));
+
+// ---- 벤치 4: 같은 키로 여러 번 실행해도 행은 1개 ----
+let b4clicks = 0;
+let b4netIncome = NET_INCOME_EOK;
+const b4Before = document.getElementById('b4-before');
+const b4Action = document.getElementById('b4-action');
+const b4After = document.getElementById('b4-after');
+const b4Table = document.getElementById('b4-table');
+const b4ClicksOut = document.getElementById('b4-clicks');
+const b4RowCountOut = document.getElementById('b4-rowcount');
+
+document.getElementById('b4-run').addEventListener('click', () => {
+  const hadRow = b4clicks > 0;
+  b4Before.textContent = hadRow ? '행 1개 (기존값)' : '행 없음';
+  b4Action.textContent = hadRow ? 'UPDATE (덮어쓰기)' : 'INSERT (신규)';
+  b4clicks += 1;
+  b4netIncome += 1; // 값은 매번 갱신되지만 행 수는 늘지 않는다
+  b4After.textContent = '행 1개 (net_income=' + fmt(b4netIncome) + ')';
+  b4Table.innerHTML = '<tr><td>005930</td><td>2025</td><td>' + fmt(b4netIncome) + '</td></tr>';
+  b4ClicksOut.textContent = String(b4clicks);
+  b4RowCountOut.textContent = '1';
+});
+
+// ---- 벤치 5: 요청-응답 단계별 시연 ----
+const B5_STEPS = [
+  { label: '대기 중', desc: '"다음 단계"를 눌러 ①부터 시작합니다.', active: null },
+  { label: '① 조립', desc: 'crtfc_key·corp_code·bsns_year·reprt_code 4개를 학생이 손으로 주소에 채웁니다.', active: 'req' },
+  { label: '② 탐색', desc: '금감원 DB가 CFS·OFS 두 벌 30행을 돌려주면, 그 중 "당기순이익(손실)" 행을 눈으로 찾습니다.', active: 'db' },
+  { label: '③ 변환', desc: '"45,206,805,000,000" 같은 쉼표 문자열을 숫자로 바꿉니다.', active: 'resp' },
+  { label: '④ 환산 — 기준값 확보', desc: '원 단위를 억원으로 나누면 당기순이익 452,068억원(45.2조), 자본총계 4,363,203억원(436.3조)이 이번 주 내내 쓸 기준값이 됩니다.', active: 'resp' },
+];
+let b5step = 0;
+const b5NodeStudent = document.getElementById('b5-node-student');
+const b5NodeApi = document.getElementById('b5-node-api');
+const b5NodeDb = document.getElementById('b5-node-db');
+const b5Arrow1 = document.getElementById('b5-arrow-1');
+const b5Arrow2 = document.getElementById('b5-arrow-2');
+const b5Label = document.getElementById('b5-step-label');
+const b5Desc = document.getElementById('b5-step-desc');
+const b5Next = document.getElementById('b5-next');
+
+function renderB5() {
+  const s = B5_STEPS[b5step];
+  b5Label.textContent = s.label;
+  b5Desc.textContent = s.desc;
+  [b5NodeStudent, b5NodeApi, b5NodeDb, b5Arrow1, b5Arrow2].forEach(el => el.classList.remove('active'));
+  if (s.active === 'req') {
+    b5NodeStudent.classList.add('active'); b5Arrow1.classList.add('active'); b5NodeApi.classList.add('active');
+  } else if (s.active === 'db') {
+    b5NodeApi.classList.add('active'); b5Arrow2.classList.add('active'); b5NodeDb.classList.add('active');
+  } else if (s.active === 'resp') {
+    b5NodeDb.classList.add('active'); b5Arrow2.classList.add('active'); b5NodeApi.classList.add('active'); b5Arrow1.classList.add('active'); b5NodeStudent.classList.add('active');
+  }
+  b5Next.textContent = (b5step >= B5_STEPS.length - 1) ? '처음부터 다시 →' : '다음 단계 →';
+}
+b5Next.addEventListener('click', () => {
+  b5step = (b5step + 1) % B5_STEPS.length;
+  renderB5();
+});
+
+updateBench1();
+updateBench2();
+renderB5();
+</script>
+
+</body>
+</html>
