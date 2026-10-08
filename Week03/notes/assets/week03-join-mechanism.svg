@@ -1,0 +1,55 @@
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" font-family="'Pretendard','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="720" height="300" fill="#FAF7F0"/>
+
+  <!-- faint background: ON 없을 때 모든 선이 모든 행으로 -->
+  <g stroke="#DC2626" stroke-width="0.6" opacity="0.18">
+    <line x1="150" y1="70" x2="480" y2="70"/><line x1="150" y1="70" x2="480" y2="110"/><line x1="150" y1="70" x2="480" y2="150"/>
+    <line x1="150" y1="110" x2="480" y2="70"/><line x1="150" y1="110" x2="480" y2="110"/><line x1="150" y1="110" x2="480" y2="150"/>
+    <line x1="150" y1="150" x2="480" y2="70"/><line x1="150" y1="150" x2="480" y2="110"/><line x1="150" y1="150" x2="480" y2="150"/>
+  </g>
+  <text x="360" y="40" font-size="10.5" fill="#DC2626" text-anchor="middle" opacity="0.7">(옅은 배경 = ON을 지웠을 때: 모든 행이 모든 행과 이어진다)</text>
+
+  <!-- companies table -->
+  <text x="150" y="60" font-size="12" font-weight="700" text-anchor="middle" fill="#0F2747">companies</text>
+  <g font-size="10.5">
+    <rect x="80" y="65" width="70" height="90" fill="#E2E8F0" stroke="#0F2747"/>
+    <rect x="150" y="65" width="70" height="90" fill="#FCD34D" fill-opacity="0.35" stroke="#D97706"/>
+    <text x="115" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">name</text>
+    <text x="185" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">code</text>
+    <text x="115" y="100" text-anchor="middle">삼성전자</text><text x="185" y="100" text-anchor="middle">005930</text>
+    <text x="115" y="120" text-anchor="middle">SK하이닉스</text><text x="185" y="120" text-anchor="middle">000660</text>
+    <text x="115" y="140" text-anchor="middle">NAVER</text><text x="185" y="140" text-anchor="middle">035420</text>
+  </g>
+
+  <!-- financials table -->
+  <text x="480" y="60" font-size="12" font-weight="700" text-anchor="middle" fill="#0F2747">financials</text>
+  <g font-size="10.5">
+    <rect x="410" y="65" width="70" height="90" fill="#FCD34D" fill-opacity="0.35" stroke="#D97706"/>
+    <rect x="480" y="65" width="70" height="90" fill="#E2E8F0" stroke="#0F2747"/>
+    <text x="445" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">code</text>
+    <text x="515" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">roe</text>
+    <text x="445" y="100" text-anchor="middle">005930</text><text x="515" y="100" text-anchor="middle">0.11</text>
+    <text x="445" y="120" text-anchor="middle">000660</text><text x="515" y="120" text-anchor="middle">0.24</text>
+    <text x="445" y="140" text-anchor="middle">035420</text><text x="515" y="140" text-anchor="middle">0.09</text>
+  </g>
+
+  <!-- matched ON lines (solid, only same code) -->
+  <line x1="220" y1="100" x2="410" y2="100" stroke="#16A34A" stroke-width="2.5"/>
+  <line x1="220" y1="120" x2="410" y2="120" stroke="#16A34A" stroke-width="2.5"/>
+  <line x1="220" y1="140" x2="410" y2="140" stroke="#16A34A" stroke-width="2.5"/>
+  <text x="315" y="95" font-size="10" fill="#16A34A" text-anchor="middle" font-weight="700">ON code = code</text>
+
+  <!-- merged result -->
+  <text x="360" y="195" font-size="12" font-weight="700" text-anchor="middle" fill="#0F2747">JOIN 결과 — 같은 code끼리 한 행으로 합쳐진다</text>
+  <g font-size="10.5">
+    <rect x="150" y="205" width="120" height="70" fill="#A7F3D0" fill-opacity="0.4" stroke="#16A34A"/>
+    <rect x="270" y="205" width="90" height="70" fill="#FCD34D" fill-opacity="0.35" stroke="#D97706"/>
+    <rect x="360" y="205" width="90" height="70" fill="#A7F3D0" fill-opacity="0.4" stroke="#16A34A"/>
+    <text x="210" y="220" text-anchor="middle" font-weight="700">name</text>
+    <text x="315" y="220" text-anchor="middle" font-weight="700">code</text>
+    <text x="405" y="220" text-anchor="middle" font-weight="700">roe</text>
+    <text x="210" y="238" text-anchor="middle">삼성전자</text><text x="315" y="238" text-anchor="middle">005930</text><text x="405" y="238" text-anchor="middle">0.11</text>
+    <text x="210" y="255" text-anchor="middle">SK하이닉스</text><text x="315" y="255" text-anchor="middle">000660</text><text x="405" y="255" text-anchor="middle">0.24</text>
+    <text x="210" y="272" text-anchor="middle">NAVER</text><text x="315" y="272" text-anchor="middle">035420</text><text x="405" y="272" text-anchor="middle">0.09</text>
+  </g>
+</svg>

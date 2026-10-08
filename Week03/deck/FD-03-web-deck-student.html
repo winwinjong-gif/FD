@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="lec-html-render-check" content="desktop,mobile">
+<title>Week 03: 재무데이터를 위한 SQLite & 클라우드 DB | 재무데이터분석</title>
+<style>
+:root {
+  --primary: #0E7C7B;
+  --primary-d: #085453;
+  --primary-l: #E6FFFA;
+  --navy: #0F2747;
+  --navy2: #1E3A5F;
+  --ink: #161D29;
+  --ink2: #33404F;
+  --muted: #64748B;
+  --subtle: #94A3B8;
+  --line: #E2E8F0;
+  --line2: #CBD5E1;
+  --surface: #FFFFFF;
+  --surf2: #FAF7F0;
+  --surf3: #F1F5F9;
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+  --violet: #7C3AED;
+  --teal: #0E7C7B;
+  --amber: #E67E22;
+  --gold: #FCD34D;
+  --blue: #2563EB;
+  
+  --sb-bg: #091322;
+  --sb-hover: #132438;
+  --sb-active: #1A365D;
+  --sb-border: #1E293B;
+  --sb-text: #94A3B8;
+  --sb-text-hl: #38BDF8;
+  --sb-title: #E2E8F0;
+  
+  --stage-bg: #1E293B;
+  --topbar-bg: #0F2747;
+  
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; width: 100%; overflow: hidden; font-family: var(--font); background: var(--stage-bg); color: var(--ink); line-height: 1.45; font-size: 14px; -webkit-font-smoothing: antialiased; }
+
+.app-shell { display: flex; height: 100vh; width: 100vw; position: relative; }
+
+/* Sidebar TOC */
+.sidebar {
+  width: 310px;
+  background: var(--sb-bg);
+  color: var(--sb-text);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--sb-border);
+  flex-shrink: 0;
+  transition: margin-left var(--dur-base) ease;
+  z-index: 100;
+}
+.sidebar.collapsed { margin-left: -310px; }
+
+.sb-header { padding: 14px 14px 10px; border-bottom: 1px solid var(--sb-border); }
+.sb-search-box { position: relative; }
+.sb-search-box input {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 6px 10px 6px 28px;
+  color: #fff;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.sb-search-box input:focus { border-color: var(--sb-text-hl); background: rgba(255,255,255,0.12); }
+.sb-search-box .icon {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: var(--sb-text); pointer-events: none;
+}
+
+.sb-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 8px 30px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.sb-list::-webkit-scrollbar { width: 5px; }
+.sb-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+.sb-section-group { margin-bottom: 12px; }
+.sb-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #64748B;
+  padding: 5px 10px 3px;
+}
+
+.sb-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 2px;
+  text-decoration: none;
+  color: var(--sb-text);
+  font-size: 11.5px;
+}
+.sb-item:hover { background: var(--sb-hover); color: #fff; }
+.sb-item.active { background: var(--sb-active); color: var(--sb-text-hl); font-weight: 600; }
+.sb-item-num { font-family: var(--mono); font-size: 10.5px; opacity: 0.7; width: 22px; flex-shrink: 0; padding-top: 1px; }
+.sb-item-title { flex: 1; line-height: 1.35; word-break: keep-all; }
+
+.sb-footer {
+  padding: 8px 14px;
+  border-top: 1px solid var(--sb-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  color: #64748B;
+}
+.sb-footer kbd {
+  background: rgba(255,255,255,0.1);
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: #CBD5E1;
+}
+
+/* Main Stage */
+.main-stage { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+.topbar {
+  height: 48px;
+  background: var(--topbar-bg);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  color: #fff;
+  z-index: 50;
+  flex-shrink: 0;
+}
+.topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-icon:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.btn-icon.active { background: rgba(56,189,248,0.2); color: #38BDF8; }
+
+.deck-info { display: flex; align-items: center; gap: 10px; }
+.deck-badge {
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.deck-title { font-size: 13px; font-weight: 600; color: #F1F5F9; }
+
+.slide-counter {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: rgba(255,255,255,0.1);
+  padding: 3px 9px;
+  border-radius: 12px;
+  color: #E2E8F0;
+}
+
+.topbar-nav-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+}
+.topbar-nav-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* Slide Canvas Container */
+.canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 18px;
+  overflow: auto;
+  position: relative;
+}
+
+.slide {
+  display: none;
+  width: min(1240px, 96vw, calc((100vh - 105px) * 16 / 9));
+  max-height: calc(100vh - 105px);
+  aspect-ratio: 16 / 9;
+  background: var(--surface);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+  flex-direction: column;
+  padding: 26px 36px 30px;
+  border-radius: 8px;
+}
+.slide.active {
+  display: flex;
+  animation: slideFade var(--dur-base) var(--ease-spring);
+}
+
+@keyframes slideFade {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Slide Components */
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.kicker::before {
+  content: '';
+  width: 18px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+.action-title {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.action-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  line-height: 1.45;
+}
+
+.slide-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Layout Grids */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; height: 100%; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; height: 100%; }
+.grid-2-1 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; height: 100%; }
+.grid-1-2 { display: grid; grid-template-columns: 1fr 1.35fr; gap: 16px; height: 100%; }
+
+/* Visual Cards */
+.card {
+  background: var(--surf2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.card.highlight {
+  background: var(--primary-l);
+  border-color: #99F6E4;
+}
+.card.alert {
+  background: #FEF2F2;
+  border-color: #FECACA;
+}
+.card.warning {
+  background: #FFFBEB;
+  border-color: #FDE68A;
+}
+
+.card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Stat Pill & Stat Row */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.stat-box {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.stat-val { font-size: 17px; font-weight: 800; color: var(--primary); font-family: var(--mono); }
+.stat-lbl { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+/* Tables */
+.tbl-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.tbl-compare th {
+  background: var(--navy);
+  color: #fff;
+  padding: 7px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.tbl-compare td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.tbl-compare tr:nth-child(even) { background: var(--surf3); }
+
+/* Code block */
+.code-box {
+  background: #0F172A;
+  color: #E2E8F0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-x: auto;
+  flex: 1;
+}
+.code-out {
+  background: #1E293B;
+  color: #38BDF8;
+  border-left: 3px solid #38BDF8;
+  padding: 7px 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  margin-top: 6px;
+  border-radius: 0 4px 4px 0;
+}
+
+/* SQL Highlighting tokens */
+.hl-kwd { color: #F472B6; font-weight: 700; }
+.hl-fn { color: #38BDF8; font-weight: 600; }
+.hl-str { color: #FCD34D; }
+.hl-num { color: #A7F3D0; }
+.hl-cmt { color: #64748B; font-style: italic; }
+
+/* SVG containers */
+.viz-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  overflow: hidden;
+}
+.viz-box svg { max-width: 100%; max-height: 100%; display: block; }
+
+/* Footer Takeaway Pill */
+.takeaway-bar {
+  margin-top: 12px;
+  padding: 7px 12px;
+  background: var(--navy);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.takeaway-badge {
+  background: var(--amber);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.takeaway-text { font-weight: 500; line-height: 1.35; }
+
+/* Interactive Lab Bridge Link */
+.interactive-bridge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #1E56A0 0%, #0F2747 100%);
+  color: #fff !important;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-decoration: none;
+  box-shadow: 0 2px 5px rgba(15, 39, 71, 0.2);
+  transition: all 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.interactive-bridge-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 39, 71, 0.35);
+  background: linear-gradient(135deg, #2563EB 0%, #1E56A0 100%);
+}
+
+/* Presenter Notes Drawer */
+.notes-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: #0B132B;
+  color: #E2E8F0;
+  border-top: 2px solid var(--sb-text-hl);
+  padding: 14px 22px;
+  transform: translateY(100%);
+  transition: transform var(--dur-base) ease;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+}
+.notes-drawer.open { transform: translateY(0); }
+
+.notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+.notes-title { font-size: 11.5px; font-weight: 700; color: var(--sb-text-hl); letter-spacing: 0.8px; text-transform: uppercase; }
+.notes-content {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #CBD5E1;
+}
+.notes-content p { margin-bottom: 6px; }
+.notes-content strong { color: #F1F5F9; }
+.notes-timing {
+  display: inline-block;
+  background: rgba(255,255,255,0.1);
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--gold);
+  margin-left: 8px;
+}
+
+/* Typography & Callout helpers */
+h1, h2, h3 { color: var(--navy); }
+p { line-height: 1.45; }
+ul { padding-left: 18px; margin: 5px 0; }
+li { margin-bottom: 4px; font-size: 11.5px; color: var(--ink2); line-height: 1.45; }
+b, strong { color: var(--navy); }
+.hl { color: var(--primary); font-weight: 700; }
+.alert-text { color: var(--danger); font-weight: 700; }
+.amber-text { color: var(--amber); font-weight: 700; }
+.success-text { color: var(--success); font-weight: 700; }
+
+.formula-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  color: #3730A3;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Sidebar TOC -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div class="sb-search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="sbSearch" placeholder="슬라이드 검색 (TOC)...">
+      </div>
+    </div>
+    <div class="sb-list" id="sbList">
+      <!-- Section 1 -->
+      <div class="sb-section-group">
+        <div class="sb-section-title">Part 1: §100 왜 데이터베이스인가</div>
+        <a class="sb-item active" data-index="0">
+          <span class="sb-item-num">01</span>
+          <span class="sb-item-title">§100 앵커 질문: 조건 변경의 악몽</span>
+        </a>
+        <a class="sb-item" data-index="1">
+          <span class="sb-item-num">02</span>
+          <span class="sb-item-title">§100 5단계 파일 루프 병목 vs DB</span>
+        </a>
+        <a class="sb-item" data-index="2">
+          <span class="sb-item-num">03</span>
+          <span class="sb-item-title">§100 입문용 쇼핑몰 토이 모델</span>
+        </a>
+        <a class="sb-item" data-index="3">
+          <span class="sb-item-num">04</span>
+          <span class="sb-item-title">§100 토스증권 핀테크 아키텍처</span>
+        </a>
+        <a class="sb-item" data-index="4">
+          <span class="sb-item-num">05</span>
+          <span class="sb-item-title">§100 엑셀 vs DB: 4대 핵심 차이</span>
+        </a>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="sb-section-group">
+        <div class="sb-section-title">Part 2: §200 무설치 DB SQLite</div>
+        <a class="sb-item" data-index="5">
+          <span class="sb-item-num">06</span>
+          <span class="sb-item-title">§200 가상환경 커널 &amp; 4대 점검</span>
+        </a>
+        <a class="sb-item" data-index="6">
+          <span class="sb-item-num">07</span>
+          <span class="sb-item-title">§200 sqlite3.connect 연결 원리</span>
+        </a>
+        <a class="sb-item" data-index="7">
+          <span class="sb-item-num">08</span>
+          <span class="sb-item-title">§200 데이터 적재: append vs replace</span>
+        </a>
+        <a class="sb-item" data-index="8">
+          <span class="sb-item-num">09</span>
+          <span class="sb-item-title">§200 데이터 인출: pd.read_sql</span>
+        </a>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="sb-section-group">
+        <div class="sb-section-title">Part 3: §300 금융 분석 SQL 5대 문법</div>
+        <a class="sb-item" data-index="9">
+          <span class="sb-item-num">10</span>
+          <span class="sb-item-title">§300 1. WHERE &amp; 종목코드 따옴표</span>
+        </a>
+        <a class="sb-item" data-index="10">
+          <span class="sb-item-num">11</span>
+          <span class="sb-item-title">§300 2. ORDER BY &amp; LIMIT 랭킹</span>
+        </a>
+        <a class="sb-item" data-index="11">
+          <span class="sb-item-num">12</span>
+          <span class="sb-item-title">§300 3. 계산열(ROE) &amp; 정수 나눗셈</span>
+        </a>
+        <a class="sb-item" data-index="12">
+          <span class="sb-item-num">13</span>
+          <span class="sb-item-title">§300 4. GROUP BY 업종별 집계</span>
+        </a>
+        <a class="sb-item" data-index="13">
+          <span class="sb-item-num">14</span>
+          <span class="sb-item-title">§300 5. JOIN 표 잇기 메커니즘</span>
+        </a>
+        <a class="sb-item" data-index="14">
+          <span class="sb-item-num">15</span>
+          <span class="sb-item-title">§300 SQL 디버깅: 3대 흔한 에러</span>
+        </a>
+      </div>
+
+      <!-- Section 4 -->
+      <div class="sb-section-group">
+        <div class="sb-section-title">Part 4: §400 SQL ➔ pandas 파이프라인</div>
+        <a class="sb-item" data-index="15">
+          <span class="sb-item-num">16</span>
+          <span class="sb-item-title">§400 황금 분업: 줄이는 SQL, 주무르는 판다스</span>
+        </a>
+        <a class="sb-item" data-index="16">
+          <span class="sb-item-num">17</span>
+          <span class="sb-item-title">[BONUS]: SQL Injection 방지와 파라미터 바인딩</span>
+        </a>
+        <a class="sb-item" data-index="17">
+          <span class="sb-item-num">18</span>
+          <span class="sb-item-title">§400 엔드투엔드 파이프라인: DB에서 차트까지</span>
+        </a>
+      </div>
+
+      <!-- Section 5 -->
+      <div class="sb-section-group">
+        <div class="sb-section-title">Part 5: §500 4대 DB 지형도</div>
+        <a class="sb-item" data-index="18">
+          <span class="sb-item-num">19</span>
+          <span class="sb-item-title">§500 4대 데이터베이스 2축 매트릭스</span>
+        </a>
+        <a class="sb-item" data-index="19">
+          <span class="sb-item-num">20</span>
+          <span class="sb-item-title">§500 내 상황에 맞는 DB 의사결정 트리</span>
+        </a>
+      </div>
+
+      <!-- Section 6 -->
+      <div class="sb-section-group">
+        <div class="sb-section-title">Part 6: §600 클라우드 DB &amp; 브릿지</div>
+        <a class="sb-item" data-index="20">
+          <span class="sb-item-num">21</span>
+          <span class="sb-item-title">§600 Supabase 클라우드 DB 연동</span>
+        </a>
+        <a class="sb-item" data-index="21">
+          <span class="sb-item-num">22</span>
+          <span class="sb-item-title">§600 API 게이트웨이와 드라이브스루 보안</span>
+        </a>
+        <a class="sb-item" data-index="22">
+          <span class="sb-item-num">23</span>
+          <span class="sb-item-title">§600 AI와 MCP: 자연어 질의와 인간의 검증</span>
+        </a>
+        <a class="sb-item" data-index="23">
+          <span class="sb-item-num">24</span>
+          <span class="sb-item-title">§600 Week 04 브릿지: DART API 파이프라인</span>
+        </a>
+      </div>
+    </div>
+    <div class="sb-footer">
+      <span>단축키 안내</span>
+      <span><kbd>←</kbd> <kbd>→</kbd> 슬라이드 | <kbd>N</kbd> 노트 | <kbd>T</kbd> 목차</span>
+    </div>
+  </aside>
+
+  <!-- Main Stage -->
+  <main class="main-stage">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="btnToggleSidebar" title="목차 토글 (T)">☰</button>
+        <div class="deck-info">
+          <span class="deck-badge">FD Week03</span>
+          <span class="deck-title">재무데이터를 위한 SQLite &amp; 클라우드 DB</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="slide-counter" id="slideCounter">01 / 24</div>
+        <button class="topbar-nav-btn" id="btnPrevSlide" title="이전 (←)">◀</button>
+        <button class="topbar-nav-btn" id="btnNextSlide" title="다음 (→)">▶</button>
+        <button class="btn-icon" id="btnFullscreen" title="전체화면 (F)">⛶</button>
+      </div>
+    </header>
+
+    <!-- Canvas Container -->
+    <div class="canvas-container">
+
+      <!-- ==================== SLIDE 01 ==================== -->
+      <section class="slide active" id="slide-1">
+        <div class="kicker">§100 WHY DATABASE · ANCHOR QUESTION</div>
+        <h1 class="action-title">조건 하나 바꿨을 뿐인데, 왜 처음부터 다시일까?</h1>
+        <p class="action-sub">금융 데이터 분석가가 매일 마주하는 앵커 질문: "지금 살펴볼 만한 기업을 어떻게 골라내지?"</p>
+        
+        <div class="slide-content">
+          <div class="stat-row">
+            <div class="stat-box">
+              <div class="stat-val">3개</div>
+              <div class="stat-lbl">동시 조회 필수 파일</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val">5단계</div>
+              <div class="stat-lbl">반복 파일 루프</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val">3분 40초</div>
+              <div class="stat-lbl">파일 병합 대기 시간</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val">0.03초</div>
+              <div class="stat-lbl">DB WHERE 쿼리 속도</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🔍 분석가의 실무 질문: 좋은 기업 선별하기</div>
+              <p style="font-size:12px; margin-bottom:10px; color:var(--ink2);">
+                "매출이 꾸준히 늘고 있고, 같은 업종 평균보다 수익성(ROE)이 높으며, 최근 주가가 과열되지 않은 기업."
+              </p>
+              <ul>
+                <li><b>기업기본 (`companies`):</b> 종목코드, 회사명, 소속 업종</li>
+                <li><b>재무제표 (`financials`):</b> 분기별 매출액, 영업이익, 자본총계</li>
+                <li><b>주가수익률 (`returns`):</b> 일별 종가, 거래량, 기간 수익률</li>
+              </ul>
+              <div style="margin-top:auto; font-size:11px; color:var(--muted); background:#fff; padding:6px 10px; border-radius:4px; border:1px solid var(--line);">
+                💡 세 데이터는 독립된 출처에서 발생하며, 종목코드(<code>code</code>)로 연결됩니다.
+              </div>
+            </div>
+
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">⚠️ 팀장님의 한마디: 조건 변경 시나리오</div>
+              <div style="font-size:12px; font-weight:700; color:var(--danger); margin-bottom:6px;">
+                "어제 뽑은 매출 1조 원 이상 기업에서, 기준만 5,000억 원으로 낮춰 5개만 다시 뽑아와 봐."
+              </div>
+              <p style="font-size:11.5px; color:var(--ink2); margin-bottom:8px;">
+                조건 숫자 하나 바꿨을 뿐인데 발생하는 현실의 고통:
+              </p>
+              <ul>
+                <li>수백 MB짜리 CSV 파일 3개를 처음부터 다시 디스크에서 로딩</li>
+                <li>결측치 재처리 및 <code>pd.merge()</code> 무거운 병합 연산 재실행</li>
+                <li>메모리 사용량 급증(OOM) 및 팬 소음과 함께 무기력한 대기</li>
+              </ul>
+              <div style="margin-top:auto; font-size:11px; font-weight:700; color:var(--danger);">
+                질문: 데이터는 그대로인데 왜 매번 파일 전체를 처음부터 뒤집어까야 할까?
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">데이터는 데이터베이스에 안전하게 한 번 쌓아두고, 조건이 바뀔 땐 질문(SQL) 한 줄만 던져 0.03초 만에 꺼내 씁니다.</span>
+          <a href="FD-03-week03-interactive.html#p0" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗ (실험 0: 루프 대조)</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 02 ==================== -->
+      <section class="slide" id="slide-2">
+        <div class="kicker">§100 WHY DATABASE · 5-STAGE FILE LOOP</div>
+        <h1 class="action-title">5단계 파일 루프의 병목과 DB 엔진의 혁신</h1>
+        <p class="action-sub">파일 방식은 조건 변경마다 전체 과정을 원점 반복하지만, DB는 질문(WHERE) 한 줄만 바뀝니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2-1">
+            <div class="viz-box">
+              <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto;">
+                <rect x="0" y="0" width="720" height="260" fill="#FAF7F0" rx="6"/>
+                <text x="20" y="26" font-size="13" font-weight="700" fill="#0F2747">파일로 답하기 (5단계 병목 루프)</text>
+                <rect x="20" y="38" width="70" height="34" rx="6" fill="#E2E8F0" stroke="#64748B"/>
+                <text x="55" y="59" font-size="11" text-anchor="middle" fill="#0F2747">CSV 1</text>
+                <rect x="105" y="38" width="70" height="34" rx="6" fill="#E2E8F0" stroke="#64748B"/>
+                <text x="140" y="59" font-size="11" text-anchor="middle" fill="#0F2747">CSV 2</text>
+                <rect x="190" y="38" width="70" height="34" rx="6" fill="#E2E8F0" stroke="#64748B"/>
+                <text x="225" y="59" font-size="11" text-anchor="middle" fill="#0F2747">CSV 3</text>
+                <path d="M262 55 H300" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+                <rect x="302" y="38" width="80" height="34" rx="6" fill="#FCD34D" stroke="#D97706"/>
+                <text x="342" y="59" font-size="11" text-anchor="middle" fill="#0F2747">합치기</text>
+                <path d="M384 55 H422" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+                <rect x="424" y="38" width="80" height="34" rx="6" fill="#FCD34D" stroke="#D97706"/>
+                <text x="464" y="59" font-size="11" text-anchor="middle" fill="#0F2747">정리하기</text>
+                <path d="M506 55 H544" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+                <rect x="546" y="38" width="130" height="34" rx="6" fill="#FEF2F2" stroke="#DC2626"/>
+                <text x="611" y="59" font-size="11" text-anchor="middle" fill="#0F2747">조건을 바꾼다</text>
+                <path d="M611 74 C 611 120, 55 120, 55 76" stroke="#DC2626" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/>
+                <text x="330" y="118" font-size="11.5" font-weight="700" text-anchor="middle" fill="#DC2626">처음으로 돌아간다 — 조건 하나 바뀔 때마다 이 줄 전체를 다시</text>
+                
+                <line x1="10" y1="150" x2="710" y2="150" stroke="#CBD5E1" stroke-width="1"/>
+                
+                <text x="20" y="176" font-size="13" font-weight="700" fill="#0F2747">DB에 물어보기 (핀포인트 추출)</text>
+                <rect x="20" y="188" width="100" height="46" rx="6" fill="#0E7C7B"/>
+                <text x="70" y="216" font-size="11" text-anchor="middle" fill="#fff" font-weight="700">market_data.db</text>
+                <path d="M122 211 H160" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+                <rect x="162" y="196" width="280" height="30" rx="6" fill="#E2E8F0" stroke="#0F2747"/>
+                <text x="302" y="216" font-size="11" text-anchor="middle" fill="#0F2747" font-family="monospace">SELECT ... WHERE revenue > 500000</text>
+                <path d="M444 211 H482" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)"/>
+                <rect x="484" y="196" width="70" height="30" rx="6" fill="#A7F3D0" stroke="#16A34A"/>
+                <text x="519" y="216" font-size="11" text-anchor="middle" fill="#0F2747" font-weight="700">답 반환</text>
+                <text x="575" y="216" font-size="11.5" font-weight="700" fill="#16A34A">조건 변경 시 질문 한 줄만 교체!</text>
+                <defs>
+                  <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#64748B"/></marker>
+                  <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#DC2626"/></marker>
+                </defs>
+              </svg>
+            </div>
+
+            <div class="card">
+              <div class="card-title">⚙️ 시스템 메커니즘 대조</div>
+              <table class="tbl-compare" style="margin-top:4px;">
+                <tr>
+                  <th>구분</th>
+                  <th>파일 (CSV)</th>
+                  <th>데이터베이스</th>
+                </tr>
+                <tr>
+                  <td><b>데이터 접근</b></td>
+                  <td>전체 행 디스크 풀스캔</td>
+                  <td><b>B-Tree 인덱스</b> 핀포인트</td>
+                </tr>
+                <tr>
+                  <td><b>메모리(RAM)</b></td>
+                  <td>전체 파일 적재 (15GB)</td>
+                  <td><b>결과만 적재 (40MB)</b></td>
+                </tr>
+                <tr>
+                  <td><b>속도 반응</b></td>
+                  <td>수 분 소요 (OOM 위험)</td>
+                  <td><b>0.03초 즉각 반환</b></td>
+                </tr>
+              </table>
+              <div style="margin-top:auto; font-size:11px; color:var(--ink2); line-height:1.4;">
+                📌 <b>눈으로 확인할 점:</b> 위쪽 줄기(파일)에만 되돌아가는 붉은 화살표가 존재합니다. DB는 붉은 루프 자체를 제거합니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">B-Tree 인덱스를 탑재한 DB 엔진은 수백만 행 전체를 뒤집지 않고, 조건에 맞는 5개 행만 디스크에서 집어 올립니다.</span>
+          <a href="FD-03-week03-interactive.html#p0" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 03 ==================== -->
+      <section class="slide" id="slide-3">
+        <div class="kicker">§100 WHY DATABASE · SHOPPING MALL TOY MODEL</div>
+        <h1 class="action-title">입문용 토이 모델: 쇼핑몰의 세 표와 공통 열</h1>
+        <p class="action-sub">쇼핑몰이 user_id로 주문 내역을 묶듯, 금융 데이터는 종목코드(code) 하나로 모든 표를 연결합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🛍 일상 속 쇼핑몰 앱 (Toy Model)</div>
+              <p style="font-size:12px; margin-bottom:10px; color:var(--ink2);">
+                앱 화면 뒤에는 세 개의 독립된 표가 안전하게 저장되어 있습니다:
+              </p>
+              <table class="tbl-compare">
+                <tr><th>표 이름</th><th>저장하는 데이터</th><th>연결 열</th></tr>
+                <tr><td><b>사용자</b></td><td>회원번호, 이름, 주소, 연락처</td><td><span class="hl">user_id</span></td></tr>
+                <tr><td><b>주문</b></td><td>주문번호, 주문일시, 결제금액</td><td><span class="hl">user_id</span>, item_id</td></tr>
+                <tr><td><b>상품</b></td><td>상품번호, 상품명, 재고, 정가</td><td>item_id</td></tr>
+              </table>
+              <div style="margin-top:10px; font-size:11.5px; color:var(--navy); font-weight:600;">
+                "내 주문 내역"을 보여주는 원리: 사용자 표와 주문 표가 공유하는 <code class="formula-badge">user_id</code>로 잇기 때문!
+              </div>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title" style="color:var(--primary);">📈 금융 데이터 실무 (Production Model)</div>
+              <p style="font-size:12px; margin-bottom:10px; color:var(--ink2);">
+                쇼핑몰의 <code class="formula-badge">user_id</code>가 하던 역할을 금융에서는 <code class="formula-badge">code</code>가 합니다:
+              </p>
+              <table class="tbl-compare">
+                <tr><th>표 이름</th><th>저장하는 데이터</th><th>연결 열</th></tr>
+                <tr><td><b>companies</b></td><td>종목명, 소속업종, 상장일자</td><td><span class="hl">code (종목코드)</span></td></tr>
+                <tr><td><b>financials</b></td><td>분기실적, 매출액, 영업이익, 자본</td><td><span class="hl">code</span>, year, quarter</td></tr>
+                <tr><td><b>returns</b></td><td>일별 종가, 거래량, 수익률 시계열</td><td><span class="hl">code</span>, date</td></tr>
+              </table>
+              <div style="margin-top:10px; font-size:11.5px; color:var(--primary-d); font-weight:700;">
+                🎯 이번 주 내내 기억할 단 하나의 원칙: "두 표에 같이 들어 있는 열(code)로 잇는다!"
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">관계형 데이터베이스(RDBMS)의 모든 원리는 "각 표의 고유 식별자(종목코드)를 열쇠 삼아 연결한다"는 직관 하나로 통합니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 04 ==================== -->
+      <section class="slide" id="slide-4">
+        <div class="kicker">§100 WHY DATABASE · FINTECH ARCHITECTURE</div>
+        <h1 class="action-title">실전 핀테크 아키텍처: 토스증권 화면 뒤의 데이터 흐름</h1>
+        <p class="action-sub">앱 화면 하나를 보여주기 위해 API 수집, 중앙 데이터베이스(SSOT), 분석 파이프라인이 결합됩니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2-1">
+            <div class="viz-box" style="padding:4px;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" style="width:100%; height:100%;">
+                <rect width="100%" height="100%" fill="#0b0f19" rx="8"/>
+                <text x="360" y="28" text-anchor="middle" fill="#f8fafc" font-size="14" font-weight="700">🏛️ 실전 핀테크 &amp; 퀀트 알고리즘 트레이딩 아키텍처</text>
+                <text x="360" y="46" text-anchor="middle" fill="#94a3b8" font-size="10.5">"왜 매번 API를 부르지 않고, 중앙 DB에 데이터를 모아두고 쓸까?"</text>
+                
+                <!-- Layer 1 -->
+                <rect x="15" y="60" width="160" height="280" fill="#131b2e" stroke="#1e293b" rx="6"/>
+                <rect x="15" y="60" width="160" height="28" fill="rgba(59,130,246,0.15)" rx="6"/>
+                <text x="95" y="78" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="700">1. 외부 데이터 API</text>
+                
+                <rect x="25" y="98" width="140" height="90" fill="#1a233a" stroke="#3b82f6" rx="4"/>
+                <text x="95" y="118" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="700">OpenDART API</text>
+                <text x="95" y="134" text-anchor="middle" fill="#fbbf24" font-size="9.5">🎯 4주차 핵심 실습</text>
+                <text x="95" y="152" text-anchor="middle" fill="#94a3b8" font-size="10">상장사 분기 재무제표</text>
+                <text x="95" y="168" text-anchor="middle" fill="#94a3b8" font-size="9.5">PER · ROE · 사업보고서</text>
+                
+                <rect x="25" y="200" width="140" height="90" fill="#1a233a" stroke="#3b82f6" rx="4"/>
+                <text x="95" y="220" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="700">거래소 / 시세 API</text>
+                <text x="95" y="236" text-anchor="middle" fill="#60a5fa" font-size="9.5">FDR / KIS 시세 피드</text>
+                <text x="95" y="254" text-anchor="middle" fill="#94a3b8" font-size="10">매일 장마감 일별 종가</text>
+                <text x="95" y="270" text-anchor="middle" fill="#94a3b8" font-size="9.5">실시간 체결 틱 &amp; 호가</text>
+                
+                <!-- Arrow 1->2 -->
+                <path d="M180 145 H235" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr-b)"/>
+                <path d="M180 245 H235" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr-b)"/>
+                
+                <!-- Layer 2 -->
+                <rect x="240" y="60" width="220" height="280" fill="#131b2e" stroke="#1e293b" rx="6"/>
+                <rect x="240" y="60" width="220" height="28" fill="rgba(16,185,129,0.15)" rx="6"/>
+                <text x="350" y="78" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">2. 중앙 DB (단일 진실 공급원)</text>
+                
+                <rect x="255" y="98" width="190" height="60" fill="#1a233a" stroke="#10b981" rx="4"/>
+                <text x="350" y="118" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">💾 로컬 SQLite</text>
+                <text x="350" y="134" text-anchor="middle" fill="#f8fafc" font-size="10">market_data.db (무설치)</text>
+                <text x="350" y="148" text-anchor="middle" fill="#94a3b8" font-size="9">내 PC 초고속 분석용</text>
+                
+                <rect x="255" y="170" width="190" height="80" fill="#1a233a" stroke="#10b981" rx="4"/>
+                <text x="350" y="190" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">☁️ 클라우드 PostgreSQL</text>
+                <text x="350" y="206" text-anchor="middle" fill="#fbbf24" font-size="9.5">Supabase (팀/원격 공유)</text>
+                <text x="350" y="222" text-anchor="middle" fill="#94a3b8" font-size="9.5">Row Level Security 보호</text>
+                <text x="350" y="238" text-anchor="middle" fill="#94a3b8" font-size="9">3개 표 통일 관리 (SSOT)</text>
+                
+                <!-- Arrow 2->3 -->
+                <path d="M465 140 H515" stroke="#10b981" stroke-width="2" marker-end="url(#arr-g)"/>
+                <path d="M465 240 H515" stroke="#10b981" stroke-width="2" marker-end="url(#arr-g)"/>
+                
+                <!-- Layer 3 -->
+                <rect x="520" y="60" width="185" height="280" fill="#131b2e" stroke="#1e293b" rx="6"/>
+                <rect x="520" y="60" width="185" height="28" fill="rgba(192,132,252,0.15)" rx="6"/>
+                <text x="612" y="78" text-anchor="middle" fill="#c084fc" font-size="11" font-weight="700">3. 고객 서빙 &amp; 퀀트 분석</text>
+                
+                <rect x="535" y="98" width="155" height="90" fill="#1a233a" stroke="#8b5cf6" rx="4"/>
+                <text x="612" y="118" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="700">📱 토스증권 모바일 앱</text>
+                <text x="612" y="134" text-anchor="middle" fill="#38bdf8" font-size="9.5">0.01초 차트 즉시 로딩</text>
+                <text x="612" y="152" text-anchor="middle" fill="#94a3b8" font-size="10">고객 화면 인출 전용</text>
+                <text x="612" y="168" text-anchor="middle" fill="#94a3b8" font-size="9.5">REST API 캐시 연동</text>
+                
+                <rect x="535" y="200" width="155" height="90" fill="#1a233a" stroke="#8b5cf6" rx="4"/>
+                <text x="612" y="220" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="700">🐍 금융 데이터 분석가</text>
+                <text x="612" y="236" text-anchor="middle" fill="#fbbf24" font-size="9.5">Jupyter / pandas 연동</text>
+                <text x="612" y="254" text-anchor="middle" fill="#94a3b8" font-size="10">SQL 황금 분업 파이프라인</text>
+                <text x="612" y="270" text-anchor="middle" fill="#94a3b8" font-size="9.5">시계열 통계 &amp; 백테스팅</text>
+                
+                <defs>
+                  <marker id="arr-b" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#3b82f6"/></marker>
+                  <marker id="arr-g" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#10b981"/></marker>
+                </defs>
+              </svg>
+            </div>
+
+            <div class="card">
+              <div class="card-title">💡 핀테크 아키텍처의 핵심 교훈</div>
+              <ul>
+                <li><b>호출 제한(Rate Limit) 방어:</b> 외부 API는 초당 호출 횟수 제한이 있어 실시간으로 매번 찌르면 차단당합니다.</li>
+                <li><b>배치 적재(Batch Ingestion):</b> 정해진 시각(장마감 후)에 데이터를 한 번만 가져와 중앙 DB에 적재합니다.</li>
+                <li><b>단일 진실 공급원(SSOT):</b> 모바일 앱과 퀀트 분석가가 동일한 DB를 바라보므로 데이터 불일치가 0이 됩니다.</li>
+              </ul>
+              <div style="margin-top:auto; font-size:11px; color:var(--primary); font-weight:700;">
+                이 구조의 축소판을 오늘 내 컴퓨터(SQLite)와 클라우드(Supabase) 위에 그대로 구축합니다!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">중앙 DB는 외부 API의 호출 제한을 막아주는 안전 완충재이자, 핀테크 서비스 전체의 정합성을 보장하는 심장입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 05 ==================== -->
+      <section class="slide" id="slide-5">
+        <div class="kicker">§100 WHY DATABASE · EXCEL VS DATABASE</div>
+        <h1 class="action-title">엑셀 vs 데이터베이스: 금융 실무를 가르는 4대 차이</h1>
+        <p class="action-sub">100만 행 한계를 넘어 무결성, 동시성, 자동화 파이프라인으로 나아가는 전환점입니다.</p>
+        
+        <div class="slide-content">
+          <table class="tbl-compare" style="font-size:12px;">
+            <thead>
+              <tr>
+                <th style="width:16%;">비교 축</th>
+                <th style="width:42%;">스프레드시트 (Excel / CSV)</th>
+                <th style="width:42%;">관계형 데이터베이스 (RDBMS)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>1. 데이터 용량</b></td>
+                <td>최대 1,048,576행 제한. 수십만 행 이상 시 버벅거림 및 프리징 발생.</td>
+                <td><b>수억~수십억 행 무제한.</b> 디스크 인덱스로 수백만 행도 0.01초 검색.</td>
+              </tr>
+              <tr>
+                <td><b>2. 무결성과 정합성</b></td>
+                <td>셀 단위로 아무 값이나 입력 가능. 실수로 수식이나 행을 지울 위험 상존.</td>
+                <td><b>스키마 제약조건(PK, FK, NOT NULL).</b> 잘못된 데이터 유입 원천 차단.</td>
+              </tr>
+              <tr>
+                <td><b>3. 동시 다중 접근</b></td>
+                <td>동시에 열면 "읽기 전용" 경고. 덮어쓰기로 인한 변경 내역 소실 빈번.</td>
+                <td><b>트랜잭션(ACID) 지원.</b> 수백 명이 동시에 읽고 써도 충돌 없는 데이터 보장.</td>
+              </tr>
+              <tr>
+                <td><b>4. 파이썬 자동화</b></td>
+                <td>수동 파일 복사, 마우스 클릭 의존. 매일 아침 수작업 반복 필요.</td>
+                <td><b>코드 파이프라인 직결.</b> <code>pd.read_sql</code>로 매일 아침 자동 스크리닝 리포트 산출.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="card warning" style="margin-top:12px; padding:10px 14px;">
+            <div class="card-title" style="margin-bottom:4px; font-size:12.5px; color:var(--warning);">⚠️ 실무 금융 사고의 90%는 수동 엑셀 파일 관리에서 발생합니다</div>
+            <p style="font-size:11.5px; color:var(--ink2);">
+              월스트리트 투자은행(JP모건 고래 참사 등)의 천문학적 손실 뒤에는 언제나 '엑셀 수식 복사 오류'나 '파일 덮어쓰기'가 있었습니다.
+              금융 데이터 사이언티스트가 DB를 다루는 것은 선택이 아닌 필수 생존 역량입니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">엑셀은 사람의 최종 보고서 뷰어로 남겨두고, 데이터의 축적·정제·연산은 데이터베이스에 일임합니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 06 ==================== -->
+      <section class="slide" id="slide-6">
+        <div class="kicker">§200 SQLITE BASICS · ENVIRONMENT CHECK</div>
+        <h1 class="action-title">시작 전에 한 줄: 가상환경 커널과 4대 사전 점검</h1>
+        <p class="action-sub">이번 주 가장 치명적인 오류는 패키지 미설치가 아니라 잘못된 파이썬 커널 선택입니다.</p>
+        
+        <div class="slide-content">
+          <div class="card" style="margin-bottom:12px;">
+            <div class="card-title">🧪 인터프리터 경로 한 줄 확인</div>
+            <div class="code-box" style="flex:none; padding:8px 12px;">
+              <span class="hl-kwd">import</span> sys<br>
+              <span class="hl-fn">print</span>(sys.executable)
+            </div>
+            <div class="code-out">
+              예상 출력: /Users/.../FD_26/.venv/bin/python3
+            </div>
+            <p style="font-size:11px; color:var(--muted); margin-top:6px;">
+              ⚠️ 끝부분이 <code>FD_26/.venv/bin/python3</code>가 아니라면 VS Code 우측 상단 "Select Kernel"에서 가상환경을 변경합니다.
+            </p>
+          </div>
+
+          <div class="stat-row" style="grid-template-columns:repeat(4, 1fr); margin-bottom:0;">
+            <div class="card" style="text-align:center; padding:10px;">
+              <div style="font-size:11px; font-weight:700; color:var(--muted);">① 파이썬 위치</div>
+              <div style="font-size:11px; font-family:var(--mono); color:var(--navy); font-weight:700; margin-top:4px;">.../FD_26/.venv</div>
+              <div style="font-size:10px; color:var(--success); margin-top:4px;">격리 커널 확인 ✅</div>
+            </div>
+            <div class="card" style="text-align:center; padding:10px;">
+              <div style="font-size:11px; font-weight:700; color:var(--muted);">② pandas 라이브러리</div>
+              <div style="font-size:11px; font-family:var(--mono); color:var(--navy); font-weight:700; margin-top:4px;">import pandas</div>
+              <div style="font-size:10px; color:var(--success); margin-top:4px;">에러 없이 로딩 ✅</div>
+            </div>
+            <div class="card" style="text-align:center; padding:10px;">
+              <div style="font-size:11px; font-weight:700; color:var(--muted);">③ DB 파일 존재</div>
+              <div style="font-size:11px; font-family:var(--mono); color:var(--navy); font-weight:700; margin-top:4px;">market_data.db</div>
+              <div style="font-size:10px; color:var(--success); margin-top:4px;">data/ 디렉토리 내 위치 ✅</div>
+            </div>
+            <div class="card" style="text-align:center; padding:10px;">
+              <div style="font-size:11px; font-weight:700; color:var(--muted);">④ 첫 쿼리 검증</div>
+              <div style="font-size:11px; font-family:var(--mono); color:var(--navy); font-weight:700; margin-top:4px;">sqlite_master</div>
+              <div style="font-size:10px; color:var(--success); margin-top:4px;">3개 표 목록 반환 ✅</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">네 단계 점검 카드가 모두 통과해야 이후의 쿼리와 실습 코드가 예외 없이 매끄럽게 동작합니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 07 ==================== -->
+      <section class="slide" id="slide-7">
+        <div class="kicker">§200 SQLITE BASICS · CONNECT &amp; CONN</div>
+        <h1 class="action-title">내 컴퓨터 안의 무설치 DB: sqlite3.connect</h1>
+        <p class="action-sub">별도의 DB 서버 데몬 설치 없이 파일 하나(.db)로 작동하는 가장 우아한 임베디드 RDBMS입니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🔌 파이썬 표준 라이브러리 sqlite3</div>
+              <p style="font-size:12px; margin-bottom:10px; color:var(--ink2);">
+                별도 패키지 설치(`pip install`)조차 필요 없습니다. 파이썬에 기본 탑재되어 있습니다.
+              </p>
+              <div class="code-box">
+                <span class="hl-kwd">import</span> sqlite3<br>
+                <span class="hl-kwd">import</span> pandas <span class="hl-kwd">as</span> pd<br><br>
+                <span class="hl-cmt"># DB 파일과 파이썬 파이프라인 연결</span><br>
+                conn = sqlite3.<span class="hl-fn">connect</span>(<span class="hl-str">'data/market_data.db'</span>)<br><br>
+                <span class="hl-fn">print</span>(<span class="hl-str">"DB 연결 성공:"</span>, conn)
+              </div>
+              <div class="code-out">
+                DB 연결 성공: [sqlite3.Connection object at 0x10a2b4...]
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🏗️ 연결자(conn)와 파일 구조의 비밀</div>
+              <ul>
+                <li><b>단일 파일 완결성:</b> <code>market_data.db</code> 파일 하나 안에 모든 테이블, 인덱스, 메타데이터가 바이너리로 압축 저장됩니다.</li>
+                <li><b>이식성의 극치:</b> 이 파일 하나만 카톡이나 이메일로 팀원에게 보내면, 상대방도 즉시 동일한 쿼리를 0.001초 만에 실행할 수 있습니다.</li>
+                <li><b>서버리스(Serverless):</b> 백그라운드 프로세스나 포트(Port) 충돌이 전혀 발생하지 않아 초보자 학습 및 단일 분석에 최적입니다.</li>
+              </ul>
+              <div style="margin-top:auto; background:var(--primary-l); border:1px solid #99F6E4; padding:8px 10px; border-radius:6px; font-size:11px; color:var(--primary-d);">
+                💡 <b>연결자(conn)의 역할:</b> 파이썬 인터프리터와 SQLite C-엔진 사이를 이어주는 고속 데이터 고속도로입니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">SQLite는 파일 하나로 RDBMS의 모든 강력함(SQL, B-Tree 인덱스, 트랜잭션)을 누릴 수 있는 최고의 실무 분석 도구입니다.</span>
+          <a href="FD-03-week03-interactive.html#p1" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗ (실험 1: 적재·인출)</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 08 ==================== -->
+      <section class="slide" id="slide-8">
+        <div class="kicker">§200 SQLITE BASICS · INGESTION (TO_SQL)</div>
+        <h1 class="action-title">데이터를 넣는 일: df.to_sql (append vs replace)</h1>
+        <p class="action-sub">새 거래일 데이터를 누적할 때는 append를, 스키마 재구축이 아니라면 replace의 참사를 피하세요.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card" style="border-left:4px solid var(--success);">
+              <div class="card-title" style="color:var(--success);">✅ 실무 표준: if_exists='append' (누적 적재)</div>
+              <p style="font-size:12px; margin-bottom:8px; color:var(--ink2);">
+                기존 테이블의 과거 데이터는 그대로 보존하고, 새 거래일/새 분기 데이터만 뒤에 이어 붙입니다.
+              </p>
+              <div class="code-box">
+                <span class="hl-cmt"># 새 영업일 주가 데이터를 기존 테이블에 안전하게 누적</span><br>
+                df_today.<span class="hl-fn">to_sql</span>(<br>
+                &nbsp;&nbsp;<span class="hl-str">'returns'</span>,<br>
+                &nbsp;&nbsp;conn,<br>
+                &nbsp;&nbsp;if_exists=<span class="hl-str">'append'</span>,<br>
+                &nbsp;&nbsp;index=<span class="hl-kwd">False</span><br>
+                )
+              </div>
+              <div style="font-size:11px; color:var(--success); font-weight:700; margin-top:8px;">
+                💡 실무 배치 파이프라인의 99%는 이 방식으로 매일 장마감 시 데이터를 누적합니다.
+              </div>
+            </div>
+
+            <div class="card alert" style="border-left:4px solid var(--danger);">
+              <div class="card-title" style="color:var(--danger);">❌ 주의 위험: if_exists='replace' (전체 소실)</div>
+              <p style="font-size:12px; margin-bottom:8px; color:var(--ink2);">
+                기존 테이블을 통째로 <code>DROP TABLE</code>하고, 지금 들고 있는 DataFrame으로 덮어씁니다!
+              </p>
+              <div class="code-box">
+                <span class="hl-cmt"># ⚠️ 치명적 실수: 오늘 하루 치 주가를 넣으려다</span><br>
+                <span class="hl-cmt"># 과거 10년 치 데이터 전체가 영구 소실됨!</span><br>
+                df_today.<span class="hl-fn">to_sql</span>(<br>
+                &nbsp;&nbsp;<span class="hl-str">'returns'</span>,<br>
+                &nbsp;&nbsp;conn,<br>
+                &nbsp;&nbsp;if_exists=<span class="hl-str">'replace'</span>,<br>
+                &nbsp;&nbsp;index=<span class="hl-kwd">False</span><br>
+                )
+              </div>
+              <div style="font-size:11px; color:var(--danger); font-weight:700; margin-top:8px;">
+                ⚠️ 스키마를 처음부터 완전히 다시 만들 때가 아니면 'replace'는 봉인합니다!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">운영 DB에 replace를 던지는 순간 과거 데이터는 영원히 증발합니다 — 항상 append를 기본 옵션으로 삼으세요.</span>
+          <a href="FD-03-week03-interactive.html#p1" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 09 ==================== -->
+      <section class="slide" id="slide-9">
+        <div class="kicker">§200 SQLITE BASICS · RETRIEVAL (READ_SQL)</div>
+        <h1 class="action-title">데이터를 꺼내는 일: pd.read_sql과 DataFrame 변환</h1>
+        <p class="action-sub">DB에 담긴 테이블 목록을 확인하고, 쿼리 결과를 판다스 데이터프레임으로 바통 터치받습니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">📋 sqlite_master로 보유 테이블 확인</div>
+              <div class="code-box">
+                <span class="hl-cmt"># DB 내 모든 테이블 이름 조회</span><br>
+                query = <span class="hl-str">"""<br>
+                SELECT name <br>
+                FROM sqlite_master <br>
+                WHERE type = 'table'<br>
+                """</span><br>
+                pd.<span class="hl-fn">read_sql</span>(query, conn)
+              </div>
+              <div class="code-out">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name<br>
+                0&nbsp;&nbsp;companies<br>
+                1&nbsp;&nbsp;financials<br>
+                2&nbsp;&nbsp;&nbsp;&nbsp;returns
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">⚡ pd.read_sql의 동작 파이프라인</div>
+              <ul>
+                <li><b>SQL 파싱:</b> 쿼리 문자열이 SQLite C-엔진으로 전송되어 문법을 파싱합니다.</li>
+                <li><b>인덱스 추출:</b> 조건에 맞는 행들만 디스크 바이너리에서 메모리로 추출합니다.</li>
+                <li><b>DataFrame 즉시 생성:</b> 추출된 튜플(행)들이 판다스 인메모리 DataFrame으로 즉시 래핑됩니다.</li>
+              </ul>
+              <div style="margin-top:auto; padding:8px; background:#fff; border:1px solid var(--line); border-radius:6px; font-size:11.5px; color:var(--navy);">
+                <b>핵심:</b> 파이썬 반복문(<code>for row in cursor:</code>)을 직접 돌릴 필요 없이, 판다스가 C 레벨에서 최적화된 속도로 DataFrame을 만들어 줍니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">pd.read_sql(query, conn)은 DB 엔진의 검색 결과와 판다스의 분석 엔진을 단 1줄로 이어주는 마법의 통로입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 10 ==================== -->
+      <section class="slide" id="slide-10">
+        <div class="kicker">§300 CORE SQL · 1. FILTERING (WHERE)</div>
+        <h1 class="action-title">조건으로 거르기: WHERE와 텍스트 종목코드 따옴표</h1>
+        <p class="action-sub">수백만 행 중 원하는 조건만 0.001초 만에 추려내며, 종목코드의 앞자리 0 소실 함정을 방어합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🎯 다중 조건 필터링 (AND)</div>
+              <div class="code-box">
+                <span class="hl-cmt"># 2025년 매출액 3,000억 초과 기업만 필터링</span><br>
+                query = <span class="hl-str">"""<br>
+                SELECT code, revenue <br>
+                FROM financials <br>
+                WHERE revenue > 300000 <br>
+                &nbsp;&nbsp;AND year = 2025<br>
+                """</span><br>
+                df = pd.<span class="hl-fn">read_sql</span>(query, conn)<br>
+                df.head()
+              </div>
+              <div class="code-out">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;revenue<br>
+                0&nbsp;&nbsp;005930&nbsp;&nbsp;3466200<br>
+                1&nbsp;&nbsp;000660&nbsp;&nbsp;1007720<br>
+                2&nbsp;&nbsp;005380&nbsp;&nbsp;1797600
+              </div>
+            </div>
+
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">⚠️ 치명적 함정: 종목코드 따옴표 누락!</div>
+              <p style="font-size:12px; margin-bottom:8px; color:var(--ink2);">
+                한국 거래소의 종목코드는 6자리 <b>TEXT(문자열)</b> 컬럼입니다.
+              </p>
+              <div class="code-box" style="background:#2A1215; border:1px solid #7F1D1D;">
+                <span class="hl-cmt">-- ❌ 오답: 앞자리 0 두 개가 소실되어 검색 실패!</span><br>
+                WHERE code = 5930<br><br>
+                <span class="hl-cmt">-- ✅ 정답: 문자열 따옴표를 반드시 감싸준다!</span><br>
+                WHERE code = <span class="hl-str">'005930'</span>
+              </div>
+              <div style="margin-top:auto; font-size:11px; color:var(--danger); font-weight:700;">
+                숫자로 취급하면 '005930'이 정수 5930으로 형변환되어 일치하는 행을 절대 찾지 못합니다!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">WHERE 절은 디스크에서 행을 읽는 순간 필요 없는 데이터를 잘라내어 메모리 낭비를 원천 차단합니다.</span>
+          <a href="FD-03-week03-interactive.html#p2" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗ (실험 2: 5대 문법 랩)</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 11 ==================== -->
+      <section class="slide" id="slide-11">
+        <div class="kicker">§300 CORE SQL · 2. SORTING &amp; SLICING</div>
+        <h1 class="action-title">상위 몇 개만: ORDER BY와 LIMIT의 황금 조합</h1>
+        <p class="action-sub">판다스의 sort_values와 nlargest가 SQL 엔진 레벨에서 훨씬 빠르고 가볍게 실행됩니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">📐 SQL 정렬과 상위 슬라이싱</div>
+              <div class="code-box">
+                <span class="hl-cmt"># 2025년 매출 상위 5개 기업만 내림차순 정렬</span><br>
+                query = <span class="hl-str">"""<br>
+                SELECT code, revenue <br>
+                FROM financials <br>
+                WHERE year = 2025 <br>
+                ORDER BY revenue DESC <br>
+                LIMIT 5<br>
+                """</span><br>
+                pd.<span class="hl-fn">read_sql</span>(query, conn)
+              </div>
+              <div class="code-out">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;revenue<br>
+                0&nbsp;&nbsp;005930&nbsp;&nbsp;3466200<br>
+                1&nbsp;&nbsp;005380&nbsp;&nbsp;1797600<br>
+                2&nbsp;&nbsp;000270&nbsp;&nbsp;1209900<br>
+                3&nbsp;&nbsp;000660&nbsp;&nbsp;1007720<br>
+                4&nbsp;&nbsp;051910&nbsp;&nbsp;&nbsp;470256
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">💡 판다스와 SQL의 문법 1:1 대조</div>
+              <table class="tbl-compare">
+                <tr><th>동작</th><th>SQL 문법</th><th>pandas 문법</th></tr>
+                <tr>
+                  <td><b>내림차순 정렬</b></td>
+                  <td><code>ORDER BY col DESC</code></td>
+                  <td><code>df.sort_values(ascending=False)</code></td>
+                </tr>
+                <tr>
+                  <td><b>오름차순 정렬</b></td>
+                  <td><code>ORDER BY col ASC</code></td>
+                  <td><code>df.sort_values(ascending=True)</code></td>
+                </tr>
+                <tr>
+                  <td><b>상위 N개 자르기</b></td>
+                  <td><code>LIMIT N</code></td>
+                  <td><code>df.head(N)</code> 또는 <code>df.nlargest(N)</code></td>
+                </tr>
+              </table>
+              <div style="margin-top:auto; font-size:11px; color:var(--ink2); line-height:1.4;">
+                📌 <b>실무 팁:</b> 전체 1,000만 건을 판다스로 다 가져와서 <code>.head(5)</code>를 치지 마세요! DB 쿼리 끝에 <code>LIMIT 5</code>를 붙여 5개만 네트워크로 넘겨받는 것이 1,000배 빠릅니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">ORDER BY와 LIMIT은 대용량 데이터에서 필요한 최상위 결과만 핀포인트로 잘라오는 최고의 가성비 도구입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 12 ==================== -->
+      <section class="slide" id="slide-12">
+        <div class="kicker">§300 CORE SQL · 3. DERIVED METRICS</div>
+        <h1 class="action-title">새로운 지표 만들기: 계산열(ROE)과 정수 나눗셈 함정</h1>
+        <p class="action-sub">SQLite의 정수 나눗셈 소수점 증발 함정을 피하고, 반올림(ROUND)으로 의미 있는 재무 지표를 만듭니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🧮 파생 계산열: 자기자본이익률 (ROE)</div>
+              <div class="code-box">
+                <span class="hl-cmt"># 순이익 / 자본총계 = ROE (퍼센트 및 소수점 2자리)</span><br>
+                query = <span class="hl-str">"""<br>
+                SELECT code, <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ROUND(net_income * 100.0 / total_equity, 2) AS roe<br>
+                FROM financials <br>
+                WHERE year = 2025 <br>
+                ORDER BY roe DESC <br>
+                LIMIT 5<br>
+                """</span><br>
+                pd.<span class="hl-fn">read_sql</span>(query, conn)
+              </div>
+              <div class="code-out">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;roe<br>
+                0&nbsp;&nbsp;000660&nbsp;&nbsp;24.12<br>
+                1&nbsp;&nbsp;005930&nbsp;&nbsp;11.45<br>
+                2&nbsp;&nbsp;035420&nbsp;&nbsp;&nbsp;9.20
+              </div>
+            </div>
+
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">⚠️ 정수 나눗셈 함정 (Integer Division)</div>
+              <p style="font-size:12px; margin-bottom:8px; color:var(--ink2);">
+                SQLite를 포함한 대다수 SQL 엔진은 <b>정수 / 정수 = 정수</b>로 계산합니다!
+              </p>
+              <div class="code-box" style="background:#2A1215; border:1px solid #7F1D1D;">
+                <span class="hl-cmt">-- ❌ 참사: 3 / 4 계산 시 0.75가 아닌 0으로 소수점 버림!</span><br>
+                net_income / total_equity &nbsp;➔ 전부 0으로 반환됨!<br><br>
+                <span class="hl-cmt">-- ✅ 해결: 실수 리터럴(100.0 또는 1.0)을 먼저 곱한다!</span><br>
+                net_income * <span class="hl-num">100.0</span> / total_equity &nbsp;➔ 정상 부동소수점 연산
+              </div>
+              <div style="margin-top:auto; font-size:11px; color:var(--danger); font-weight:700;">
+                계산열이 자꾸 0으로 나온다면 가장 먼저 실수(1.0) 곱하기를 빠뜨렸는지 점검하세요!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">SQL 계산식에서는 반드시 1.0이나 100.0을 곱해 명시적 실수 연산을 강제하고, AS 별칭으로 새 컬럼명을 붙여줍니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 13 ==================== -->
+      <section class="slide" id="slide-13">
+        <div class="kicker">§300 CORE SQL · 4. AGGREGATION (GROUP BY)</div>
+        <h1 class="action-title">업종별로 묶어 요약하기: GROUP BY와 집계 함수</h1>
+        <p class="action-sub">수천 개 종목을 전기전자, 화학, 자동차 등 업종 바구니로 묶어 산업군 평균 통계를 한눈에 조망합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">📊 업종별 평균 매출 &amp; 기업 수 집계</div>
+              <div class="code-box">
+                <span class="hl-cmt"># 업종별 기업 수(COUNT)와 평균 매출(AVG) 산출</span><br>
+                query = <span class="hl-str">"""<br>
+                SELECT c.sector,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;COUNT(*) AS n_companies,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ROUND(AVG(f.revenue), 0) AS avg_revenue<br>
+                FROM companies c<br>
+                JOIN financials f ON c.code = f.code<br>
+                WHERE f.year = 2025<br>
+                GROUP BY c.sector<br>
+                ORDER BY avg_revenue DESC<br>
+                """</span><br>
+                pd.<span class="hl-fn">read_sql</span>(query, conn)
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🧺 바구니에 담아 압축하는 메커니즘</div>
+              <ul>
+                <li><b>바구니 분류:</b> <code>GROUP BY sector</code>에 의해 '전기전자', '자동차', '화학' 바구니가 생성됩니다.</li>
+                <li><b>바구니 안 집계:</b> 각 바구니 안에 들어온 행들의 매출을 더하고 나눠 <code>AVG()</code>와 <code>COUNT()</code>를 1행씩으로 요약합니다.</li>
+                <li><b>거시적 비교:</b> 2,000개 개별 종목 대신 15개 업종별 통계 행으로 압축되어 산업 간 비교가 명확해집니다.</li>
+              </ul>
+              <div style="margin-top:auto; font-size:11.5px; background:var(--surf3); padding:8px 10px; border-radius:6px; color:var(--navy);">
+                💡 <b>주의:</b> <code>GROUP BY</code>에 적지 않은 일반 열(예: <code>c.name</code>)은 SELECT에 함부로 쓰지 않는다 (바구니 안의 어떤 회사명을 보여줘야 할지 DB가 알 수 없음).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">GROUP BY는 방대한 금융 마이크로 데이터를 거시적 매크로 통계(업종별 평균·합계)로 압축해 주는 요약기입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 14 ==================== -->
+      <section class="slide" id="slide-14">
+        <div class="kicker">§300 CORE SQL · 5. MULTI-TABLE JOIN</div>
+        <h1 class="action-title">흩어진 두 표 잇기: JOIN의 메커니즘과 공통 열</h1>
+        <p class="action-sub">기업 기본정보와 재무제표를 종목코드(code)로 이어 실무에서 원하는 완전한 단일 표를 만듭니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2-1">
+            <div class="viz-box">
+              <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto;">
+                <rect x="0" y="0" width="720" height="300" fill="#FAF7F0" rx="6"/>
+                <g stroke="#DC2626" stroke-width="0.6" opacity="0.18">
+                  <line x1="150" y1="70" x2="480" y2="70"/><line x1="150" y1="70" x2="480" y2="110"/><line x1="150" y1="70" x2="480" y2="150"/>
+                  <line x1="150" y1="110" x2="480" y2="70"/><line x1="150" y1="110" x2="480" y2="110"/><line x1="150" y1="110" x2="480" y2="150"/>
+                  <line x1="150" y1="150" x2="480" y2="70"/><line x1="150" y1="150" x2="480" y2="110"/><line x1="150" y1="150" x2="480" y2="150"/>
+                </g>
+                <text x="360" y="38" font-size="10.5" fill="#DC2626" text-anchor="middle" opacity="0.7">(옅은 붉은선 = ON이 없을 때: 모든 행이 모든 행과 결합하는 참사)</text>
+                
+                <!-- companies -->
+                <text x="150" y="58" font-size="12" font-weight="700" text-anchor="middle" fill="#0F2747">companies</text>
+                <g font-size="10.5">
+                  <rect x="80" y="65" width="70" height="90" fill="#E2E8F0" stroke="#0F2747"/>
+                  <rect x="150" y="65" width="70" height="90" fill="#FCD34D" fill-opacity="0.35" stroke="#D97706"/>
+                  <text x="115" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">name</text>
+                  <text x="185" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">code</text>
+                  <text x="115" y="100" text-anchor="middle">삼성전자</text><text x="185" y="100" text-anchor="middle">005930</text>
+                  <text x="115" y="120" text-anchor="middle">SK하이닉스</text><text x="185" y="120" text-anchor="middle">000660</text>
+                  <text x="115" y="140" text-anchor="middle">NAVER</text><text x="185" y="140" text-anchor="middle">035420</text>
+                </g>
+                
+                <!-- financials -->
+                <text x="480" y="58" font-size="12" font-weight="700" text-anchor="middle" fill="#0F2747">financials</text>
+                <g font-size="10.5">
+                  <rect x="410" y="65" width="70" height="90" fill="#FCD34D" fill-opacity="0.35" stroke="#D97706"/>
+                  <rect x="480" y="65" width="70" height="90" fill="#E2E8F0" stroke="#0F2747"/>
+                  <text x="445" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">code</text>
+                  <text x="515" y="80" text-anchor="middle" fill="#0F2747" font-weight="700">roe</text>
+                  <text x="445" y="100" text-anchor="middle">005930</text><text x="515" y="100" text-anchor="middle">0.11</text>
+                  <text x="445" y="120" text-anchor="middle">000660</text><text x="515" y="120" text-anchor="middle">0.24</text>
+                  <text x="445" y="140" text-anchor="middle">035420</text><text x="515" y="140" text-anchor="middle">0.09</text>
+                </g>
+                
+                <!-- matched ON lines -->
+                <line x1="220" y1="100" x2="410" y2="100" stroke="#16A34A" stroke-width="2.5"/>
+                <line x1="220" y1="120" x2="410" y2="120" stroke="#16A34A" stroke-width="2.5"/>
+                <line x1="220" y1="140" x2="410" y2="140" stroke="#16A34A" stroke-width="2.5"/>
+                <text x="315" y="94" font-size="10" fill="#16A34A" text-anchor="middle" font-weight="700">ON c.code = f.code</text>
+                
+                <!-- merged result -->
+                <text x="360" y="195" font-size="12" font-weight="700" text-anchor="middle" fill="#0F2747">JOIN 결과 — 같은 code끼리 한 줄로 완벽 결합</text>
+                <g font-size="10.5">
+                  <rect x="150" y="205" width="120" height="70" fill="#A7F3D0" fill-opacity="0.4" stroke="#16A34A"/>
+                  <rect x="270" y="205" width="90" height="70" fill="#FCD34D" fill-opacity="0.35" stroke="#D97706"/>
+                  <rect x="360" y="205" width="90" height="70" fill="#A7F3D0" fill-opacity="0.4" stroke="#16A34A"/>
+                  <text x="210" y="220" text-anchor="middle" font-weight="700">name</text>
+                  <text x="315" y="220" text-anchor="middle" font-weight="700">code</text>
+                  <text x="405" y="220" text-anchor="middle" font-weight="700">roe</text>
+                  <text x="210" y="238" text-anchor="middle">삼성전자</text><text x="315" y="238" text-anchor="middle">005930</text><text x="405" y="238" text-anchor="middle">0.11</text>
+                  <text x="210" y="255" text-anchor="middle">SK하이닉스</text><text x="315" y="255" text-anchor="middle">000660</text><text x="405" y="255" text-anchor="middle">0.24</text>
+                  <text x="210" y="272" text-anchor="middle">NAVER</text><text x="315" y="272" text-anchor="middle">035420</text><text x="405" y="272" text-anchor="middle">0.09</text>
+                </g>
+              </svg>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🔗 실전 조인 구문</div>
+              <div class="code-box" style="padding:8px 10px; font-size:10.5px;">
+                <span class="hl-kwd">SELECT</span> c.name, c.sector, f.revenue<br>
+                <span class="hl-kwd">FROM</span> companies c<br>
+                <span class="hl-kwd">JOIN</span> financials f <br>
+                &nbsp;&nbsp;<span class="hl-kwd">ON</span> c.code = f.code<br>
+                <span class="hl-kwd">WHERE</span> f.year = <span class="hl-num">2025</span>
+              </div>
+              <ul style="margin-top:8px;">
+                <li><b>별칭(Alias):</b> <code>companies c</code>, <code>financials f</code>처럼 약어를 주면 쿼리가 깔끔해집니다.</li>
+                <li><b>ON의 중요성:</b> <code>ON c.code = f.code</code>가 누락되면 모든 행이 곱해져 시스템이 뻗어버립니다.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">JOIN은 두 표 사이에 공통으로 존재하는 식별자(code)를 다리 삼아, 필요한 정보만 한 행으로 이어 붙입니다.</span>
+          <a href="FD-03-week03-interactive.html#p2" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 15 ==================== -->
+      <section class="slide" id="slide-15">
+        <div class="kicker">§300 CORE SQL · ERROR DEBUGGING</div>
+        <h1 class="action-title">SQL 에러 디버깅: 가장 흔한 3대 오류와 해결법</h1>
+        <p class="action-sub">빨간색 에러 메시지를 만났을 때 당황하지 않고 원인을 짚어내는 체크리스트입니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-3">
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">① no such table</div>
+              <div class="code-box" style="background:#2A1215; padding:6px 8px; font-size:10px; margin-bottom:8px;">
+                OperationalError: no such table: financial
+              </div>
+              <p style="font-size:11.5px; color:var(--ink2);">
+                <b>원인:</b> 테이블 이름의 오타입니다. 복수형 <code>financials</code>를 단수형 <code>financial</code>로 잘못 썼을 때 발생합니다.
+              </p>
+              <div style="margin-top:auto; font-size:11px; color:var(--danger); font-weight:600;">
+                해결: <code>sqlite_master</code>로 정확한 테이블명을 재확인합니다.
+              </div>
+            </div>
+
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">② syntax error</div>
+              <div class="code-box" style="background:#2A1215; padding:6px 8px; font-size:10px; margin-bottom:8px;">
+                OperationalError: near "FROM": syntax error
+              </div>
+              <p style="font-size:11.5px; color:var(--ink2);">
+                <b>원인:</b> SQL 문법 오타입니다. SELECT 문 마지막 열 뒤에 불필요한 쉼표(<code>,</code>)를 붙였거나 키워드 순서가 꼬였을 때 생깁니다.
+              </p>
+              <div style="margin-top:auto; font-size:11px; color:var(--danger); font-weight:600;">
+                해결: 에러가 발생한 단어 직전의 쉼표나 따옴표를 지웁니다.
+              </div>
+            </div>
+
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">③ no such column</div>
+              <div class="code-box" style="background:#2A1215; padding:6px 8px; font-size:10px; margin-bottom:8px;">
+                OperationalError: no such column: code
+              </div>
+              <p style="font-size:11.5px; color:var(--ink2);">
+                <b>원인:</b> 컬럼명 오타이거나, JOIN 시 두 표 모두에 <code>code</code>가 들어있어 어느 표의 것인지 모호할 때 발생합니다.
+              </p>
+              <div style="margin-top:auto; font-size:11px; color:var(--danger); font-weight:600;">
+                해결: <code>c.code</code>처럼 테이블 별칭을 명시적으로 붙여줍니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">에러 메시지는 실패의 증거가 아니라 길을 안내하는 나침반입니다 — 첫 줄의 에러 키워드부터 확인하세요.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 16 ==================== -->
+      <section class="slide" id="slide-16">
+        <div class="kicker">§400 PIPELINE · DIVISION OF LABOR</div>
+        <h1 class="action-title">황금 분업: "줄이는 일은 SQL, 주무르는 일은 pandas"</h1>
+        <p class="action-sub">수백만 행의 원천 데이터 중 필요한 최정예만 DB에서 깎아내고, 통계와 차트는 판다스로 완성합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">📜 완성된 복합 쿼리 파이프라인</div>
+              <div class="code-box">
+                <span class="hl-cmt"># 삼중따옴표로 줄바꿈을 살려 가독성 확보</span><br>
+                query = <span class="hl-str">"""<br>
+                SELECT c.name, c.sector, <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f.revenue, <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ROUND(f.net_income * 100.0 / f.total_equity, 2) AS roe<br>
+                FROM companies c<br>
+                JOIN financials f ON c.code = f.code<br>
+                WHERE f.year = 2025<br>
+                &nbsp;&nbsp;AND f.revenue > 300000<br>
+                ORDER BY roe DESC<br>
+                """</span><br>
+                df = pd.<span class="hl-fn">read_sql</span>(query, conn)<br>
+                df.head()
+              </div>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title" style="color:var(--primary-d);">⚖️ 금융 데이터 분석의 완벽한 분업 구조</div>
+              <div style="margin-bottom:12px;">
+                <div style="font-size:12px; font-weight:700; color:var(--primary);">1. SQL의 몫 (DB 엔진 레벨)</div>
+                <p style="font-size:11.5px; color:var(--ink2);">
+                  수백만 행의 디스크 데이터에서 필요한 행만 거르고(WHERE), 표들을 묶고(JOIN), 계산열을 붙여 수 MB로 가볍게 압축합니다.
+                </p>
+              </div>
+              <div>
+                <div style="font-size:12px; font-weight:700; color:var(--violet);">2. pandas의 몫 (파이썬 분석 레벨)</div>
+                <p style="font-size:11.5px; color:var(--ink2);">
+                  DB가 깔끔하게 깎아서 넘겨준 최정예 DataFrame을 받아 Week 02에서 손에 익힌 통계 요약(`describe`), 결측치 보간, 시계열 시각화로 이어갑니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">"줄이는 일은 SQL이, 주무르는 일은 pandas가" — 이 한 문장이 금융 데이터 분석 실무의 황금률입니다.</span>
+          <a href="FD-03-week03-interactive.html#p3" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗ (실험 3: 파이프라인 분업)</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 17 ==================== -->
+      <section class="slide" id="slide-17">
+        <div class="kicker">[BONUS] · 노트 범위 밖 실무 보안 팁</div>
+        <h1 class="action-title">보안과 안정성: SQL Injection 방지와 파라미터 바인딩</h1>
+        <p class="action-sub">파이썬 f-string으로 쿼리에 값을 직접 끼워 넣지 말고, 안전한 params 바인딩을 사용하세요.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">❌ 지양: f-string 직접 문자열 결합</div>
+              <div class="code-box" style="background:#2A1215; border:1px solid #7F1D1D; margin-bottom:8px;">
+                code = <span class="hl-str">"005930"</span><br>
+                <span class="hl-cmt"># ⚠️ 따옴표 누락 위험 및 SQL Injection 보안 취약점</span><br>
+                query = f<span class="hl-str">"SELECT * FROM companies WHERE code = '{code}'"</span><br>
+                pd.<span class="hl-fn">read_sql</span>(query, conn)
+              </div>
+              <p style="font-size:11.5px; color:var(--ink2);">
+                만약 사용자 입력값에 악의적인 <code>' OR '1'='1</code>이나 <code>DROP TABLE</code>이 들어가면 데이터가 통째로 털리거나 날아갈 수 있습니다.
+              </p>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title" style="color:var(--success);">✅ 권장: params 파라미터 바인딩</div>
+              <div class="code-box" style="margin-bottom:8px;">
+                code = <span class="hl-str">"005930"</span><br>
+                <span class="hl-cmt"># 플레이스홀더(:code) 사용</span><br>
+                query = <span class="hl-str">"SELECT * FROM companies WHERE code = :code"</span><br>
+                pd.<span class="hl-fn">read_sql</span>(query, conn, <span class="hl-kwd">params</span>={<span class="hl-str">'code'</span>: code})
+              </div>
+              <p style="font-size:11.5px; color:var(--ink2);">
+                DB 엔진이 SQL 명령어 구조와 입력 데이터 값을 완전히 분리하여 해석하므로, 어떤 이상한 값이 들어와도 안전하게 방어됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">파라미터 바인딩(params)은 따옴표 실수를 방지하고 악의적인 공격을 차단하는 실무 엔지니어링의 기본입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 18 ==================== -->
+      <section class="slide" id="slide-18">
+        <div class="kicker">§400 PIPELINE · END-TO-END EXECUTION</div>
+        <h1 class="action-title">엔드투엔드 파이프라인: DB 질의에서 최종 시각화까지</h1>
+        <p class="action-sub">SQL로 고수익 우량주를 추려내고, 판다스 통계 분석과 시각화 차트로 2025년 투자 리포트를 완성합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-title">1단계: SQL 정예 추출</div>
+              <div class="code-box" style="font-size:10px;">
+                SELECT c.name, c.sector,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f.revenue, <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f.roe<br>
+                FROM companies c<br>
+                JOIN financials f ...<br>
+                WHERE f.roe > 10.0
+              </div>
+              <p style="font-size:11px; color:var(--muted); margin-top:6px;">
+                수천 개 기업 중 ROE 10% 이상 우량주만 수 밀리초 만에 선별
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-title">2단계: pandas 통계 가공</div>
+              <div class="code-box" style="font-size:10px;">
+                <span class="hl-cmt"># 업종별 순위 부여 및 통계</span><br>
+                df[<span class="hl-str">'rank'</span>] = df.<span class="hl-fn">groupby</span>(<span class="hl-str">'sector'</span>)[<span class="hl-str">'roe'</span>]\<br>
+                &nbsp;&nbsp;.<span class="hl-fn">rank</span>(ascending=<span class="hl-kwd">False</span>)<br>
+                df.<span class="hl-fn">describe</span>()
+              </div>
+              <p style="font-size:11px; color:var(--muted); margin-top:6px;">
+                Week 02에서 다룬 통계 요약 및 랭킹 산출
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-title">3단계: 시각화 리포트</div>
+              <div class="code-box" style="font-size:10px;">
+                <span class="hl-kwd">import</span> matplotlib.pyplot <span class="hl-kwd">as</span> plt<br>
+                plt.<span class="hl-fn">scatter</span>(df[<span class="hl-str">'revenue'</span>], df[<span class="hl-str">'roe'</span>])<br>
+                plt.<span class="hl-fn">xlabel</span>(<span class="hl-str">'매출액'</span>)<br>
+                plt.<span class="hl-fn">ylabel</span>(<span class="hl-str">'ROE (%)'</span>)<br>
+                plt.<span class="hl-fn">show</span>()
+              </div>
+              <p style="font-size:11px; color:var(--muted); margin-top:6px;">
+                매출액 vs ROE 4분면 산점도 차트 완성
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">DB 질의와 판다스 시각화가 연결될 때, 조건이 바뀌어도 1초 만에 최신 차트가 다시 그려지는 자동화 파이프라인이 완성됩니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 19 ==================== -->
+      <section class="slide" id="slide-19">
+        <div class="kicker">§500 DATABASE LANDSCAPE · 4-TIER MATRIX</div>
+        <h1 class="action-title">4대 데이터베이스 지형도: 2축 매트릭스</h1>
+        <p class="action-sub">동시 사용자 수와 데이터 규모의 2축에 따라 최적의 데이터 인프라가 달라집니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2-1">
+            <div class="viz-box" style="padding:4px;">
+              <svg viewBox="0 0 560 380" style="width:100%; height:auto;">
+                <rect width="100%" height="100%" fill="#FAF7F0" rx="6"/>
+                <line x1="60" y1="20" x2="60" y2="280" stroke="#64748B" stroke-width="1.5"/>
+                <line x1="60" y1="280" x2="520" y2="280" stroke="#64748B" stroke-width="1.5"/>
+                <text x="290" y="305" font-size="11" text-anchor="middle" fill="#0F2747">동시 사용자 수 (협업 규모) →</text>
+                <text x="25" y="150" font-size="11" text-anchor="middle" fill="#0F2747" transform="rotate(-90 25 150)">데이터 크기 →</text>
+
+                <!-- SQLite -->
+                <rect x="75" y="215" width="115" height="55" rx="6" fill="#A7F3D0" stroke="#16A34A"/>
+                <text x="132" y="233" font-size="11.5" text-anchor="middle" fill="#0F2747" font-weight="700">SQLite</text>
+                <text x="132" y="247" font-size="9" text-anchor="middle" fill="#0F2747">지금 우리가 있는 자리</text>
+                <text x="132" y="260" font-size="8.5" text-anchor="middle" fill="#166534">혼자 분석 / 파일 하나</text>
+
+                <!-- PostgreSQL -->
+                <rect x="210" y="155" width="130" height="55" rx="6" fill="#E3F2FD" stroke="#0F2747"/>
+                <text x="275" y="173" font-size="11.5" text-anchor="middle" fill="#0F2747" font-weight="700">PostgreSQL · MySQL</text>
+                <text x="275" y="187" font-size="9" text-anchor="middle" fill="#0F2747">사내 엔터프라이즈 서버</text>
+                <text x="275" y="200" font-size="8.5" text-anchor="middle" fill="#1E3A8A">팀 협업 / 백엔드 서비스</text>
+
+                <!-- Supabase -->
+                <rect x="300" y="75" width="135" height="55" rx="6" fill="#FCD34D" fill-opacity="0.4" stroke="#D97706"/>
+                <text x="367" y="93" font-size="11.5" text-anchor="middle" fill="#0F2747" font-weight="700">Supabase (클라우드)</text>
+                <text x="367" y="107" font-size="9" text-anchor="middle" fill="#0F2747">오늘 600 실습 목표</text>
+                <text x="367" y="120" font-size="8.5" text-anchor="middle" fill="#92400E">클라우드 공유 / API 게이트웨이</text>
+
+                <!-- BigQuery -->
+                <rect x="360" y="20" width="130" height="48" rx="6" fill="#FEF2F2" stroke="#DC2626"/>
+                <text x="425" y="38" font-size="11.5" text-anchor="middle" fill="#0F2747" font-weight="700">BigQuery · Snowflake</text>
+                <text x="425" y="52" font-size="9" text-anchor="middle" fill="#991B1B">수억 건 이상 초대규모 OLAP</text>
+              </svg>
+            </div>
+
+            <div class="card">
+              <div class="card-title">📌 SQLite의 자리를 정확히</div>
+              <ul>
+                <li><b>절대 장난감이 아닙니다:</b> 에어버스 A350 비행기 비행제어, 스마트폰 앱, 브라우저 캐시 등 전 세계에서 가장 많이 배포된 DB입니다.</li>
+                <li><b>동시 쓰기(Write)의 한계:</b> 파일 기반이므로 여러 명이 동시에 쓸 때는 파일 락이 걸립니다 ➔ 이 지점에서 <b>PostgreSQL/Supabase</b>로 도약합니다.</li>
+              </ul>
+              <div style="margin-top:auto; font-size:11px; color:var(--primary-d); font-weight:700;">
+                오늘 배우는 SQL 문법은 4대 DB 전체에서 95% 이상 동일하게 작동합니다!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">도구는 종착지가 아니라 규모에 따른 선택입니다 — 로컬 SQLite에서 시작해 클라우드 Supabase로 확장합니다.</span>
+          <a href="FD-03-week03-interactive.html#p4" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗ (실험 4: DB 선택 가이드)</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 20 ==================== -->
+      <section class="slide" id="slide-20">
+        <div class="kicker">§500 DATABASE LANDSCAPE · DECISION TREE</div>
+        <h1 class="action-title">내 분석 상황에 딱 맞는 DB 선택 의사결정 트리</h1>
+        <p class="action-sub">오버엔지니어링 없이 현재 분석 규모와 협업 요구조건에 최적화된 DB를 선택합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🌲 4문 4답 의사결정 경로</div>
+              <div style="font-size:11.5px; line-height:1.6; color:var(--ink2);">
+                <p><b>Q1. 나 혼자 내 컴퓨터에서 논문/과제/백테스팅을 하는가?</b><br>
+                ➔ <b>SQLite 선택</b> (설치 0초, 파일 1개 백업, 가장 빠르고 쾌적함)</p>
+                <p style="margin-top:6px;"><b>Q2. 팀원들과 원격에서 데이터를 공유하고 대시보드를 띄우는가?</b><br>
+                ➔ <b>Supabase 선택</b> (클라우드 Postgres, 브라우저 관리, API 제공)</p>
+                <p style="margin-top:6px;"><b>Q3. 핀테크 주문 체결 등 초당 수천 건의 동시 트랜잭션이 필요한가?</b><br>
+                ➔ <b>PostgreSQL 서버 구축</b> (강력한 동시성 제어, 엔터프라이즈 신뢰성)</p>
+                <p style="margin-top:6px;"><b>Q4. 10억 건 이상의 클릭 로그나 틱 시계열을 집계해야 하는가?</b><br>
+                ➔ <b>BigQuery / Snowflake</b> (칼럼형 저장소, 서버리스 분산 처리)</p>
+              </div>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title" style="color:var(--primary);">💡 Karpathy 미니멀리즘 원칙</div>
+              <p style="font-size:12px; margin-bottom:10px; color:var(--ink2);">
+                "처음부터 거대한 클라우드 분산 DB를 도입하지 마라. 현재 필요한 가장 단순한 도구로 시작하라."
+              </p>
+              <ul>
+                <li>대부분의 금융 데이터 분석은 <b>SQLite</b> 하나로 100% 완벽하게 처리됩니다.</li>
+                <li>원격 협업이 필요해지는 순간 <b>Supabase</b>로 부드럽게 확장합니다.</li>
+                <li>문법은 동일하므로 인프라 전환에 따른 학습 비용은 0에 수렴합니다.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">도구의 화려함에 현혹되지 마세요. 내 분석의 크기에 딱 맞는 도구를 고르는 것이 진짜 시니어의 실력입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 21 ==================== -->
+      <section class="slide" id="slide-21">
+        <div class="kicker">§600 CLOUD DB · SUPABASE PYTHON</div>
+        <h1 class="action-title">내 노트북 DB가 클라우드(Supabase)에서도 통한다</h1>
+        <p class="action-sub">로컬 SQLite에서 다루었던 세 표를 클라우드 PostgreSQL에서 파이썬 공식 클라이언트로 재조회합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">☁️ Supabase 공식 파이썬 연동 코드</div>
+              <div class="code-box">
+                <span class="hl-kwd">from</span> supabase <span class="hl-kwd">import</span> create_client<br>
+                <span class="hl-kwd">import</span> pandas <span class="hl-kwd">as</span> pd<br><br>
+                <span class="hl-cmt"># 강의용 공개 프로젝트 연결 (읽기 전용 티켓)</span><br>
+                url = <span class="hl-str">"https://xyzcompany.supabase.co"</span><br>
+                key = <span class="hl-str">"eyJhbGciOiJIUzI1NiIsInR5cCI6..."</span><br>
+                client = <span class="hl-fn">create_client</span>(url, key)<br><br>
+                <span class="hl-cmt"># 클라우드 DB에서 companies 표 조회</span><br>
+                res = client.<span class="hl-fn">table</span>(<span class="hl-str">'companies'</span>).<span class="hl-fn">select</span>(<span class="hl-str">'*'</span>).<span class="hl-fn">limit</span>(5).<span class="hl-fn">execute</span>()<br>
+                df = pd.<span class="hl-fn">DataFrame</span>(res.data)<br>
+                df.head()
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🎯 장소만 바뀌었을 뿐, 본질은 같다</div>
+              <ul>
+                <li><b>데이터 구조의 일치:</b> 로컬 <code>market_data.db</code>의 세 표(`companies`, `financials`, `returns`)가 클라우드 PostgreSQL에 그대로 올라가 있습니다.</li>
+                <li><b>표 단위 조회:</b> <code>client.table('companies').select('*')</code> 한 줄로 원격 클라우드 DB 데이터를 가져옵니다.</li>
+                <li><b>DataFrame 즉시 결합:</b> 반환된 <code>res.data</code>(JSON 리스트)를 판다스에 넣으면 익숙한 테이블로 즉시 변환됩니다.</li>
+              </ul>
+              <div style="margin-top:auto; font-size:11px; background:var(--primary-l); padding:8px 10px; border-radius:6px; color:var(--primary-d); font-weight:700;">
+                💡 이번 실습을 통해 학생 여러분은 '로컬 분석가'에서 '클라우드 엔지니어링 감각을 갖춘 분석가'로 도약합니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">SQLite에 던졌던 조회가 클라우드 PostgreSQL에서도 동일하게 동작함을 직접 눈으로 확인합니다.</span>
+          <a href="FD-03-week03-interactive.html#p5" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 실험실 시연 ↗ (실험 5: 클라우드 &amp; 게이트웨이)</a>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 22 ==================== -->
+      <section class="slide" id="slide-22">
+        <div class="kicker">§600 CLOUD DB · DRIVE-THRU SECURITY</div>
+        <h1 class="action-title">왜 DB를 외부에 열지 않을까? API 게이트웨이 드라이브스루</h1>
+        <p class="action-sub">원격 DB를 인터넷에 그대로 노출하면 0.1초 만에 날아갈 수 있으므로, 안전한 주문 창구를 방패로 둡니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🍔 드라이브스루 보안 메타포</div>
+              <table class="tbl-compare">
+                <tr><th>비유 (드라이브스루)</th><th>클라우드 시스템 실체</th><th>보안 역할</th></tr>
+                <tr>
+                  <td><b>🚗 손님 차량</b></td>
+                  <td>학생 VS Code / 로컬 환경</td>
+                  <td>데이터를 요청하는 클라이언트</td>
+                </tr>
+                <tr>
+                  <td><b>🎫 영수증 / 쿠폰</b></td>
+                  <td><code>publishable key</code></td>
+                  <td>읽기 전용(SELECT) 인증 티켓</td>
+                </tr>
+                <tr>
+                  <td><b>🛡️ 주문 창구</b></td>
+                  <td><b>API 게이트웨이 &amp; RLS</b></td>
+                  <td>티켓 검사 ➔ 쓰기/삭제 차단 ❌</td>
+                </tr>
+                <tr>
+                  <td><b>🔒 보호된 주방</b></td>
+                  <td><b>PostgreSQL 중앙 DB</b></td>
+                  <td>외부 인터넷 차단, 데이터 보존</td>
+                </tr>
+              </table>
+              <div style="margin-top:10px; font-size:11.5px; color:var(--ink2);">
+                손님이 직접 주방에 들어와 냄비를 뒤엎을 수 없듯, 학생 코드가 원격 DB를 직접 건드리지 못하게 게이트웨이가 차단합니다.
+              </div>
+            </div>
+
+            <div class="card alert">
+              <div class="card-title" style="color:var(--danger);">⚠️ 노트북에 넣어도 되는 키 vs 넣으면 안 되는 키</div>
+              <div style="margin-bottom:8px;">
+                <div style="font-size:11.5px; font-weight:700; color:var(--success);">✅ 노트북에 넣어도 되는 것: publishable key</div>
+                <p style="font-size:11px; color:var(--ink2);">
+                  프로젝트 식별용 공개 키. Row Level Security(RLS)가 걸려 있어 세 표의 <code>SELECT</code>(읽기)만 허용되며, 데이터 수정·삭제는 원천 차단됩니다.
+                </p>
+              </div>
+              <div>
+                <div style="font-size:11.5px; font-weight:700; color:var(--danger);">❌ 절대 코드/노트북에 넣으면 안 되는 것: service_role key</div>
+                <p style="font-size:11px; color:var(--ink2);">
+                  관리자 마스터 키! 깃허브나 노트북에 올라가는 순간 누구든 DB 전체를 지우거나 해킹할 수 있습니다. 비밀번호와 함께 절대 노출 금지!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">API 게이트웨이와 읽기 전용 키(RLS)는 전 세계에 노출된 클라우드 DB의 무결성을 지키는 핵심 방패입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 23 ==================== -->
+      <section class="slide" id="slide-23">
+        <div class="kicker">§600 CLOUD DB · AI &amp; MCP AGENT</div>
+        <h1 class="action-title">자연어로 DB를 조회하는 AI: MCP와 사람의 검증 책임</h1>
+        <p class="action-sub">AI가 Model Context Protocol로 DB에 직접 접근하지만, 쿼리 결과의 타당성은 사람이 검증해야 합니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🤖 Model Context Protocol (MCP) 구조</div>
+              <p style="font-size:12px; margin-bottom:8px; color:var(--ink2);">
+                "2025년 ROE 15% 넘는 반도체 기업 뽑아줘"라고 자연어로 말하면:
+              </p>
+              <div class="stat-row" style="grid-template-columns:1fr 1fr; margin-bottom:8px;">
+                <div class="stat-box" style="padding:6px;">
+                  <div style="font-size:12px; font-weight:700; color:var(--violet);">1. 스키마 파악</div>
+                  <div style="font-size:10px; color:var(--muted);">테이블/컬럼 구조 읽기</div>
+                </div>
+                <div class="stat-box" style="padding:6px;">
+                  <div style="font-size:12px; font-weight:700; color:var(--primary);">2. SQL 자동 작성</div>
+                  <div style="font-size:10px; color:var(--muted);">JOIN &amp; WHERE 생성</div>
+                </div>
+              </div>
+              <div class="stat-row" style="grid-template-columns:1fr 1fr; margin-bottom:0;">
+                <div class="stat-box" style="padding:6px;">
+                  <div style="font-size:12px; font-weight:700; color:var(--amber);">3. DB 엔진 실행</div>
+                  <div style="font-size:10px; color:var(--muted);">API로 쿼리 전송</div>
+                </div>
+                <div class="stat-box" style="padding:6px;">
+                  <div style="font-size:12px; font-weight:700; color:var(--success);">4. 한국어 요약</div>
+                  <div style="font-size:10px; color:var(--muted);">답변 및 표 제시</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card warning">
+              <div class="card-title" style="color:var(--warning);">⚖️ 인간 분석가의 고유한 검증 책임</div>
+              <ul>
+                <li><b>환각(Hallucination) 위험:</b> AI가 쿼리를 짤 때 엉뚱한 컬럼을 나눗셈하거나, <code>INNER JOIN</code> 대신 잘못된 조인을 걸어 행이 누락될 수 있습니다.</li>
+                <li><b>비즈니스 논리 검증:</b> 산출된 숫자가 상식적인 금융 범위(예: ROE가 10,000%로 튀거나 매출이 음수)에 있는지 판단하는 것은 전적으로 사람의 몫입니다.</li>
+                <li><b>최종 결정권자:</b> "AI가 뽑아준 표니까 맞겠지"라는 태도는 실무에서 치명적인 오판을 낳습니다.</li>
+              </ul>
+              <div style="margin-top:auto; font-size:11px; font-weight:700; color:var(--warning);">
+                📌 오늘 SQL 5대 문법을 배운 이유: AI가 짠 쿼리를 읽고 검증할 수 있는 눈을 갖추기 위함입니다!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">AI는 강력한 코딩 조력자이지만, 도출된 쿼리의 정합성과 금융 논리를 최종 검증하는 주체는 분석가 자신입니다.</span>
+        </div>
+      </section>
+
+      <!-- ==================== SLIDE 24 ==================== -->
+      <section class="slide" id="slide-24">
+        <div class="kicker">§600 CLOUD DB · WEEK 04 BRIDGE</div>
+        <h1 class="action-title">다음 주 예고: 공시 원천 OpenDART API에서 클라우드 DB까지</h1>
+        <p class="action-sub">오늘 준비한 빈 데이터베이스 그릇에, 다음 주에는 금융감독원 진짜 실시간 공시 데이터를 채워 넣습니다.</p>
+        
+        <div class="slide-content">
+          <div class="grid-2">
+            <div class="card highlight">
+              <div class="card-title" style="color:var(--primary);">🎯 이번 주 (Week 03) 완성한 마일스톤</div>
+              <ul>
+                <li><b>그릇의 완성:</b> 데이터를 안전하게 담고 고속으로 꺼내 쓸 SQLite &amp; Supabase 인프라 구축</li>
+                <li><b>SQL 5대 문법 체득:</b> WHERE, ORDER BY, 계산열, GROUP BY, JOIN</li>
+                <li><b>황금 분업 파이프라인:</b> "줄이는 일은 SQL이, 주무르는 일은 pandas가" 확립</li>
+              </ul>
+              <div style="margin-top:auto; padding:8px; background:#fff; border-radius:6px; border:1px solid #99F6E4; font-size:11px; color:var(--primary-d);">
+                ✅ 데이터가 어디에 어떻게 저장되고 흘러가는지 완벽하게 이해했습니다.
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🎯 다음 주 (Week 04) 본격 연결 파이프라인</div>
+              <ul>
+                <li><b>OpenDART API 인증키 발급:</b> 금융감독원 전자공시시스템 개발자 등록</li>
+                <li><b>진짜 상장사 재무제표 수집:</b> 삼성전자·현대차 분기보고서 XML/JSON 파싱</li>
+                <li><b>자동 적재 파이프라인 완성:</b> DART API ➔ 데이터 가공 ➔ <b>오늘 만든 DB(to_sql)</b>에 자동 저장!</li>
+              </ul>
+              <div style="margin-top:auto; padding:8px; background:var(--surf3); border-radius:6px; border:1px solid var(--line); font-size:11px; color:var(--navy); font-weight:700;">
+                오늘 배운 DB가 다음 주 DART API 데이터를 받아내는 튼튼한 금고가 됩니다!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="takeaway-bar">
+          <span class="takeaway-badge">Key Takeaway</span>
+          <span class="takeaway-text">3주차에서 튼튼한 데이터베이스 그릇을 만들었으니, 4주차에는 진짜 금융 원천 데이터(OpenDART)를 부어 넣습니다!</span>
+          <a href="FD-03-week03-interactive.html" class="interactive-bridge-btn" style="margin-left:auto;">🎯 실시간 6단계 전체 실험실 열기 ↗</a>
+        </div>
+      </section>
+
+    </div>
+    </div></main>
+</div>
+
+<script>
+// Student edition: presenter notes stripped
+// App State
+let currentSlide = 0;
+const totalSlides = 24;
+
+// DOM Elements
+const slides = document.querySelectorAll('.slide');
+const sbItems = document.querySelectorAll('.sb-item');
+const slideCounter = document.getElementById('slideCounter');
+const sidebar = document.getElementById('sidebar');
+
+// Slide Navigation
+function goToSlide(index, updateHistory = true) {
+  if (index < 0) index = 0;
+  if (index >= totalSlides) index = totalSlides - 1;
+  
+  slides[currentSlide].classList.remove('active');
+  sbItems[currentSlide].classList.remove('active');
+  
+  currentSlide = index;
+  
+  slides[currentSlide].classList.add('active');
+  sbItems[currentSlide].classList.add('active');
+  
+  // Update counter
+  const numStr = (currentSlide + 1).toString().padStart(2, '0');
+  slideCounter.textContent = `${numStr} / ${totalSlides}`;
+  
+  // Scroll sidebar active item into view
+  sbItems[currentSlide].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  
+  // URL Hash Sync
+  if (updateHistory) {
+    history.replaceState(null, null, `#slide-${currentSlide + 1}`);
+  }
+}
+
+// Navigation Buttons
+document.getElementById('btnPrevSlide').addEventListener('click', () => goToSlide(currentSlide - 1));
+document.getElementById('btnNextSlide').addEventListener('click', () => goToSlide(currentSlide + 1));
+
+// Sidebar toggle
+document.getElementById('btnToggleSidebar').addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed');
+});
+
+// Fullscreen toggle
+document.getElementById('btnFullscreen').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {});
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+// Sidebar item click
+sbItems.forEach(item => {
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    const idx = parseInt(item.getAttribute('data-index'), 10);
+    goToSlide(idx);
+  });
+});
+
+// Keyboard Navigation
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault();
+    goToSlide(currentSlide + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    goToSlide(currentSlide - 1);
+  } else if (e.key === 'Home') {
+    e.preventDefault();
+    goToSlide(0);
+  } else if (e.key === 'End') {
+    e.preventDefault();
+    goToSlide(totalSlides - 1);
+  } else if (e.key.toLowerCase() === 't' || e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    sidebar.classList.toggle('collapsed');
+  } else if (e.key.toLowerCase() === 'f') {
+    e.preventDefault();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+});
+
+// Live Sidebar Search
+document.getElementById('sbSearch').addEventListener('input', (e) => {
+  const term = e.target.value.toLowerCase().trim();
+  sbItems.forEach(item => {
+    const title = item.querySelector('.sb-item-title').textContent.toLowerCase();
+    if (title.includes(term)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+});
+
+// Hash router init
+function initFromHash() {
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#slide-')) {
+    const sNum = parseInt(hash.replace('#slide-', ''), 10);
+    if (!isNaN(sNum) && sNum >= 1 && sNum <= totalSlides) {
+      goToSlide(sNum - 1, false);
+      return;
+    }
+  }
+  goToSlide(0, false);
+}
+
+window.addEventListener('DOMContentLoaded', initFromHash);
+window.addEventListener('hashchange', initFromHash);
+initFromHash();
+</script>
+
+</body>
+</html>

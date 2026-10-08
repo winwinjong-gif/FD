@@ -1,0 +1,3188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL 기초 & 클라우드 DB</title>
+<style>
+/* ── CSS Variables ─────────────────────────────────────────────────── */
+:root{
+  --bg:#0a0e1a;--s1:#111827;--s2:#1a2235;--bd:#1e2d45;
+  --a1:#3b82f6;--a2:#8b5cf6;--a3:#10b981;--a4:#f59e0b;
+  --tx:#e2e8f0;--tm:#64748b;--td:#94a3b8;
+  --bad:#ef4444;
+  --col-pass:#6ee7b7;--col-act:#93c5fd;--col-warn:#fcd34d;--col-fail:#fca5a5;--col-purp:#c4b5fd;
+  --row-fail-bg:rgba(239,68,68,0.08);
+  --calc-bg:#070b14;--calc-tx:#cbd5e1;--calc-bd:#1e2d45;
+}
+/* ── Reset ─────────────────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  min-height:100vh}
+/* ── T1 Universal Primitives ───────────────────────────────────────── */
+.wrap{max-width:960px;margin:0 auto;padding:36px 18px 80px}
+.hdr{text-align:center;margin-bottom:32px}
+.badge{display:inline-block;background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(139,92,246,.15));
+  border:1px solid rgba(139,92,246,.3);color:#a78bfa;font-family:monospace;
+  font-size:11px;letter-spacing:2px;padding:5px 14px;border-radius:20px;margin-bottom:14px}
+h1{font-size:clamp(22px,5vw,36px);font-weight:700;
+  background:linear-gradient(135deg,#93c5fd,#a78bfa,#6ee7b7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:8px;text-align:center}
+.sub{color:var(--td);font-size:14px;line-height:1.75;word-break:keep-all;
+  max-width:760px;margin:0 auto}
+/* Progress */
+.progress,.prog-wrap{height:3px;background:var(--bd);border-radius:4px;margin:16px 0}
+.progress span,.prog{display:block;height:100%;
+  background:linear-gradient(90deg,var(--a1),var(--a2));
+  border-radius:4px;transition:width .3s}
+/* Navigation */
+.nav,.step-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:20px}
+button{font-family:inherit;cursor:pointer}
+.sbtn{padding:7px 15px;border-radius:20px;border:1px solid var(--bd);
+  background:var(--s1);color:var(--tm);font-size:12px;transition:all .2s;white-space:nowrap}
+.sbtn:hover,.sbtn.active,.sbtn.on{background:var(--a1);border-color:var(--a1);color:#fff;font-weight:500}
+/* Panels */
+.panel{display:none}.panel.on{display:block;animation:pi .25s ease both}
+@keyframes pi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* Card */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:14px;
+  padding:22px;margin-bottom:14px;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.ctitle,.title{font-size:18px;font-weight:600;margin-bottom:12px}
+.desc,.sub{color:var(--td);font-size:13.5px;line-height:1.8;word-break:keep-all;margin-bottom:14px}
+/* Boxes */
+.box{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.box h3{font-size:14px;margin:0 0 9px}
+/* Navigation row */
+.navrow{display:flex;justify-content:space-between;margin-top:20px;gap:9px}
+.nbtn,.btn{padding:10px 20px;border-radius:9px;border:1px solid var(--bd);
+  background:var(--s1);color:var(--td);font-size:13px;transition:all .2s}
+.nbtn:hover:not(:disabled),.btn:hover:not(:disabled){border-color:var(--a1);color:var(--tx)}
+.nbtn:disabled,.btn:disabled{opacity:.3;cursor:not-allowed}
+.nbtn.pri,.btn.pri{background:var(--a1);border-color:var(--a1);color:#fff;font-weight:600}
+.btn.g{border-color:rgba(16,185,129,.6);color:#6ee7b7}
+/* Tokens */
+.tok{padding:5px 11px;border-radius:7px;font-family:monospace;font-size:13px;border:1px solid}
+.tw{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.35);color:#93c5fd}
+.ti{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.35);color:#c4b5fd}
+.tokens{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.promptTok{border-color:rgba(139,92,246,.58);background:rgba(139,92,246,.14);color:#c4b5fd}
+.genTok{border-color:rgba(16,185,129,.62);background:rgba(16,185,129,.14);color:#6ee7b7}
+.focusTok{border-color:rgba(245,158,11,.8);background:rgba(245,158,11,.16);color:#fcd34d}
+.specialTok{border-color:rgba(56,189,248,.62);background:rgba(56,189,248,.13);color:#7dd3fc}
+.selectedTok{box-shadow:0 0 0 2px rgba(16,185,129,.28)}
+/* Info callouts */
+.ibox{border-radius:9px;padding:12px 15px;margin:9px 0;font-size:13px;word-break:keep-all;color:var(--td)}
+.ibox.bl{background:rgba(59,130,246,.08);border-left:3px solid var(--a1)}
+.ibox.pu{background:rgba(139,92,246,.08);border-left:3px solid var(--a2)}
+.ibox.gr{background:rgba(16,185,129,.08);border-left:3px solid var(--a3)}
+.ibox.am{background:rgba(245,158,11,.08);border-left:3px solid var(--a4)}
+.ibox-t{font-weight:600;margin-bottom:6px;font-size:13px}
+.ibox ul{list-style:none;display:flex;flex-direction:column;gap:4px;padding-left:2px}
+.ibox ul li{display:flex;align-items:flex-start;gap:7px;line-height:1.7}
+.ibox ul li::before{content:"›";font-size:14px;flex-shrink:0}
+.ibox.bl ul li::before{color:var(--a1)}.ibox.pu ul li::before{color:var(--a2)}
+.ibox.gr ul li::before{color:var(--a3)}.ibox.am ul li::before{color:var(--a4)}
+/* Notes (decoder style callouts) */
+.note{border-left:3px solid var(--a1);background:rgba(59,130,246,.08);
+  border-radius:10px;padding:12px 14px;color:var(--td);font-size:13px;
+  line-height:1.75;word-break:keep-all;margin:12px 0}
+.note.g{border-left-color:var(--a3);background:rgba(16,185,129,.08)}
+.note.a{border-left-color:var(--a4);background:rgba(245,158,11,.08)}
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid.three{grid-template-columns:1fr 1fr 1fr}
+/* Bullet lists */
+.bul{margin:8px 0 0;padding:0;list-style:none}
+.bul li{position:relative;padding-left:16px;margin:3px 0;color:var(--td);
+  font-size:12.5px;line-height:1.7;word-break:keep-all}
+.bul li:before{content:"-";position:absolute;left:0;color:var(--tm)}
+.blist{display:flex;flex-direction:column;gap:5px;margin:8px 0}
+.bi{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--td);
+  line-height:1.7;word-break:keep-all}
+.bd{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:7px}
+.bd.b{background:var(--a1)}.bd.p{background:var(--a2)}
+.bd.g{background:var(--a3)}.bd.y{background:var(--a4)}
+/* Calc / preformatted */
+.calc{background:var(--calc-bg);border:1px solid var(--calc-bd);border-radius:11px;
+  padding:14px;font:13px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:var(--calc-tx);white-space:pre-wrap;overflow:auto}
+.formula{border-left:3px solid var(--a4);background:rgba(245,158,11,.08)}
+/* Matrix */
+.mx-wrap{overflow-x:auto;margin:12px 0}
+.mx{display:inline-grid;gap:4px;padding:13px;background:var(--s2);
+  border-radius:11px;border:1px solid var(--bd)}
+.mc{width:50px;height:32px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;font-family:monospace;font-size:11px}
+.mv{background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.25);color:#c4b5fd}
+.mp{background:rgba(100,116,139,.08);border:1px dashed rgba(100,116,139,.2);color:var(--tm);font-size:10px}
+/* Distribution bars */
+.dist{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+.drow{display:grid;grid-template-columns:minmax(86px,128px) 1fr 42px;gap:8px;align-items:center}
+.lab{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:#0b1220;
+  border:1px solid var(--bd);border-radius:7px;padding:6px 8px;color:#cbd5e1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meter{height:16px;background:#0b1220;border-radius:7px;overflow:hidden}
+.meter span{display:block;height:100%;
+  background:linear-gradient(90deg,var(--a4),var(--a3));border-radius:7px}
+.pct{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;text-align:right;color:#cbd5e1}
+/* Mini flow */
+.miniFlow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.mini{border:1px solid var(--bd);background:#0b1220;border-radius:10px;
+  padding:10px;text-align:center;font-size:12px;line-height:1.45;color:#cbd5e1}
+.mini.on{border-color:rgba(245,158,11,.8);background:rgba(245,158,11,.12);color:#fcd34d}
+/* Seq grow */
+.seqGrow{display:grid;gap:10px;margin-top:12px}
+.seqStep{display:grid;grid-template-columns:86px 1fr;gap:10px;align-items:start;
+  border:1px solid var(--bd);background:#0b1220;border-radius:11px;padding:10px}
+.seqLabel{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#fcd34d}
+.seqText{font-size:12px;color:var(--td);line-height:1.55;word-break:keep-all;margin-top:4px}
+/* Legend */
+.legend,.ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.leg,.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bd);
+  border-radius:999px;background:#0b1220;color:#cbd5e1;font-size:12px;padding:6px 10px}
+.dot{width:9px;height:9px;border-radius:99px}
+.dot.p{background:var(--a2)}.dot.g{background:var(--a3)}
+.dot.y{background:var(--a4)}.dot.s{background:#38bdf8}
+/* Misc */
+.hl{color:#93c5fd;font-weight:500}
+.small{font-size:12px;color:var(--td);line-height:1.65;word-break:keep-all}
+.spbg{display:inline-flex;align-items:center;background:rgba(0,0,0,.3);
+  border:1px solid var(--bd);border-radius:7px;padding:4px 10px;
+  font-family:monospace;font-size:11px;color:var(--td);margin:3px 3px 3px 0}
+.spbg b{color:var(--a4)}
+.cue{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(245,158,11,.45);
+  background:rgba(245,158,11,.1);color:#fcd34d;border-radius:999px;
+  padding:4px 9px;font-size:12px;font-weight:700;margin-right:6px}
+/* Flow diagram */
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.f{border:1px solid var(--bd);background:var(--s2);border-radius:11px;
+  padding:10px 13px;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:center}
+.op{font-size:18px;color:var(--tm)}
+/* Explain grid */
+.explainGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.reason{background:#07111d;border:1px solid rgba(59,130,246,.35);border-radius:11px;
+  padding:12px;color:#cbd5e1;font-size:13px;line-height:1.65;word-break:keep-all}
+/* Story */
+.story{font-size:18px;line-height:1.8;word-break:keep-all}
+.blank{color:#fcd34d;border-bottom:1px dashed rgba(245,158,11,.8);padding:0 4px}
+/* Attention items */
+.attnItem{display:grid;grid-template-columns:minmax(124px,168px) 1fr;
+  gap:10px;align-items:center;margin:9px 0}
+.spot{border:1px solid var(--bd);background:#0b1220;border-radius:10px;
+  min-height:34px;overflow:hidden}
+.spot span{display:block;height:34px;
+  background:linear-gradient(90deg,rgba(245,158,11,.35),rgba(16,185,129,.35));border-radius:10px}
+/* Sub-tabs */
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.stab{padding:6px 13px;border-radius:7px;border:1px solid var(--bd);
+  background:var(--s1);color:var(--tm);font-size:12px;cursor:pointer;transition:all .2s}
+.stab.on{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.5);
+  color:#c4b5fd;font-weight:500}
+.spanel{display:none}.spanel.on{display:block}
+/* Responsive */
+@media(max-width:800px){.grid,.grid.three{grid-template-columns:1fr}}
+@media(max-width:520px){
+  .wrap{padding:28px 14px 68px}.card{padding:18px}
+  .nav,.step-nav{justify-content:flex-start}.sbtn{padding:7px 10px}
+  .miniFlow{grid-template-columns:1fr}.story{font-size:16px}
+  .drow{grid-template-columns:84px 1fr 36px;gap:6px}
+  .seqStep{grid-template-columns:1fr}.navrow .btn{padding:10px 11px}
+  .calc{font-size:12px}.tokens{gap:6px}.tok{padding:6px 8px;font-size:11.5px}
+  .explainGrid{grid-template-columns:1fr}.attnItem{grid-template-columns:1fr}
+}
+/* ── Light theme (toggle; additive — dark stays the default) ────────── */
+/* data-theme attribute (not a class) keeps the catalog allowlist clean */
+body[data-theme="light"]{
+  --bg:#f8fafc;--s1:#ffffff;--s2:#f1f5f9;--bd:#e2e8f0;
+  --tx:#0f172a;--tm:#64748b;--td:#334155;
+  --bad:#dc2626;
+  --col-pass:#047857;--col-act:#1d4ed8;--col-warn:#b45309;--col-fail:#b91c1c;--col-purp:#7c3aed;
+  --row-fail-bg:rgba(239,68,68,0.05);
+  --calc-bg:#f1f5f9;--calc-tx:#0f172a;--calc-bd:#cbd5e1;
+}
+body[data-theme="light"] h1{background:linear-gradient(135deg,#2563eb,#7c3aed,#059669);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+body[data-theme="light"] .badge{color:#7c3aed;
+  background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(124,58,237,.1));
+  border-color:rgba(124,58,237,.35)}
+body[data-theme="light"] .hl{color:#2563eb}
+body[data-theme="light"] .seqStep{background:#eef2f7}
+body[data-theme="light"] .seqLabel{color:#b45309}
+</style>
+</head>
+<body>
+<!-- Shared SVG arrow markers: kept outside every .panel so they still render
+     when the defining panel is display:none (same fix as FD-03 deck arrow bug). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr-gray" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#64748b"/></marker>
+    <marker id="arr-red" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#ef4444"/></marker>
+    <marker id="arr-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#3b82f6"/></marker>
+    <marker id="arr-green" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#10b981"/></marker>
+    <marker id="arr-purple" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#8b5cf6"/></marker>
+    <marker id="arr-yellow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0,0 7,3.5 0,7" fill="#fcd34d"/></marker>
+  </defs>
+</svg>
+<button class="sbtn" id="themeBtn" onclick="toggleTheme()" style="position:fixed;top:12px;right:12px;z-index:50">🌙 다크</button>
+<div class="wrap">
+<div class="hdr">
+  <div class="badge">FD Week03 · SQLite→Supabase</div>
+  <h1>SQL 기초 & 클라우드 DB</h1>
+  <div style="margin-top: 10px; margin-bottom: 6px;">
+    <a href="FD-03-web-deck.lecture-mode.html#slide-2" id="deckLink" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:linear-gradient(135deg,rgba(59,130,246,0.18),rgba(139,92,246,0.18));border:1px solid rgba(139,92,246,0.4);border-radius:20px;color:#c4b5fd;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s;">📽 덱 §100 (장면 2)로 돌아가기 ↗</a>
+  </div>
+</div>
+<style>
+/* pe-table / pe-pos — reused from catalog T3-ENC as generic value-table primitives (allowlisted) */
+.pe-table{width:100%;border-collapse:collapse;margin:10px 0;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto;display:block}
+.pe-table thead,.pe-table tbody{display:table;width:100%;table-layout:fixed}
+.pe-table th{background:var(--s2);color:var(--td);text-align:left;padding:7px 9px;border-bottom:1px solid var(--bd);font-weight:600}
+.pe-table td{padding:7px 9px;border-bottom:1px solid var(--bd);color:var(--tx);transition:background .2s ease,color .2s ease}
+.pe-table tr:last-child td{border-bottom:none}
+.pe-pos{background:rgba(245,158,11,.12);color:#fcd34d;font-weight:700}
+
+/* Motion & visual enhancements */
+body, .card, .sub, .desc, .box, .ibox, .small { word-break: keep-all; }
+
+/* ── Light Theme Adaptability for SVG & Code ── */
+body[data-theme="light"] svg text[fill="#cbd5e1"],
+body[data-theme="light"] svg text[fill="#f1f5f9"] {
+  fill: #0f172a !important;
+}
+body[data-theme="light"] svg text[fill="#94a3b8"] {
+  fill: #475569 !important;
+}
+body[data-theme="light"] svg text[fill="#6ee7b7"] {
+  fill: #047857 !important;
+}
+body[data-theme="light"] svg text[fill="#93c5fd"] {
+  fill: #1d4ed8 !important;
+}
+body[data-theme="light"] svg text[fill="#fcd34d"] {
+  fill: #b45309 !important;
+}
+body[data-theme="light"] svg text[fill="#c4b5fd"] {
+  fill: #7c3aed !important;
+}
+body[data-theme="light"] svg text[fill="#fca5a5"] {
+  fill: #b91c1c !important;
+}
+body[data-theme="light"] svg rect[fill="#1e293b"],
+body[data-theme="light"] svg rect[fill="#0f172a"] {
+  fill: #ffffff !important;
+  stroke: #cbd5e1 !important;
+}
+body[data-theme="light"] svg line[stroke="#1e293b"] {
+  stroke: #cbd5e1 !important;
+}
+body[data-theme="light"] svg circle[fill="#1e293b"] {
+  fill: #ffffff !important;
+  stroke: #047857 !important;
+}
+body[data-theme="light"] .calc {
+  background: var(--calc-bg);
+  color: var(--calc-tx);
+  border-color: var(--calc-bd);
+}
+.box, .calc, .ibox, .card {
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.btn {
+  transition: all .18s ease;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+@keyframes panelFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes flowStream {
+  to { stroke-dashoffset: -24; }
+}
+@keyframes flowStreamRev {
+  to { stroke-dashoffset: 24; }
+}
+@keyframes pulseGlowBlue {
+  0%, 100% { filter: drop-shadow(0 0 1px rgba(59,130,246,0.3)); }
+  50% { filter: drop-shadow(0 0 6px rgba(59,130,246,0.6)); }
+}
+@keyframes pulseGlowAmber {
+  0%, 100% { filter: drop-shadow(0 0 1px rgba(245,158,11,0.3)); }
+  50% { filter: drop-shadow(0 0 7px rgba(245,158,11,0.6)); }
+}
+@keyframes pulseGlowRed {
+  0%, 100% { filter: drop-shadow(0 0 1px rgba(239,68,68,0.3)); }
+  50% { filter: drop-shadow(0 0 7px rgba(239,68,68,0.6)); }
+}
+@keyframes pulseGlowGreen {
+  0%, 100% { filter: drop-shadow(0 0 1px rgba(16,185,129,0.3)); }
+  50% { filter: drop-shadow(0 0 7px rgba(16,185,129,0.7)); }
+}
+.spanel.on {
+  animation: panelFadeIn .22s ease-out both;
+}
+#fdb-result, #fdb-bottle-result, #fdm-result, #toss-sim-view, #dbnav-result, #env-terminal, #sqlite-diag-box, #ob-note, #xray-calc, #xray-table, #xray-summary, #cc-body, #gb-warn, #gb-buckets, #jn-result, #jn-alert, #err-msg, #err-tip, #pd-pipe-box, #dbmap-detail, #tt-result, #sim-result, #mcp-result {
+  animation: panelFadeIn .2s ease-out both;
+}
+
+/* ── SQL Dynamic Motion Engine ── */
+#xray-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+  margin: 10px 0;
+  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+#xray-table th {
+  background: var(--s2);
+  color: var(--td);
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--bd);
+  font-weight: 600;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#xray-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--bd);
+  color: var(--tx);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sql-row {
+  background: var(--s1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sql-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.sql-row.pass-glow {
+  background: rgba(16, 185, 129, 0.08) !important;
+  box-shadow: inset 3px 0 0 #10b981;
+}
+.sql-row.fail-dim {
+  opacity: 0.15;
+  transform: translateX(20px);
+  filter: grayscale(1);
+  text-decoration: line-through;
+  pointer-events: none;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid var(--bd);
+  background: var(--s1);
+  color: var(--td);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+.pill:hover {
+  border-color: var(--a1);
+  color: var(--tx);
+}
+.pill.active {
+  background: var(--a1);
+  color: #fff;
+  border-color: var(--a1);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.35);
+}
+#xray-cutoff-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 6px 0;
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.05));
+  border-left: 3px solid #06b6d4;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #67e8f9;
+  font-weight: 700;
+  animation: panelFadeIn 0.3s ease both;
+}
+
+/* ── GROUP BY Bucket Motion ── */
+.bucket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.bucket-card {
+  background: var(--s2);
+  border: 1.5px dashed var(--bd);
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.3s ease;
+  min-height: 120px;
+}
+.bucket-card.active {
+  border-color: var(--a3);
+  border-style: solid;
+  background: rgba(16, 185, 129, 0.05);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+.bucket-item {
+  background: var(--s1);
+  border: 1px solid var(--bd);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-bottom: 5px;
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  animation: itemDrop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes itemDrop {
+  from { opacity: 0; transform: translateY(-12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+</style>
+
+<meta name="lec-html-render-check" content="desktop,mobile">
+<p class="sub">앵커 질문 — "지금 살펴볼 만한 회사를 어떻게 골라내지?" 파일 세 개를 여는 방식에서 DB에 물어보는 방식으로 옮겨가는 6단계 시각화 랩.</p>
+
+<div class="progress"><span id="prog" style="width:16.6%"></span></div>
+<div class="step-nav">
+  <button class="sbtn on" onclick="goTab(0)">① §100 왜 DB</button>
+  <button class="sbtn" onclick="goTab(1)">② §200 SQLite·적재</button>
+  <button class="sbtn" onclick="goTab(2)">③ §300 SQL복습</button>
+  <button class="sbtn" onclick="goTab(3)">④ §400 파이프라인</button>
+  <button class="sbtn" onclick="goTab(4)">⑤ §500 DB지도</button>
+  <button class="sbtn" onclick="goTab(5)">⑥ §600 클라우드</button>
+</div>
+
+<!-- ============ PANEL 0 — 왜 DB인가 ============ -->
+<section class="panel on" id="p0">
+  <div class="card">
+    <div class="badge" style="margin-bottom:10px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;font-weight:700;font-size:11px;letter-spacing:1px;">§100 · 왜 데이터베이스인가</div>
+    <div class="ctitle">🛒 조건 하나가 바뀌면 무엇이 반복되나 (파이프라인 구조도)</div>
+    <div class="ibox pu">
+      <div class="ibox-t">💬 팀장님 한마디: "매출 기준 1조 → 5,000억으로 낮춰서 다시 뽑아봐"</div>
+      숫자 하나 바꿨을 뿐인데, 파일 방식은 <b>3개 CSV를 다시 열고 병합하는 동안 멍하니 팬 돌아가는 소리를 듣고</b> 있어야 합니다. DB 방식이면 <b>질의(WHERE) 한 줄만 바꿔 0.01초 만에</b> 다시 받습니다.
+    </div>
+    <p class="desc">아래 다이어그램에서 <b>"되돌아가는 붉은색 루프 화살표(파일 방식 병목)"</b>와 <b>"질의만 전달하는 녹색 스트림(DB 방식)"</b>의 차이를 확인하세요.</p>
+
+    <!-- SVG Architecture Flow: File loop vs DB query -->
+    <div class="box" style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;margin:12px 0;padding:14px;text-align:center">
+      <svg viewBox="0 0 560 270" style="width:100%;max-width:560px;display:inline-block">
+        <!-- Loop Arrow returning to start (placed cleanly in top margin, y=16) -->
+        <path d="M 248 71 C 248 12, 64 12, 64 54" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="4,3" marker-end="url(#arr-red)"/>
+        <text x="156" y="20" font-size="10.5" fill="#fca5a5" font-weight="700" text-anchor="middle">↺ 조건 변경 시 처음부터 전체 반복 (병목!)</text>
+
+        <!-- TOP: File Method -->
+        <rect x="15" y="28" width="530" height="102" rx="8" fill="rgba(239,68,68,.06)" stroke="rgba(239,68,68,.35)" stroke-width="1.2"/>
+        <text x="28" y="48" font-size="11.5" fill="#fca5a5" font-weight="700">📁 파일 방식: CSV 3장 → 병합 → 대기</text>
+
+        <!-- File stages: icon + motion scene (see the situation, don't read it) -->
+        <g>
+          <rect x="25" y="56" width="78" height="20" rx="4" fill="#1e293b" stroke="#3b82f6" stroke-width="1.2"/>
+          <text x="34" y="70" font-size="11" text-anchor="middle">📄</text>
+          <text x="47" y="70" font-size="7" fill="#93c5fd">companies.csv</text>
+        </g>
+        <g>
+          <rect x="25" y="80" width="78" height="20" rx="4" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.2"/>
+          <text x="34" y="94" font-size="11" text-anchor="middle">📄</text>
+          <text x="47" y="94" font-size="7" fill="#c4b5fd">financials.csv</text>
+        </g>
+        <g>
+          <rect x="25" y="104" width="78" height="20" rx="4" fill="#1e293b" stroke="#f59e0b" stroke-width="1.2"/>
+          <text x="34" y="118" font-size="11" text-anchor="middle">📄</text>
+          <text x="47" y="118" font-size="7" fill="#fcd34d">returns.csv</text>
+        </g>
+
+        <path d="M 103 66 L 163 88" stroke="#64748b" stroke-width="1.2" stroke-dasharray="2,2"/>
+        <path d="M 103 90 L 163 90" stroke="#64748b" stroke-width="1.2" stroke-dasharray="2,2"/>
+        <path d="M 103 114 L 163 92" stroke="#64748b" stroke-width="1.2" marker-end="url(#arr-gray)"/>
+
+        <g>
+          <circle cx="180" cy="90" r="17" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="180" y="96" font-size="15" text-anchor="middle">⚙️</text>
+          <animateTransform attributeName="transform" type="rotate" from="0 180 90" to="360 180 90" dur="2.2s" repeatCount="indefinite"/>
+        </g>
+        <text x="180" y="117" font-size="7.2" text-anchor="middle" fill="#fca5a5" font-weight="700">병합 처리 중</text>
+
+        <path d="M 199 90 L 222 90" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-red)"/>
+
+        <circle cx="248" cy="90" r="17" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" style="animation:pulseGlowRed 2s ease-in-out infinite"/>
+        <line x1="248" y1="90" x2="248" y2="80" stroke="#fca5a5" stroke-width="2" stroke-linecap="round"/>
+        <g>
+          <line x1="248" y1="90" x2="257" y2="85" stroke="#fca5a5" stroke-width="2" stroke-linecap="round"/>
+          <animateTransform attributeName="transform" type="rotate" from="0 248 90" to="360 248 90" dur="3s" repeatCount="indefinite"/>
+        </g>
+        <text x="248" y="117" font-size="7.2" text-anchor="middle" fill="#fca5a5" font-weight="700">3분 40초 대기</text>
+
+        <!-- BOTTOM: DB Method -->
+        <rect x="15" y="145" width="530" height="112" rx="8" fill="rgba(16,185,129,.06)" stroke="rgba(16,185,129,.35)" stroke-width="1.2"/>
+        <text x="26" y="161" font-size="11" fill="#6ee7b7" font-weight="700">🗄️ DB 방식: 원본 데이터 보존 &amp; SQL 질의 전송</text>
+
+        <!-- Analyst Notebook (Left) -->
+        <rect x="28" y="172" width="120" height="68" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="88" y="196" font-size="11.5" text-anchor="middle" fill="#93c5fd" font-weight="700">💻 분석가 (VS Code)</text>
+        <text x="88" y="214" font-size="9" text-anchor="middle" fill="#cbd5e1">조건 변경 시</text>
+        <text x="88" y="227" font-size="9" text-anchor="middle" fill="#6ee7b7">질의만 수정 전송</text>
+
+        <!-- Forward query arrows -->
+        <path d="M 148 195 L 163 195" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arr-blue)"/>
+
+        <!-- SQL Query Card (Structured, Multi-line with pulse glow) -->
+        <rect x="166" y="168" width="206" height="52" rx="5" fill="#0f172a" stroke="#3b82f6" stroke-width="1.2" style="animation:pulseGlowBlue 2.8s ease-in-out infinite"/>
+        <text x="176" y="180" font-size="7.5" fill="#93c5fd" font-weight="700">① 구조화된 질의 전송 (수 KB)</text>
+        <text x="176" y="192" font-size="8.5" font-family="monospace"><tspan fill="#60a5fa" font-weight="700">SELECT </tspan><tspan fill="#6ee7b7">name, revenue</tspan></text>
+        <text x="176" y="203" font-size="8.5" font-family="monospace"><tspan fill="#60a5fa" font-weight="700">  FROM </tspan><tspan fill="#c084fc">financials</tspan></text>
+        <text x="176" y="214" font-size="8.5" font-family="monospace"><tspan fill="#60a5fa" font-weight="700"> WHERE </tspan><tspan fill="#6ee7b7">revenue</tspan> > <tspan fill="#fcd34d">300000;</tspan></text>
+
+        <path d="M 372 195 L 388 195" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arr-blue)"/>
+
+        <!-- Return Arrow: DB -> VS Code (animated flowing stream!) -->
+        <path d="M 390 230 L 152 230" stroke="#10b981" stroke-width="2" stroke-dasharray="6,4" style="animation:flowStreamRev 1.2s linear infinite" marker-end="url(#arr-green)"/>
+        <text x="269" y="244" font-size="8.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">② 필터링된 결과 5행만 반환 (실시간 스트림)</text>
+
+        <!-- Central DB Store (Right) -->
+        <rect x="392" y="172" width="140" height="68" rx="6" fill="rgba(16,185,129,.15)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="462" y="196" font-size="11.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">🗄️ 중앙 DB 저장소</text>
+        <text x="462" y="214" font-size="9.5" text-anchor="middle" fill="#cbd5e1">market_data.db</text>
+        <text x="462" y="227" font-size="8.5" text-anchor="middle" fill="#94a3b8">원본 보존 · 엔진 처리</text>
+
+      </svg>
+    </div>
+
+    <div class="box" style="margin-top:12px;border-color:var(--a1);background:var(--s1);padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <b class="small" style="color:#93c5fd">💥 [실무 위기 체험] 엑셀/CSV로 버티다가 금융 퀀트팀이 겪는 3대 대참사 배틀 시뮬레이터</b>
+        <span class="small" style="color:var(--td)">실시간 비교</span>
+      </div>
+      <p class="small" style="margin:4px 0 8px 0;color:var(--tx);word-break:keep-all">
+        아래 3대 실무 위기 시나리오를 클릭하여, 조건 하나 바뀔 때 파일 방식과 DB 방식의 <b>소요 시간, RAM 점유율, 데이터 무결성</b> 차이를 직접 눈으로 확인해 보세요.
+      </p>
+      <div class="ctrl">
+        <button class="btn pri" id="fdb-bat-cond" onclick="simBattle('cond')">① 팀장의 조건 변경 (1조→5천억)</button>
+        <button class="btn" id="fdb-bat-oom" onclick="simBattle('oom')">② 10년치 일별주가 500만행 로딩</button>
+        <button class="btn" id="fdb-bat-app" onclick="simBattle('append')">③ 오늘 장 마감 데이터 덧붙이기 (Append)</button>
+      </div>
+      <!-- Backward compatibility buttons (accessible for test scripts) -->
+      <div style="display:none">
+        <button id="fdb-file" onclick="dbToggleFileDb('file')">파일</button>
+        <button id="fdb-db" onclick="dbToggleFileDb('db')">DB</button>
+      </div>
+      <div id="fdb-result" class="box" style="min-height:130px;margin-top:8px"></div>
+    </div>
+
+    <div class="ibox am" style="margin-top:10px">
+      <div class="ibox-t">⚠️ 오해 방지</div>
+      <ul><li>파일 방식이 틀린 게 아니다. 데이터가 작고 조건이 거의 안 바뀌면 파일로도 충분하다.</li>
+      <li>DB가 절대적으로 유리해지는 지점은 정확히 <b>"데이터가 대용량이거나, 조건이 자주 바뀌거나, 실시간으로 누적될 때"</b>다.</li></ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">⚡ 3대 병목 시각 진단기 — 파일/API 방식이 부딪히는 물리적 한계</div>
+    <p class="desc">FD-03-100에서 짚은 세 가지 치명적 병목을 클릭하여 게이지와 다이어그램으로 체감한다.</p>
+    <div class="ctrl">
+      <button class="btn pri" id="fdb-bot-rate" onclick="dbBottleCheck('rate')">① 호출 한도 (Rate Limit)</button>
+      <button class="btn" id="fdb-bot-lat" onclick="dbBottleCheck('lat')">② 응답 지연 (Latency)</button>
+      <button class="btn" id="fdb-bot-rep" onclick="dbBottleCheck('rep')">③ 재현성 (Reproducibility)</button>
+    </div>
+    <div id="fdb-bottle-result" class="box"></div>
+    <div class="small">해법은 간단하다: <b>"한 번 쌓아두고, 새로 생긴 것만 덧붙인다(append)"</b> — 이 세 병목이 이 한 가지 습관으로 동시에 풀린다.</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🔗 토이 모델에서 실전 핀테크까지 — 데이터 아키텍처 4단계 사다리</div>
+    <p class="desc">가장 단순한 쇼핑몰 비유(입문용 토이 모델)부터 에브리타임 게시글, 구글 시트의 한계, 그리고 토스증권·알고리즘 트레이딩 실전 아키텍처까지 4단계로 직관을 확장합니다.</p>
+
+    <!-- Schema Mapping SVG -->
+    <div class="box" style="background:var(--s2);margin:12px 0;padding:12px;text-align:center">
+      <svg viewBox="0 0 520 150" style="width:100%;max-width:520px;display:inline-block">
+        <!-- Left: Shopping -->
+        <rect x="20" y="15" width="225" height="120" rx="8" fill="rgba(59,130,246,.08)" stroke="#3b82f6" stroke-width="1.2"/>
+        <text x="132" y="35" font-size="11.5" text-anchor="middle" fill="#93c5fd" font-weight="700">🛍️ 쇼핑몰 3개 표 구조 (Toy 모델)</text>
+        
+        <rect x="35" y="48" width="80" height="34" rx="4" fill="#1e293b" stroke="#64748b"/>
+        <text x="75" y="64" font-size="10" text-anchor="middle" fill="#f1f5f9">사용자 표</text>
+        <text x="75" y="76" font-size="8.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">user_id</text>
+
+        <path d="M 115 65 L 145 65" stroke="#6ee7b7" stroke-width="2" stroke-dasharray="2,2"/>
+
+        <rect x="150" y="48" width="80" height="34" rx="4" fill="#1e293b" stroke="#64748b"/>
+        <text x="190" y="64" font-size="10" text-anchor="middle" fill="#f1f5f9">주문 표</text>
+        <text x="190" y="76" font-size="8.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">user_id</text>
+
+        <path d="M 190 82 L 190 98" stroke="#fcd34d" stroke-width="2" stroke-dasharray="2,2"/>
+
+        <rect x="150" y="98" width="80" height="30" rx="4" fill="#1e293b" stroke="#64748b"/>
+        <text x="190" y="113" font-size="9" text-anchor="middle" fill="#f1f5f9">상품 표</text>
+        <text x="190" y="123" font-size="8" text-anchor="middle" fill="#fcd34d">product_id</text>
+
+        <!-- Right: Financial Data -->
+        <rect x="275" y="15" width="225" height="120" rx="8" fill="rgba(16,185,129,.08)" stroke="#10b981" stroke-width="1.2"/>
+        <text x="387" y="35" font-size="11.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">💰 금융데이터 3개 표 구조 (실무)</text>
+
+        <rect x="290" y="48" width="85" height="34" rx="4" fill="#1e293b" stroke="#64748b"/>
+        <text x="332" y="64" font-size="10" text-anchor="middle" fill="#f1f5f9">companies</text>
+        <text x="332" y="76" font-size="8.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">code</text>
+
+        <path d="M 375 65 L 400 65" stroke="#6ee7b7" stroke-width="2" stroke-dasharray="2,2"/>
+
+        <rect x="405" y="48" width="85" height="34" rx="4" fill="#1e293b" stroke="#64748b"/>
+        <text x="447" y="64" font-size="10" text-anchor="middle" fill="#f1f5f9">financials</text>
+        <text x="447" y="76" font-size="8.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">code</text>
+
+        <path d="M 332 82 L 332 98" stroke="#6ee7b7" stroke-width="2" stroke-dasharray="2,2"/>
+
+        <rect x="290" y="98" width="85" height="30" rx="4" fill="#1e293b" stroke="#64748b"/>
+        <text x="332" y="113" font-size="9" text-anchor="middle" fill="#f1f5f9">returns</text>
+        <text x="332" y="123" font-size="8" text-anchor="middle" fill="#6ee7b7" font-weight="700">code</text>
+      </svg>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn pri" id="fdm-shop" onclick="dbMapping('shop')">🛍️ 1단계: 쇼핑몰 (Toy)</button>
+      <button class="btn" id="fdm-post" onclick="dbMapping('post')">💬 2단계: 게시글 &amp; 구글시트</button>
+      <button class="btn" id="fdm-toss" onclick="dbMapping('toss')">📱 3단계: 토스증권 &amp; 퀀트 아키텍처</button>
+      <button class="btn" id="fdm-bridge" onclick="dbMapping('bridge')">🎯 4단계: Week04 OpenDART 브릿지</button>
+    </div>
+    <div id="fdm-result"></div>
+    <div class="small">핵심 직관: <b>"같은 값을 담은 열(code)이 있으면, 그 열로 표를 잇는다"</b> — 이 동작 하나가 이번 주 내내 반복된다.</div>
+  </div>
+
+  <!-- Card 4: Interactive DB Decision Navigator -->
+  <div class="card">
+    <div class="ctitle">🧭 대화형 재무데이터 DB 선택 내비게이터 (언제 어떤 DB를 쓸까?)</div>
+    <p class="desc">"실무에서 무조건 PostgreSQL을 써야 하나요? 판다스 CSV로는 안 되나요?" 4가지 질문을 선택하면 프로젝트에 최적인 데이터 저장소를 즉시 판정합니다.</p>
+    
+    <div class="box" style="background:var(--s1);border-color:var(--a1);padding:12px">
+      <!-- Question 1 -->
+      <div style="margin-bottom:10px">
+        <div class="small" style="font-weight:700;color:#93c5fd;margin-bottom:4px">1. 데이터 체급 (Data Volume):</div>
+        <div class="ctrl" style="margin:0">
+          <button class="btn pri small" id="dbnav-q0-0" onclick="dbNavSelect(0, 0)">① 1GB 미만 (재무제표 / 일별 종가)</button>
+          <button class="btn small" id="dbnav-q0-1" onclick="dbNavSelect(0, 1)">② 10GB~100GB+ (고빈도 틱 / 체결 틱봉)</button>
+        </div>
+      </div>
+
+      <!-- Question 2 -->
+      <div style="margin-bottom:10px">
+        <div class="small" style="font-weight:700;color:#93c5fd;margin-bottom:4px">2. 갱신 빈도 (Write Pattern):</div>
+        <div class="ctrl" style="margin:0">
+          <button class="btn pri small" id="dbnav-q1-0" onclick="dbNavSelect(1, 0)">① 매일 / 매분기 새로 누적 (Append/Update)</button>
+          <button class="btn small" id="dbnav-q1-1" onclick="dbNavSelect(1, 1)">② 1회성 다운로드 후 읽기전용 분석 (Read-only)</button>
+        </div>
+      </div>
+
+      <!-- Question 3 -->
+      <div style="margin-bottom:10px">
+        <div class="small" style="font-weight:700;color:#93c5fd;margin-bottom:4px">3. 사용자 환경 (Access Model):</div>
+        <div class="ctrl" style="margin:0">
+          <button class="btn pri small" id="dbnav-q2-0" onclick="dbNavSelect(2, 0)">① 나 혼자 로컬 VS Code (.venv) 연구</button>
+          <button class="btn small" id="dbnav-q2-1" onclick="dbNavSelect(2, 1)">② 팀 / 연구실 / 웹 대시보드 다중 동시접속</button>
+        </div>
+      </div>
+
+      <!-- Question 4 -->
+      <div>
+        <div class="small" style="font-weight:700;color:#93c5fd;margin-bottom:4px">4. 주요 분석 툴체인 (Primary Stack):</div>
+        <div class="ctrl" style="margin:0">
+          <button class="btn pri small" id="dbnav-q3-0" onclick="dbNavSelect(3, 0)">① Python pandas / NumPy / 머신러닝</button>
+          <button class="btn small" id="dbnav-q3-1" onclick="dbNavSelect(3, 1)">② SQL 중심 질의 / BI 대시보드</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendation Result Area -->
+    <div id="dbnav-result" class="box" style="margin-top:10px;min-height:90px"></div>
+
+    <!-- 5-way Storage Comparison Table (pe-table) -->
+    <div style="margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table class="pe-table" id="dbnav-table" style="min-width:540px">
+        <thead>
+          <tr>
+            <th style="width:115px">저장소 기술</th>
+            <th style="width:80px">서버 설치</th>
+            <th style="width:85px">권장 체급</th>
+            <th style="width:85px">동시 쓰기</th>
+            <th style="width:75px">SQL 문법</th>
+            <th>FD-03 실무 적합도 요약</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="dbt-sqlite">
+            <td><b>SQLite</b></td>
+            <td>서버 불필요</td>
+            <td>1GB 미만</td>
+            <td>단일 쓰기</td>
+            <td>ANSI SQL</td>
+            <td>1인 연구자·로컬 금융 분석 표준 (FD-03 1부 실습)</td>
+          </tr>
+          <tr id="dbt-postgres">
+            <td><b>PostgreSQL<br>(Supabase)</b></td>
+            <td>서버 필요</td>
+            <td>수백 GB+</td>
+            <td>다중 ACID</td>
+            <td>고급 SQL</td>
+            <td>팀 프로젝트·클라우드 웹 API 연동 표준 (FD-03 2부 실습)</td>
+          </tr>
+          <tr id="dbt-bigquery">
+            <td><b>BigQuery</b></td>
+            <td>클라우드 관리형</td>
+            <td>수억 행~PB</td>
+            <td>배치 적재</td>
+            <td>표준 SQL</td>
+            <td>전사 데이터 웨어하우스, 스캔 용량별 쿼리 비용 발생 (Week03 범위 밖 참고)</td>
+          </tr>
+          <tr id="dbt-parquet">
+            <td><b>Parquet</b></td>
+            <td>서버 불필요</td>
+            <td>100GB+</td>
+            <td>불가(교체)</td>
+            <td>엔진 경유</td>
+            <td>고빈도 틱데이터 초고속 컬럼별 압축 저장용</td>
+          </tr>
+          <tr id="dbt-csv">
+            <td><b>CSV / Excel</b></td>
+            <td>서버 불필요</td>
+            <td>수십 MB 미만</td>
+            <td>충돌 위험</td>
+            <td>미지원</td>
+            <td>단순 교환용 포맷 (대용량 금융 시계열 저장 비권장)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="small" style="margin-top:8px">결론: <b>"로컬 개인 연구는 SQLite, 팀 협업 및 웹 연동은 PostgreSQL(Supabase)"</b> — 이 두 가지만 확실히 다룰 줄 알아도 금융 데이터 파이프라인의 90%가 해결됩니다.</div>
+  </div>
+</section>
+
+<!-- ============ PANEL 1 — SQLite 열기 ============ -->
+<section class="panel" id="p1">
+  <div class="card">
+    <div class="badge" style="margin-bottom:10px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;font-weight:700;font-size:11px;letter-spacing:1px;">§200 · SQLite 연결과 테이블 적재</div>
+    <div class="ctitle">🧪 시작 전 파이썬 커널 환경 진단</div>
+    <p class="desc">VS Code가 올바른 파이썬 가상환경(.venv)과 DB 파일을 정상적으로 인식하고 있는지 진단합니다.</p>
+    <div class="ctrl">
+      <button class="btn pri small" id="env-box-0" onclick="envTip(0)">① 파이썬 위치</button>
+      <button class="btn small" id="env-box-1" onclick="envTip(1)">② pandas 임포트</button>
+      <button class="btn small" id="env-box-2" onclick="envTip(2)">③ DB 파일 확인</button>
+      <button class="btn small" id="env-box-3" onclick="envTip(3)">④ 첫 쿼리 연결</button>
+    </div>
+    <div id="env-terminal" class="calc" style="margin-top:8px;font-size:11.5px;padding:10px"></div>
+    <div id="env-tip" class="ibox am" style="margin-top:8px;padding:8px 12px;font-size:12px"></div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🔌 파이썬 ↔ conn ↔ SQLite 왕복 파이프라인 아키텍처</div>
+    <p class="desc"><code>.db</code> 파일을 탐색기에서 더블클릭하면 사람이 못 읽는 바이너리 화면만 뜹니다 — 여기서 당황하는 게 가장 흔한 실수입니다. 여는 방법은 <code>conn</code> 하나뿐, 그 배관 역할을 아래에서 확인하세요.</p>
+
+    <!-- 3-Zone Pipeline Architecture Diagram (VS Code RAM ↔ conn Pipe ↔ Disk SQLite) -->
+    <div class="box" style="background:var(--s2);margin:12px 0;padding:14px;text-align:center">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <b class="small" style="color:var(--col-act)">🔌 3구역 데이터 파이프라인 (메모리 ↔ 연결 배관 ↔ 디스크 파일)</b>
+        <span class="badge" style="background:rgba(59,130,246,.15);color:var(--col-act);font-size:11px">왕복 아키텍처</span>
+      </div>
+
+      <svg viewBox="0 0 620 190" style="width:100%;max-width:620px;display:inline-block">
+        <!-- Zone 1: VS Code / Python RAM -->
+        <rect x="10" y="15" width="160" height="160" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="90" y="36" font-size="11" text-anchor="middle" fill="#93c5fd" font-weight="700">💻 VS Code 환경 (RAM)</text>
+        <text x="90" y="52" font-size="8.5" text-anchor="middle" fill="#cbd5e1">로컬 메모리 (.venv)</text>
+
+        <!-- RAM DF Card -->
+        <rect id="pipe-svg-df" x="25" y="65" width="130" height="92" rx="6" fill="#0f172a" stroke="#60a5fa" stroke-width="1.2"/>
+        <text x="90" y="85" font-size="10.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">판다스 DataFrame</text>
+        <text x="90" y="102" font-size="8" text-anchor="middle" fill="#cbd5e1">df = pd.DataFrame(...)</text>
+        <rect x="35" y="112" width="110" height="18" rx="3" fill="rgba(59,130,246,.2)"/>
+        <text x="90" y="125" font-size="8" text-anchor="middle" fill="#93c5fd">내 손 안의 표 (가공·분석)</text>
+        <text x="90" y="146" font-size="7.5" text-anchor="middle" fill="#94a3b8">프로세스 종료 시 증발</text>
+
+        <!-- Zone 2: Pipe Conduit (conn) -->
+        <rect x="185" y="45" width="140" height="100" rx="6" fill="rgba(59,130,246,.06)" stroke="#8b5cf6" stroke-dasharray="4,3" stroke-width="1.2"/>
+        <text x="255" y="64" font-size="10" text-anchor="middle" fill="#c4b5fd" font-weight="700">🔌 통신 배관 (conn)</text>
+        <text x="255" y="78" font-size="8" text-anchor="middle" fill="#94a3b8">sqlite3.connect()</text>
+
+        <!-- Pipe Arrow 1: to_sql (Top) -->
+        <path id="pipe-arrow-to" d="M 170 95 L 325 95" stroke="#10b981" stroke-width="2.5" marker-end="url(#arr-green)" stroke-dasharray="5,3"/>
+        <text x="255" y="91" font-size="8.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">① to_sql (적재 밀어넣기) ➔</text>
+
+        <!-- Pipe Arrow 2: read_sql (Bottom) -->
+        <path id="pipe-arrow-read" d="M 325 125 L 170 125" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arr-blue)" stroke-dasharray="5,3"/>
+        <text x="255" y="138" font-size="8.5" text-anchor="middle" fill="#93c5fd" font-weight="700">⬅ ② read_sql (인출 빨아들이기)</text>
+
+        <!-- Zone 3: Disk File (market_data.db) -->
+        <rect x="340" y="15" width="270" height="160" rx="8" fill="rgba(16,185,129,.05)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="475" y="34" font-size="11" text-anchor="middle" fill="#6ee7b7" font-weight="700">💾 로컬 디스크 (market_data.db)</text>
+        <text x="475" y="48" font-size="8" text-anchor="middle" fill="#94a3b8">영구 저장 파일 (컴퓨터 꺼도 안전)</text>
+
+        <!-- 3 Tables inside disk -->
+        <g id="pipe-tbl-comp" style="cursor:pointer" onclick="sqliteReveal(2)">
+          <rect x="352" y="58" width="78" height="98" rx="4" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+          <text x="391" y="75" font-size="9" text-anchor="middle" fill="#93c5fd" font-weight="700">companies</text>
+          <text x="391" y="88" font-size="7.5" text-anchor="middle" fill="#cbd5e1">12행 프로필</text>
+          <text x="391" y="105" font-size="7" text-anchor="middle" fill="#94a3b8">code (PK)</text>
+          <text x="391" y="117" font-size="7" text-anchor="middle" fill="#94a3b8">name, sector</text>
+          <text x="391" y="142" font-size="7.5" text-anchor="middle" fill="#6ee7b7">클릭: 조회</text>
+        </g>
+
+        <g id="pipe-tbl-fin" style="cursor:pointer" onclick="sqliteReveal(3)">
+          <rect x="436" y="58" width="78" height="98" rx="4" fill="#1e293b" stroke="#8b5cf6" stroke-width="1"/>
+          <text x="475" y="75" font-size="9" text-anchor="middle" fill="#c4b5fd" font-weight="700">financials</text>
+          <text x="475" y="88" font-size="7.5" text-anchor="middle" fill="#cbd5e1">24행 재무</text>
+          <text x="475" y="105" font-size="7" text-anchor="middle" fill="#94a3b8">revenue</text>
+          <text x="475" y="117" font-size="7" text-anchor="middle" fill="#94a3b8">net_income</text>
+          <text x="475" y="142" font-size="7.5" text-anchor="middle" fill="#6ee7b7">클릭: 조회</text>
+        </g>
+
+        <g id="pipe-tbl-ret" style="cursor:pointer" onclick="sqliteReveal(4)">
+          <rect x="520" y="58" width="80" height="98" rx="4" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+          <text x="560" y="75" font-size="9" text-anchor="middle" fill="#6ee7b7" font-weight="700">returns</text>
+          <text x="560" y="88" font-size="7.5" text-anchor="middle" fill="#cbd5e1">시계열 종가</text>
+          <text x="560" y="105" font-size="7" text-anchor="middle" fill="#94a3b8">date, code</text>
+          <text x="560" y="117" font-size="7" text-anchor="middle" fill="#94a3b8">close (누적)</text>
+          <text x="560" y="142" font-size="7.5" text-anchor="middle" fill="#6ee7b7">클릭: 조회</text>
+        </g>
+
+      </svg>
+    </div>
+
+    <!-- Interactive Pipeline Simulator Mode Buttons -->
+    <div class="ctrl" style="margin-bottom:10px">
+      <button class="btn pri" id="pipe-btn-conn" onclick="simPipeline('conn')">🔌 1단계: conn 배관 개설 (connect)</button>
+      <button class="btn" id="pipe-btn-tosql" onclick="simPipeline('tosql')">📤 2단계: to_sql 데이터 적재 (RAM → DB)</button>
+      <button class="btn" id="pipe-btn-readsql" onclick="simPipeline('readsql')">📥 3단계: read_sql 데이터 인출 (DB → RAM)</button>
+    </div>
+
+    <!-- Dynamic Code Console -->
+    <div class="calc" id="pipe-code" style="margin-bottom:8px;font-size:12px;line-height:1.6"></div>
+
+    <!-- Realtime Physical Flow Explanation -->
+    <div id="pipe-desc" class="box" style="margin-bottom:10px;font-size:13px;line-height:1.75;color:var(--tx)"></div>
+
+    <!-- Student Intuition Takeaway Callout (DM-02 style) -->
+    <div class="ibox bl" style="margin-bottom:14px">
+      <div class="ibox-t">💡 [쉽게 말하면...] 왜 파일 하나인데 conn과 SQL이 필요할까요?</div>
+      <ul>
+        <li><b>conn (연결 배관)</b>: 파이썬 메모리와 디스크 파일 사이에 꽂아둔 <b>"전용 빨대"</b>입니다.</li>
+        <li><b>to_sql (밀어넣기)</b>: 내 손(RAM)에 있는 데이터프레임을 빨대를 통해 DB 창고로 <b>밀어 넣는 것</b>입니다 (<code>if_exists='append'</code>로 일별 누적).</li>
+        <li><b>read_sql (빨아들이기)</b>: DB 창고의 수백만 행 중 내가 작성한 주문서(SQL 질의문)에 맞는 것만 <b>빨대로 쏙 빨아들여</b> 새 DataFrame으로 가져옵니다.</li>
+      </ul>
+    </div>
+
+    <!-- Existing Table Schema Diagnostic Buttons (Fully Preserved) -->
+    <div class="ctrl" style="margin-top:14px">
+      <span class="small" style="color:var(--td);margin-right:6px;align-self:center">🔍 DB 내부 실제 데이터 들여다보기:</span>
+      <button class="btn" id="sq-btn-1" onclick="sqliteReveal(1)">① 표 목록 (sqlite_master)</button>
+      <button class="btn" id="sq-btn-2" onclick="sqliteReveal(2)">② companies 상위 5행</button>
+      <button class="btn" id="sq-btn-3" onclick="sqliteReveal(3)">③ financials 상위 5행</button>
+      <button class="btn" id="sq-btn-4" onclick="sqliteReveal(4)">④ returns 상위 5행</button>
+      <button class="btn" id="sq-btn-5" onclick="sqliteReveal(5)">⑤ 전체 체급 집계</button>
+    </div>
+    <div id="sqlite-diag-box" class="box" style="margin-top:10px"></div>
+    <div class="small" style="margin-top:6px"><span class="hl">code</span> 열이 문자열('005930')로 저장되어 있다는 점을 꼭 기억한다 — 숫자로 저장하면 맨 앞의 0이 사라진다.</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🏗 append vs replace — 같은 코드, 다른 결과 (블록 누적 비주얼)</div>
+    <div class="calc">returns_new.to_sql('returns', conn, if_exists='append', index=False)</div>
+    <ul class="desc" style="list-style:none;padding-left:0;margin:0 0 14px 0;display:flex;flex-direction:column;gap:4px">
+      <li style="display:flex;gap:7px"><span>›</span><span><b>replace</b>를 평소에 쓰면 과거 10년 치 데이터가 0.1초 만에 날아갑니다.</span></li>
+      <li style="display:flex;gap:7px"><span>›</span><span><b>append</b>는 기존 표를 두고 새 행만 뒤에 붙입니다.</span></li>
+    </ul>
+    <div class="ctrl">
+      <button class="btn pri" id="ar-step-0" onclick="appendSim(0)">① 초기 3행 (2025-08-27~29)</button>
+      <button class="btn" id="ar-step-1" onclick="appendSim(1)">② 09-01 append (4행 누적)</button>
+      <button class="btn" id="ar-step-2" onclick="appendSim(2)">③ 09-02 append (5행 누적)</button>
+      <button class="btn" id="ar-step-3" onclick="appendSim(3)">⚠️ replace 실수 (전체 삭제 후 1행만!)</button>
+    </div>
+    <table class="pe-table"><thead><tr><th>date</th><th>code</th><th>close</th><th>상태</th></tr></thead>
+    <tbody id="ar-body"></tbody></table>
+    <div id="ar-note" class="small"></div>
+  </div>
+</section>
+
+<!-- ============ PANEL 2 — SQL 기초 복습 (5 sub-tabs) ============ -->
+<section class="panel" id="p2">
+  <div style="margin-bottom:12px;">
+    <span class="badge" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;font-weight:700;font-size:11px;letter-spacing:1px;">§300 · 금융 실무를 위한 SQL 핵심 복습</span>
+  </div>
+  <div class="subnav">
+    <button class="stab on" data-tab-group="sqlbasics" onclick="showTab('sqlbasics',0)">§310 WHERE·정렬</button>
+    <button class="stab" data-tab-group="sqlbasics" onclick="showTab('sqlbasics',1)">§320 계산 함정</button>
+    <button class="stab" data-tab-group="sqlbasics" onclick="showTab('sqlbasics',2)">§330 GROUP BY</button>
+    <button class="stab" data-tab-group="sqlbasics" onclick="showTab('sqlbasics',3)">§340 JOIN</button>
+    <button class="stab" data-tab-group="sqlbasics" onclick="showTab('sqlbasics',4)">§350 에러읽기</button>
+  </div>
+
+  <!-- sub A: WHERE / ORDER BY / LIMIT (Dynamic SQL X-Ray Simulator) -->
+  <div class="spanel on" data-group="sqlbasics">
+    <div class="card">
+      <div class="ctitle">🎯 WHERE로 거르고, ORDER BY로 줄세운다 (인터랙티브 SQL X-Ray 시뮬레이터)</div>
+      <p class="desc"><b>SELECT</b>는 보여줄 열(세로), <b>WHERE</b>는 남길 행(가로), <b>ORDER BY</b>는 순서를 정합니다. 버튼을 눌러 표가 실시간으로 바뀌는 걸 확인하세요.</p>
+
+      <!-- 🎮 Dynamic SQL X-Ray Simulator Widget -->
+      <div class="box" style="background:var(--s1);border:1px solid var(--a1);border-radius:12px;padding:12px;margin:12px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+          <b class="small" style="color:#60a5fa">🎮 SQL X-Ray 콘솔: 열(SELECT)과 행(WHERE)을 직접 조작해보세요</b>
+          <span class="badge" style="background:rgba(59,130,246,.2);color:#93c5fd;font-size:11px">모션 시뮬레이터</span>
+        </div>
+
+        <!-- 🎬 5-Step SQL Motion Transformation Stepper -->
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <span class="small" style="color:#93c5fd;font-weight:700">🎬 SQL 실행 파이프라인 단계별 모션 트랜지션:</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn pri small" id="anim-autoplay-btn" onclick="toggleSqlAutoPlay()">▶ 자동 연속 재생</button>
+              <button class="btn small" onclick="setSqlAnimStep(0)">↺ 초기화</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button class="pill active" id="anim-step-0" onclick="setSqlAnimStep(0)">0️⃣ 원본 (FROM)</button>
+            <button class="pill" id="anim-step-1" onclick="setSqlAnimStep(1)">1️⃣ WHERE (행 탈락 모션)</button>
+            <button class="pill" id="anim-step-2" onclick="setSqlAnimStep(2)">2️⃣ SELECT (열 축소 모션)</button>
+            <button class="pill" id="anim-step-3" onclick="setSqlAnimStep(3)">3️⃣ ORDER BY (행 자리바꿈)</button>
+            <button class="pill" id="anim-step-4" onclick="setSqlAnimStep(4)">4️⃣ LIMIT (상위 추출)</button>
+          </div>
+          <div id="anim-step-desc" class="small" style="color:#cbd5e1;margin-top:8px;padding-top:6px;border-top:1px dashed var(--bd);min-height:22px">
+            <b>0단계 (FROM)</b>: 원본 데이터 8행 5열 전체를 메모리로 로드합니다.
+          </div>
+        </div>
+
+        <!-- Collapsible Manual Filter Console (Clean & Uncluttered by default) -->
+        <details style="margin:8px 0;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px">
+          <summary style="cursor:pointer;color:var(--a1);font-weight:600;font-size:12px">🛠️ 세부 수동 조작 (열·조건·정렬 개별 지정 열기)</summary>
+          <div style="margin-top:10px">
+            <!-- Step 1: SELECT Columns -->
+            <div style="margin-bottom:8px">
+              <span class="small" style="color:var(--tx);font-weight:700;display:inline-block;min-width:130px">1️⃣ SELECT (열 선택):</span>
+              <button class="btn" id="xray-sel-all" onclick="xraySetSel('all')">① 전체 열 (*)</button>
+              <button class="btn pri" id="xray-sel-basic" onclick="xraySetSel('basic')">② 이름·매출 (name, revenue)</button>
+              <button class="btn" id="xray-sel-detail" onclick="xraySetSel('detail')">③ 코드·이름·업종·매출</button>
+            </div>
+
+            <!-- Step 2: WHERE Row Filters -->
+            <div style="margin-bottom:8px">
+              <span class="small" style="color:var(--tx);font-weight:700;display:inline-block;min-width:130px">2️⃣ WHERE (행 필터):</span>
+              <button class="btn" id="xray-whr-all" onclick="xraySetWhr('all')">① 전체 8행 (조건 없음)</button>
+              <button class="btn pri" id="xray-whr-2025" onclick="xraySetWhr('2025')">② 2025년도만 (year = 2025)</button>
+              <button class="btn" id="xray-whr-1tril" onclick="xraySetWhr('1tril')">③ 매출 1조 초과 (revenue 1조원 초과)</button>
+              <button class="btn" id="xray-whr-elec" onclick="xraySetWhr('elec')">④ 2025년 전기전자 (AND 조건)</button>
+              <button class="btn" id="xray-whr-auto" onclick="xraySetWhr('auto')">⑤ 2025년 자동차 (다른 업종)</button>
+            </div>
+
+            <!-- Step 3: ORDER BY & LIMIT -->
+            <div style="margin-bottom:4px">
+              <span class="small" style="color:var(--tx);font-weight:700;display:inline-block;min-width:130px">3️⃣ ORDER BY (정렬):</span>
+              <button class="btn" id="xray-ord-none" onclick="xraySetOrd('none')">① 저장 순서 그대로 (정렬 없음)</button>
+              <button class="btn pri" id="xray-ord-desc" onclick="xraySetOrd('desc')">② 매출 높은 순 (revenue DESC ↓)</button>
+              <button class="btn" id="xray-ord-asc" onclick="xraySetOrd('asc')">③ 매출 낮은 순 (revenue ASC ↑)</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Realtime Generated SQL -->
+        <div style="margin:10px 0 6px 0">
+          <span class="small" style="color:var(--td);font-weight:600">💻 실시간 조합된 SQL 질의문:</span>
+          <div class="calc" id="xray-calc" style="margin-top:4px;font-size:12px;line-height:1.55;text-align:left;white-space:pre-wrap;border-color:var(--a1)"></div>
+          <div class="calc" id="ob-calc" style="display:none"></div>
+        </div>
+
+        <!-- Realtime Interactive Table Matrix -->
+        <div style="margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table class="pe-table" id="xray-table" style="min-width:540px">
+            <thead>
+              <tr id="xray-thead-tr">
+                <th id="th-code" style="width:75px">code</th>
+                <th id="th-name" style="width:115px">name</th>
+                <th id="th-sector" style="width:85px">sector</th>
+                <th id="th-year" style="width:65px">year</th>
+                <th id="th-revenue" style="width:125px">revenue</th>
+                <th id="th-status" style="width:85px;text-align:center">판정</th>
+              </tr>
+            </thead>
+            <tbody id="xray-tbody"></tbody>
+          </table>
+          <div id="xray-cutoff-line" style="display:none">
+            <span>✂️ LIMIT 5 컷오프 경계선: 상위 5개 행만 DB에서 인출되며 아래 행은 버려집니다</span>
+          </div>
+        </div>
+
+        <!-- Realtime Takeaway & Summary -->
+        <div id="xray-summary" class="ibox gr" style="margin-top:10px"></div>
+      </div>
+
+      <!-- Quick Presets (Tucked cleanly into collapsible details) -->
+      <details style="margin-top:8px;background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:6px 12px">
+        <summary style="cursor:pointer;color:var(--td);font-size:11.5px">⚡ 핵심 시나리오 빠른 전환 (단축키 프리셋 열기)</summary>
+        <div class="ctrl" style="margin-top:8px">
+          <button class="btn" id="ob-btn-none" onclick="orderToggle('none')">① LIMIT 5만 (정렬 없음 함정)</button>
+          <button class="btn pri" id="ob-btn-desc" onclick="orderToggle('desc')">② 매출 상위 5개 (DESC)</button>
+          <button class="btn" id="ob-btn-asc" onclick="orderToggle('asc')">③ 매출 하위 5개 (ASC)</button>
+          <button class="btn" id="ob-btn-where" onclick="orderToggle('where')">④ 매출 1조 초과 필터링</button>
+        </div>
+        <div class="small" id="ob-note" style="margin-top:4px"></div>
+      </details>
+
+      <!-- Execution Pipeline Diagram -->
+      <div class="box" style="background:var(--s2);margin:14px 0 10px 0;padding:12px;text-align:center">
+        <b class="small" style="color:var(--tx);display:block;margin-bottom:8px">⚙️ SQL 엔진 내부 실행 순서 (작성 순서와 실행 순서가 다르다!)</b>
+        <svg viewBox="0 0 520 80" style="width:100%;max-width:520px;display:inline-block">
+          <g>
+            <rect x="15" y="18" width="95" height="44" rx="5" fill="#1e293b" stroke="#3b82f6"/>
+            <text x="62" y="38" font-size="10" text-anchor="middle" fill="#93c5fd" font-weight="700">1. FROM</text>
+            <text x="62" y="52" font-size="8.5" text-anchor="middle" fill="#cbd5e1">financials 대상</text>
+          </g>
+          <path d="M 110 40 L 135 40" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+          <g>
+            <rect x="140" y="18" width="105" height="44" rx="5" fill="#1e293b" stroke="#8b5cf6"/>
+            <text x="192" y="38" font-size="10" text-anchor="middle" fill="#c4b5fd" font-weight="700">2. WHERE 필터</text>
+            <text x="192" y="52" font-size="8.5" text-anchor="middle" fill="#cbd5e1">행 조건 검증 (가로)</text>
+          </g>
+          <path d="M 245 40 L 270 40" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+          <g>
+            <rect x="275" y="18" width="105" height="44" rx="5" fill="#1e293b" stroke="#f59e0b"/>
+            <text x="327" y="38" font-size="10" text-anchor="middle" fill="#fcd34d" font-weight="700">3. ORDER BY</text>
+            <text x="327" y="52" font-size="8.5" text-anchor="middle" fill="#cbd5e1">결과 행 줄세우기</text>
+          </g>
+          <path d="M 380 40 L 405 40" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+          <g>
+            <rect x="410" y="18" width="95" height="44" rx="5" fill="rgba(16,185,129,.2)" stroke="#10b981"/>
+            <text x="457" y="38" font-size="10" text-anchor="middle" fill="#6ee7b7" font-weight="700">4. SELECT/LIMIT</text>
+            <text x="457" y="52" font-size="8.5" text-anchor="middle" fill="#6ee7b7">열 절삭 & 상위 N개</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="ibox am">
+        <div class="ibox-t">⚠️ 함정 — LIMIT은 정렬 뒤에 걸린다</div>
+        <ul><li><code>ORDER BY</code> 없이 <code>LIMIT 5</code>만 쓰면 파이프라인 3단계가 통째로 빠져 <b>"저장된 순서 그대로의 아무 5개"</b>가 잘려 나온다.</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- sub B: 계산 컬럼 함정 -->
+  <div class="spanel" data-group="sqlbasics">
+    <div class="card">
+      <div class="ctitle">➕ 정수 나눗셈이 소수점을 버린다 (인터랙티브 계산기 & 절삭 다이어그램)</div>
+      <ul class="desc" style="list-style:none;padding-left:0;margin:0 0 14px 0;display:flex;flex-direction:column;gap:4px">
+        <li style="display:flex;gap:7px"><span>›</span><span>정수끼리 나누면 파이썬3와 달리 소수점 아래가 통째로 절삭되어 <b>0</b>이 됩니다.</span></li>
+        <li style="display:flex;gap:7px"><span>›</span><span>분자나 분모 중 하나에 <code>* 1.0</code>을 곱해 실수로 승격시키면 정상적인 비율(ROE)이 나옵니다.</span></li>
+      </ul>
+
+      <!-- Live Calculation Dynamic Comparison Widget -->
+      <div class="box" style="background:var(--s2);margin:10px 0;padding:12px;text-align:center">
+        <div id="calc-step-badge" style="margin-bottom:8px">
+          <span class="badge" style="background:rgba(239,68,68,.15);color:var(--col-fail);font-size:11px">❌ 정수 나눗셈 함정 모드: 소수점 이하 강제 절삭 중</span>
+        </div>
+
+        <svg id="calc-vis-svg" viewBox="0 0 540 85" style="width:100%;max-width:540px;display:inline-block">
+          <rect id="calc-box-left" x="15" y="12" width="240" height="60" rx="6" fill="rgba(239,68,68,.1)" stroke="#ef4444" stroke-width="1.5"/>
+          <text id="calc-txt-l1" x="135" y="32" font-size="10.5" text-anchor="middle" fill="#fca5a5">net_income(정수) / equity(정수)</text>
+          <text id="calc-txt-l2" x="135" y="52" font-size="11.5" text-anchor="middle" fill="#fca5a5" font-weight="700">381,432 / 3,467,567 = 0</text>
+          <text id="calc-txt-l3" x="135" y="65" font-size="8.5" text-anchor="middle" fill="#fca5a5">✂️ .109999... 통째로 잘려나감!</text>
+
+          <rect id="calc-box-right" x="285" y="12" width="240" height="60" rx="6" fill="rgba(16,185,129,.05)" stroke="#64748b" stroke-width="1" stroke-dasharray="4,3"/>
+          <text id="calc-txt-r1" x="405" y="32" font-size="10.5" text-anchor="middle" fill="#94a3b8">실수 변환 (* 1.0) 또는 ROUND()</text>
+          <text id="calc-txt-r2" x="405" y="52" font-size="11.5" text-anchor="middle" fill="#94a3b8" font-weight="700">버튼을 눌러 실수를 복원하세요</text>
+          <text id="calc-txt-r3" x="405" y="65" font-size="8.5" text-anchor="middle" fill="#94a3b8">정상 소수점 지표 산출 대기</text>
+        </svg>
+      </div>
+
+      <div class="ctrl">
+        <button class="btn pri" id="cc-btn-wrong" onclick="calcToggle('wrong')">① ❌ 정수 나눗셈 (함정: 전부 0)</button>
+        <button class="btn" id="cc-btn-raw" onclick="calcToggle('raw')">② ✅ 실수 변환 (* 1.0 곱하기)</button>
+        <button class="btn" id="cc-btn-right" onclick="calcToggle('right')">③ 🎯 ROUND 반올림 (4자리 완성)</button>
+      </div>
+
+      <!-- Realtime Generated SQL -->
+      <div class="calc" id="cc-calc" style="margin-top:10px;font-size:12px;line-height:1.55"></div>
+
+      <!-- Live Calculation Matrix Table -->
+      <table class="pe-table" style="margin-top:10px">
+        <thead><tr><th>code</th><th>net_income</th><th>equity</th><th id="cc-hdr">roe</th></tr></thead>
+        <tbody id="cc-body"></tbody>
+      </table>
+      <div id="cc-note" class="small" style="margin-top:8px"></div>
+
+      <!-- Student Intuition Takeaway Callout (DM-02 style) -->
+      <div class="ibox bl" style="margin-top:12px">
+        <div class="ibox-t">💡 [쉽게 말하면...] 왜 파이썬과 다르게 0이 나올까요?</div>
+        <ul>
+          <li><b>파이썬3의 친절함</b>: <code>5 / 2 = 2.5</code>처럼 정수끼리 나눠도 자동으로 실수형(float)으로 바꿔줍니다.</li>
+          <li><b>SQL의 엄격함</b>: <code>정수 / 정수 = 정수</code>라는 엄격한 컴퓨터 연산 규칙을 따릅니다. <code>0.11</code>에서 소수점 아래를 가위로 싹둑 잘라내고 정수 <code>0</code>만 남깁니다.</li>
+          <li><b>해결 열쇠 (* 1.0)</b>: 분자나 분모 중 하나에 <code>* 1.0</code>을 곱해주면 컴퓨터가 <b>"아, 이건 소수점이 필요한 실수 연산이구나!"</b>라고 인식하여 소수점을 살려냅니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- sub C: GROUP BY 함정 -->
+  <div class="spanel" data-group="sqlbasics">
+    <div class="card">
+      <div class="ctitle">🗂 묶은 다음엔, 하나로 못 줄이는 값을 그대로 꺼낼 수 없다 (집계 바구니 구조도)</div>
+      <p class="desc"><code>GROUP BY c.sector</code>로 묶으면 한 업종에 여러 회사가 섞인다. SQLite는 에러를 내지 않고 <b>아무 회사 이름이나 하나 골라 출력</b>해 데이터를 심각하게 왜곡시킨다.</p>
+      <div class="calc" id="gb-calc"></div>
+
+      <!-- Aggregation Bucket Diagram -->
+      <div class="box" style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;margin:10px 0;padding:12px;text-align:center">
+        <svg viewBox="0 0 560 135" style="width:100%;max-width:560px;display:inline-block">
+          <!-- 3 Companies falling into Bucket -->
+          <rect x="20" y="15" width="115" height="28" rx="4" fill="#1e293b" stroke="#64748b"/>
+          <text x="77" y="33" font-size="10" text-anchor="middle" fill="#cbd5e1">삼성전자 (0.11)</text>
+
+          <rect x="20" y="52" width="115" height="28" rx="4" fill="#1e293b" stroke="#64748b"/>
+          <text x="77" y="70" font-size="10" text-anchor="middle" fill="#cbd5e1">SK하이닉스 (0.24)</text>
+
+          <rect x="20" y="89" width="115" height="28" rx="4" fill="#1e293b" stroke="#64748b"/>
+          <text x="77" y="107" font-size="10" text-anchor="middle" fill="#cbd5e1">삼성전기 (0.07)</text>
+
+          <!-- Funnel / Bucket -->
+          <path d="M 140 25 L 215 52 L 215 80 L 140 107 Z" fill="rgba(139,92,246,.15)" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="175" y="62" font-size="10" text-anchor="middle" fill="#c4b5fd" font-weight="700">전기전자</text>
+          <text x="175" y="76" font-size="9" text-anchor="middle" fill="#c4b5fd">바구니</text>
+
+          <path d="M 220 66 L 250 66" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arr-purple)"/>
+
+          <!-- Aggregator -->
+          <circle cx="285" cy="66" r="30" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+          <text x="285" y="63" font-size="11" text-anchor="middle" fill="#6ee7b7" font-weight="700">AVG()</text>
+          <text x="285" y="78" font-size="8.5" text-anchor="middle" fill="#94a3b8">평균 연산</text>
+
+          <path d="M 320 66 L 350 66" stroke="#10b981" stroke-width="2" marker-end="url(#arr-green)"/>
+
+          <!-- Output Box: Safe vs Danger -->
+          <rect x="355" y="25" width="190" height="82" rx="6" fill="#1e293b" stroke="#f59e0b"/>
+          <text x="450" y="47" font-size="10" text-anchor="middle" fill="#6ee7b7" font-weight="700">✅ avg_roe = 0.1400 (3사 평균)</text>
+          <text x="450" y="67" font-size="10" text-anchor="middle" fill="#fca5a5">⚠️ 위험: name='삼성전자' 임의 부착!</text>
+          <text x="450" y="87" font-size="8.5" text-anchor="middle" fill="#94a3b8">마치 삼성전자만의 ROE처럼 왜곡</text>
+
+        </svg>
+      </div>
+
+      <div class="ctrl">
+        <button class="btn" id="gb-btn-danger" onclick="groupToggle('danger')">⚠️ 위험한 버전 (SELECT name, sector...)</button>
+        <button class="btn pri" id="gb-btn-safe" onclick="groupToggle('safe')">✅ 안전한 버전 (sector, AVG, COUNT만)</button>
+        <button class="btn" id="gb-btn-detail" onclick="groupToggle('detail')">🔍 왜 틀렸나: 전기전자 3사 분해</button>
+      </div>
+      <div id="gb-warn" class="ibox am" style="display:none">
+        <div class="ibox-t">🚨 에러 없이 조용히 틀림</div>
+        <ul><li>전기전자 업종 평균 ROE(0.14) 옆에 "삼성전자"라는 이름이 붙는다 — 실제로는 삼성전자·SK하이닉스·삼성전기 세 회사의 평균인데, 삼성전자만의 값처럼 보인다.</li></ul>
+      </div>
+      <div id="gb-detail-box" class="box" style="display:none;margin-bottom:10px"></div>
+      <div id="gb-buckets" style="margin:10px 0"></div>
+      <table class="pe-table" id="gb-table"><thead><tr id="gb-thead"></tr></thead>
+      <tbody id="gb-body"></tbody></table>
+      <div class="small">더 엄격한 DB(PostgreSQL 등)는 위험한 버전을 아예 문법 에러로 차단한다 — 뒤에서 클라우드 DB로 넘어갈 때 다시 만난다.</div>
+    </div>
+  </div>
+
+  <!-- sub D: JOIN -->
+  <div class="spanel" data-group="sqlbasics">
+    <div class="card">
+      <div class="ctitle">🔗 ON이 없으면, 가능한 모든 조합(카르테시안 곱)이 나온다</div>
+      <div class="calc" id="jn-calc">SELECT c.name,
+       f.year,
+       f.revenue,
+       f.net_income
+  FROM companies  AS c
+  JOIN financials AS f
+    ON c.code = f.code;</div>
+      <p class="desc">두 표 다 <code>code</code> 열이 있으니 그 열로 잇는다. 아래 인터랙티브 매칭 다이어그램으로 정상 연결선과 카르테시안 곱 그물망을 대조한다.</p>
+
+      <!-- JOIN Link Topology Diagram -->
+      <div class="box" style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;margin:10px 0;padding:12px;text-align:center">
+        <svg viewBox="0 0 560 145" style="width:100%;max-width:560px;display:inline-block">
+          <!-- Left Table (toy 3) -->
+          <rect x="20" y="15" width="140" height="110" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="90" y="36" font-size="11.5" text-anchor="middle" fill="#93c5fd" font-weight="700">companies (3사)</text>
+          <text x="90" y="58" font-size="10" text-anchor="middle" fill="#cbd5e1">005930 (삼성전자)</text>
+          <text x="90" y="80" font-size="10" text-anchor="middle" fill="#cbd5e1">000660 (SK하이닉스)</text>
+          <text x="90" y="102" font-size="10" text-anchor="middle" fill="#cbd5e1">051910 (LG화학)</text>
+
+          <!-- Middle Connection Network -->
+          <g id="join-lines-on">
+            <line x1="160" y1="58" x2="400" y2="48" stroke="#10b981" stroke-width="2.5"/>
+            <line x1="160" y1="58" x2="400" y2="62" stroke="#10b981" stroke-width="2.5"/>
+            <line x1="160" y1="80" x2="400" y2="76" stroke="#10b981" stroke-width="2.5"/>
+            <line x1="160" y1="80" x2="400" y2="90" stroke="#10b981" stroke-width="2.5"/>
+            <line x1="160" y1="102" x2="400" y2="104" stroke="#10b981" stroke-width="2.5"/>
+            <line x1="160" y1="102" x2="400" y2="116" stroke="#10b981" stroke-width="2.5"/>
+            <text x="280" y="26" font-size="10.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">ON 일치 6개 매칭선 (정상)</text>
+          </g>
+
+          <g id="join-lines-off" style="display:none">
+            <!-- Messy Cartesian network lines -->
+            <line x1="160" y1="58" x2="400" y2="48" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="58" x2="400" y2="62" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="58" x2="400" y2="76" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="58" x2="400" y2="90" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="58" x2="400" y2="104" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="58" x2="400" y2="116" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="80" x2="400" y2="48" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="80" x2="400" y2="62" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="80" x2="400" y2="76" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="80" x2="400" y2="90" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="80" x2="400" y2="104" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="80" x2="400" y2="116" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="102" x2="400" y2="48" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="102" x2="400" y2="62" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="102" x2="400" y2="76" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="102" x2="400" y2="90" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="102" x2="400" y2="104" stroke="#ef4444" stroke-width="1"/>
+            <line x1="160" y1="102" x2="400" y2="116" stroke="#ef4444" stroke-width="1"/>
+            <text x="280" y="27" font-size="10.5" text-anchor="middle" fill="#fca5a5" font-weight="700">18개 전선 폭발 (카르테시안 곱 ⚠️)</text>
+          </g>
+
+          <!-- Right Table (toy 6) -->
+          <rect x="400" y="15" width="140" height="110" rx="6" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="470" y="36" font-size="11.5" text-anchor="middle" fill="#c4b5fd" font-weight="700">financials (6행)</text>
+          <text x="470" y="52" font-size="9" text-anchor="middle" fill="#cbd5e1">005930 2024</text>
+          <text x="470" y="66" font-size="9" text-anchor="middle" fill="#cbd5e1">005930 2025</text>
+          <text x="470" y="80" font-size="9" text-anchor="middle" fill="#cbd5e1">000660 2024</text>
+          <text x="470" y="94" font-size="9" text-anchor="middle" fill="#cbd5e1">000660 2025</text>
+          <text x="470" y="108" font-size="9" text-anchor="middle" fill="#cbd5e1">051910 2024·25</text>
+        </svg>
+      </div>
+
+      <div class="ctrl">
+        <button class="btn pri" id="jn-btn-on" onclick="joinToggle('on')">① ON c.code = f.code 있음 (정상 6행)</button>
+        <button class="btn" id="jn-btn-off" onclick="joinToggle('off')">② ON 없이 JOIN (함정 18행)</button>
+        <button class="btn" id="jn-btn-full" onclick="joinToggle('full')">③ 전체 데이터 체급 비교 (24행 vs 288행)</button>
+      </div>
+      <div id="jn-result" class="box" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- sub E: 에러 읽기 -->
+  <div class="spanel" data-group="sqlbasics">
+    <div class="card">
+      <div class="ctitle">🚨 SQL 에러는 한 줄이다</div>
+      <p class="desc">파이썬 트레이스백과 다르게 줄 번호도 호출 스택도 없이 한 줄만 나온다. 대표적인 네 가지를 직접 눌러 읽어보고 해결법을 대조한다.</p>
+      <div class="ctrl">
+        <button class="btn pri" id="err-btn-0" onclick="errShow(0)">① 표 이름 오타</button>
+        <button class="btn" id="err-btn-1" onclick="errShow(1)">② 열 이름 오타</button>
+        <button class="btn" id="err-btn-2" onclick="errShow(2)">③ 키워드 오타</button>
+        <button class="btn" id="err-btn-3" onclick="errShow(3)">④ 집계함수 오용</button>
+      </div>
+      <div id="err-bad-sql" class="calc" style="margin-top:10px"></div>
+      <div id="err-msg" class="calc" style="color:#fca5a5;margin-top:8px"></div>
+      <div id="err-tip" class="ibox am" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PANEL 3 — SQL → pandas ============ -->
+<section class="panel" id="p3">
+  <div class="card">
+    <div class="badge" style="margin-bottom:10px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;font-weight:700;font-size:11px;letter-spacing:1px;">§400 · read_sql & pandas 연계 파이프라인</div>
+    <div class="ctitle">📝 줄이는 일은 SQL, 주무르는 일은 pandas (역할 분담 깔때기)</div>
+    <div class="calc">query = """
+<span id="p3-sql">SELECT c.name,
+       c.sector,
+       f.revenue,
+       ROUND(f.net_income * 1.0 / f.equity, 4) AS roe
+  FROM companies  AS c
+  JOIN financials AS f
+    ON c.code = f.code
+ WHERE f.year = 2025;</span>
+"""
+df = pd.read_sql(query, conn)</div>
+    <p class="desc"><b>SQL과 pandas의 황금 분업</b> — 수백만 행의 DB에서 필요한 12행만 SQL 깔때기로 압축해 가져오고(줄이기), 가져온 정예 DataFrame은 pandas의 강력한 시계열·통계 기능으로 주무른다.</p>
+
+    <!-- Funnel Role Division SVG -->
+    <div class="box" style="background:var(--s2);margin:12px 0;padding:12px;text-align:center">
+      <svg viewBox="0 0 520 110" style="width:100%;max-width:520px;display:inline-block">
+        <!-- DB Block -->
+        <rect x="20" y="20" width="115" height="70" rx="6" fill="#1e293b" stroke="#3b82f6"/>
+        <text x="77" y="44" font-size="10.5" text-anchor="middle" fill="#93c5fd" font-weight="700">DB 저장소</text>
+        <text x="77" y="60" font-size="8.5" text-anchor="middle" fill="#cbd5e1">수백만 행 원본</text>
+        <text x="77" y="74" font-size="8" text-anchor="middle" fill="#64748b">디스크 보관</text>
+
+        <!-- Funnel -->
+        <path d="M 145 25 L 265 45 L 265 65 L 145 85 Z" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="200" y="52" font-size="10" text-anchor="middle" fill="#fcd34d" font-weight="700">SQL pd.read_sql</text>
+        <text x="200" y="66" font-size="8.5" text-anchor="middle" fill="#fcd34d">줄이기 (필요한 만큼만)</text>
+
+        <path d="M 270 55 L 305 55" stroke="#10b981" stroke-width="2" marker-end="url(#arr-green)"/>
+
+        <!-- In-memory DataFrame -->
+        <rect x="315" y="20" width="180" height="70" rx="6" fill="rgba(16,185,129,.12)" stroke="#10b981"/>
+        <text x="405" y="44" font-size="10.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">내 손 안의 df (12행 4열)</text>
+        <text x="405" y="60" font-size="8.5" text-anchor="middle" fill="#cbd5e1">주무르기 (메모리 분석)</text>
+        <text x="405" y="74" font-size="8" text-anchor="middle" fill="#6ee7b7">필터·정렬·groupby·시각화</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🔍 DB에서 받은 표, 판다스로 이어하기 (4단계 분석)</div>
+    <p class="desc">SQL로 추려온 12개사 표를 판다스 메서드로 직접 진단하고 필터링해본다.</p>
+    <div class="ctrl">
+      <button class="btn pri" id="pd-btn-head" onclick="pandasPipe('head')">① df.head(5) (상위 5행)</button>
+      <button class="btn" id="pd-btn-info" onclick="pandasPipe('info')">② df.info() (체급·결측치 진단)</button>
+      <button class="btn" id="pd-btn-filter" onclick="pandasPipe('filter')">③ df[roe > 0.08] (수익성 우수 7개사)</button>
+      <button class="btn" id="pd-btn-desc" onclick="pandasPipe('desc')">④ df.describe() (요약 통계량)</button>
+    </div>
+    <div id="pd-pipe-box" class="box" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">⚖️ 같은 숫자, 다른 도구 (SQL GROUP BY vs pandas groupby)</div>
+    <p class="desc">앞선 300번 노트에서 SQL <code>GROUP BY</code>로 구한 업종별 평균 ROE를, 지금 손에 쥔 <code>df</code>로 pandas <code>groupby</code>만으로도 완전히 똑같이 다시 만들 수 있다.</p>
+    <div class="ctrl">
+      <button class="btn pri" id="pc-sql" onclick="pandasCompare('sql')">SQL GROUP BY 결과</button>
+      <button class="btn" id="pc-pd" onclick="pandasCompare('pandas')">df.groupby('sector')['roe'].mean() 결과</button>
+    </div>
+    <table class="pe-table"><thead><tr><th>sector</th><th id="pc-hdr">avg_roe (SQL)</th><th>n</th></tr></thead>
+    <tbody>
+      <tr><td>금융</td><td>0.0850</td><td>2</td></tr>
+      <tr><td>바이오</td><td>0.1400</td><td>1</td></tr>
+      <tr><td>서비스</td><td>0.0900</td><td>1</td></tr>
+      <tr><td>자동차</td><td>0.1150</td><td>2</td></tr>
+      <tr><td>전기전자</td><td>0.1400</td><td>3</td></tr>
+      <tr><td>화학</td><td>0.0433</td><td>3</td></tr>
+    </tbody></table>
+    <div class="small" id="pc-note">숫자가 완전히 같다 — SQL이 표를 줄여주고 나면, 그 다음부터는 매번 새로 쿼리를 던지지 않고 pandas 쪽에서 자유롭게 다시 요약할 수 있다.</div>
+  </div>
+</section>
+
+<!-- ============ PANEL 4 — DB 지도 ============ -->
+<section class="panel" id="p4">
+  <div class="card">
+    <div class="badge" style="margin-bottom:10px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;font-weight:700;font-size:11px;letter-spacing:1px;">§500 · 데이터베이스 아키텍처 포지셔닝 지도</div>
+    <div class="ctitle">🗺 이 질문이 커지면 어디로 옮겨가나 — 2차원 데이터 시스템 지도</div>
+    <p class="desc"><b>"회사는 이 중 하나만 골라 쓰지 않는다."</b> 같이 쓰는 사람 수와 데이터 크기에 따라 등장하는 시스템이 다르다. 아래 2차원 좌표 지도의 시스템을 클릭해 실무 역할과 권한 경계를 대조한다.</p>
+
+    <!-- Upgraded 2D Map SVG with clear quadrants -->
+    <div class="box" style="background:var(--s2);margin:12px 0;padding:12px;text-align:center">
+      <svg viewBox="0 0 540 280" style="width:100%;max-width:540px;display:inline-block">
+        <!-- Gridlines -->
+        <line x1="50" y1="130" x2="510" y2="130" stroke="#1e293b" stroke-dasharray="3,3"/>
+        <line x1="280" y1="20" x2="280" y2="240" stroke="#1e293b" stroke-dasharray="3,3"/>
+
+        <!-- Axes -->
+        <line x1="50" y1="20" x2="50" y2="240" stroke="#475569" stroke-width="1.5"/>
+        <line x1="50" y1="240" x2="510" y2="240" stroke="#475569" stroke-width="1.5"/>
+        <text x="280" y="268" font-size="11" text-anchor="middle" fill="#94a3b8">같이 쓰는 사람 수 (1인 → 팀 → 전사) →</text>
+        <text x="20" y="130" font-size="11" text-anchor="middle" fill="#94a3b8" transform="rotate(-90 20 130)">데이터 크기 (MB → GB → PB) →</text>
+
+        <!-- Quadrants -->
+        <!-- 1. SQLite -->
+        <rect id="svg-sq" x="65" y="160" width="125" height="68" rx="6" fill="rgba(16,185,129,.18)" stroke="#10b981" stroke-width="1.8" style="cursor:pointer" onclick="dbMapShow(0)"/>
+        <text x="127" y="184" font-size="12" text-anchor="middle" fill="#6ee7b7" font-weight="700" style="cursor:pointer" onclick="dbMapShow(0)">SQLite</text>
+        <text x="127" y="202" font-size="9.5" text-anchor="middle" fill="#cbd5e1" style="cursor:pointer" onclick="dbMapShow(0)">지금 우리의 자리</text>
+        <text x="127" y="218" font-size="8.5" text-anchor="middle" fill="#94a3b8" style="cursor:pointer" onclick="dbMapShow(0)">1인 · 로컬 분석 캐시</text>
+
+        <!-- 2. PostgreSQL / MySQL -->
+        <rect id="svg-pg" x="180" y="90" width="145" height="60" rx="6" fill="rgba(59,130,246,.15)" stroke="#3b82f6" stroke-width="1.5" style="cursor:pointer" onclick="dbMapShow(1)"/>
+        <text x="252" y="113" font-size="11.5" text-anchor="middle" fill="#93c5fd" font-weight="700" style="cursor:pointer" onclick="dbMapShow(1)">PostgreSQL·MySQL</text>
+        <text x="252" y="131" font-size="9.5" text-anchor="middle" fill="#cbd5e1" style="cursor:pointer" onclick="dbMapShow(1)">회사 서버</text>
+        <text x="252" y="143" font-size="8.5" text-anchor="middle" fill="#94a3b8" style="cursor:pointer" onclick="dbMapShow(1)">팀 · 실시간 서비스 DB</text>
+
+        <!-- 3. Supabase -->
+        <rect id="svg-supa" x="260" y="30" width="135" height="60" rx="6" fill="rgba(245,158,11,.15)" stroke="#f59e0b" stroke-width="1.8" style="cursor:pointer" onclick="dbMapShow(2)"/>
+        <text x="327" y="53" font-size="11.5" text-anchor="middle" fill="#fcd34d" font-weight="700" style="cursor:pointer" onclick="dbMapShow(2)">Supabase 등</text>
+        <text x="327" y="70" font-size="9.5" text-anchor="middle" fill="#cbd5e1" style="cursor:pointer" onclick="dbMapShow(2)">클라우드 운영</text>
+        <text x="327" y="82" font-size="8.5" text-anchor="middle" fill="#94a3b8" style="cursor:pointer" onclick="dbMapShow(2)">클라우드 공유 · 관리형</text>
+
+        <!-- 4. BigQuery -->
+        <rect id="svg-bq" x="405" y="25" width="105" height="60" rx="6" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.5" style="cursor:pointer" onclick="dbMapShow(3)"/>
+        <text x="457" y="48" font-size="11.5" text-anchor="middle" fill="#fca5a5" font-weight="700" style="cursor:pointer" onclick="dbMapShow(3)">BigQuery 등</text>
+        <text x="457" y="65" font-size="9.5" text-anchor="middle" fill="#cbd5e1" style="cursor:pointer" onclick="dbMapShow(3)">매우 큰 분석</text>
+        <text x="457" y="77" font-size="8.5" text-anchor="middle" fill="#94a3b8" style="cursor:pointer" onclick="dbMapShow(3)">수억 행 전사 DW</text>
+
+        <!-- Migration Path (SQLite -> Supabase) -->
+        <path d="M 170 175 C 210 140, 240 100, 270 75" fill="none" stroke="#fcd34d" stroke-width="2.5" stroke-dasharray="5,4" marker-end="url(#arr-yellow)"/>
+        <text x="235" y="125" font-size="10" fill="#fcd34d" font-weight="700" transform="rotate(-30 235 125)">Week03 이동 여정</text>
+
+      </svg>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn pri" id="map-btn-0" onclick="dbMapShow(0)">① SQLite · 지금 우리 자리</button>
+      <button class="btn" id="map-btn-1" onclick="dbMapShow(1)">② PostgreSQL·MySQL · 회사 서버</button>
+      <button class="btn" id="map-btn-2" onclick="dbMapShow(2)">③ Supabase · 클라우드 운영</button>
+      <button class="btn" id="map-btn-3" onclick="dbMapShow(3)">④ BigQuery · 매우 큰 분석</button>
+      <button class="btn" id="map-btn-4" onclick="dbMapShow(4)">⑤ 4대 시스템 종합 비교표</button>
+    </div>
+    <div id="dbmap-detail" class="box" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- ============ PANEL 5 — Supabase & MCP ============ -->
+<section class="panel" id="p5">
+  <div class="card">
+    <div class="badge" style="margin-bottom:10px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#93c5fd;font-weight:700;font-size:11px;letter-spacing:1px;">§600 · 클라우드 데이터베이스 (Supabase & MCP)</div>
+    <div class="ctitle">☁️ 같은 세 표, 클라우드에서도 같은 방법</div>
+    <p class="desc">앞선 200·300번 노트에서 SQLite에 던졌던 조회를 같은 세 표(companies·financials·returns)를 담은 클라우드 PostgreSQL(Supabase)에 이번 주 직접 다시 던진다.</p>
+    <p class="desc">SQLite는 로컬 파일에 직접 붙지만, <b>클라우드 DB는 왜 API 게이트웨이를 거칠까요?</b> 아래 다이어그램에서 '주방 난입 ❌'과 '드라이브스루 ✅'의 차이를 확인하세요.</p>
+
+    <!-- Intuitive API Metaphor Architecture SVG (Kitchen Intrusion ❌ vs Drive-thru Isolation ✅) -->
+    <div class="box" style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;margin:12px 0;padding:12px;text-align:center">
+      <svg viewBox="0 0 560 306" style="width:100%;max-width:560px;display:inline-block">
+
+        <!-- ── TOP TRACK: ❌ [위험 / 비상식] 손님이 주방에 직접 난입 (인터넷에 원격 DB 직접 노출) ── -->
+        <rect x="10" y="8" width="540" height="96" rx="8" fill="rgba(239,68,68,.07)" stroke="rgba(239,68,68,.35)" stroke-width="1.2"/>
+        <text x="24" y="26" font-size="11" fill="#fca5a5" font-weight="700">❌ [위험 / 비상식] 손님이 주방에 직접 난입 (인터넷에 원격 DB 엔진 직접 노출)</text>
+
+        <!-- 1. 외부 손님 / 침입자 -->
+        <rect x="22" y="36" width="118" height="58" rx="6" fill="#1e293b" stroke="#ef4444" stroke-width="1.2"/>
+        <text x="81" y="54" font-size="10.5" text-anchor="middle" fill="#fca5a5" font-weight="700">👤 외부 손님 / 해커</text>
+        <text x="81" y="68" font-size="8.5" text-anchor="middle" fill="#cbd5e1">임의의 클라이언트 / 인터넷</text>
+        <text x="81" y="81" font-size="8" text-anchor="middle" fill="#fca5a5">통제 없는 자유 접근</text>
+
+        <!-- Danger Arrow (Animated Red Warning Stream) -->
+        <path d="M 144 65 L 210 65" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,4" style="animation:flowStream 1.5s linear infinite" marker-end="url(#arr-red)"/>
+        <text x="177" y="55" font-size="8" text-anchor="middle" fill="#fca5a5">직접 접속</text>
+        <text x="177" y="77" font-size="7.5" text-anchor="middle" fill="#cbd5e1">뒷문 활짝 열림</text>
+
+        <!-- Kitchen Intrusion Disaster Box (Pulse Glow Red) -->
+        <rect x="216" y="36" width="186" height="58" rx="6" fill="rgba(239,68,68,.18)" stroke="#ef4444" stroke-dasharray="3,2" style="animation:pulseGlowRed 2.5s ease-in-out infinite"/>
+        <text x="309" y="53" font-size="9.5" text-anchor="middle" fill="#fca5a5" font-weight="700">💥 불타는 주방: 식칼·가스 무단 조작</text>
+        <text x="309" y="67" font-size="8" text-anchor="middle" fill="#fca5a5" font-weight="600">"DROP TABLE financials;" 폭탄 투하</text>
+        <text x="309" y="80" font-size="7.5" text-anchor="middle" fill="#cbd5e1">식재료 칼부림 &amp; 가스 밸브 훼손</text>
+
+        <!-- Arrow to DB Catastrophe -->
+        <path d="M 406 65 L 434 65" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,4" style="animation:flowStream 1.5s linear infinite" marker-end="url(#arr-red)"/>
+
+        <!-- Vulnerable Paralyzed DB Engine -->
+        <rect x="440" y="36" width="102" height="58" rx="6" fill="#1e293b" stroke="#ef4444" stroke-width="1.2"/>
+        <text x="491" y="54" font-size="10.5" text-anchor="middle" fill="#fca5a5" font-weight="700">💥 전교생 DB 전소</text>
+        <text x="491" y="68" font-size="8" text-anchor="middle" fill="#fca5a5">0.1초 만에 영구 삭제</text>
+        <text x="491" y="81" font-size="8" text-anchor="middle" fill="#cbd5e1">복구 불가능 재앙</text>
+
+        <!-- ── BOTTOM TRACK: ✅ [안전 / 표준] 드라이브스루 주문 창구 격리 (API Gateway) ── -->
+        <rect x="10" y="112" width="540" height="184" rx="8" fill="rgba(16,185,129,.05)" stroke="rgba(16,185,129,.35)" stroke-width="1.2"/>
+        <text x="24" y="130" font-size="11" fill="#6ee7b7" font-weight="700">✅ [안전 / 표준] 드라이브스루 주문 창구 격리: 차(VS Code) - 창구(API) - 주방(DB)</text>
+
+        <!-- 1. Customer in Car (손님: VS Code / Python) -->
+        <rect x="22" y="142" width="124" height="114" rx="7" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="84" y="161" font-size="10.5" text-anchor="middle" fill="#93c5fd" font-weight="700">🚗 손님 (VS Code / Python)</text>
+        <text x="84" y="176" font-size="8.5" text-anchor="middle" fill="#cbd5e1">차에서 절대 못 내림</text>
+        <text x="84" y="188" font-size="8" text-anchor="middle" fill="#94a3b8">(DB 주방 직접 진입 원천 차단)</text>
+        
+        <!-- Order Slip Badge -->
+        <rect x="30" y="196" width="108" height="48" rx="4" fill="rgba(59,130,246,.15)" stroke="#3b82f6" stroke-width="1"/>
+        <text x="84" y="210" font-size="8.5" text-anchor="middle" fill="#93c5fd" font-weight="600">① 주문서 (HTTPS REST)</text>
+        <text x="84" y="224" font-size="8" text-anchor="middle" fill="#cbd5e1">SELECT 메뉴 지정 +</text>
+        <text x="84" y="235" font-size="8" text-anchor="middle" fill="#6ee7b7" font-weight="600">publishable key 티켓</text>
+
+        <!-- Arrow Car -> Drive-thru Window (Animated Flow Stream) -->
+        <path d="M 148 184 L 186 184" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6,4" style="animation:flowStream 1.2s linear infinite" marker-end="url(#arr-blue)"/>
+        <text x="167" y="174" font-size="8" text-anchor="middle" fill="#93c5fd">HTTPS</text>
+        <text x="167" y="197" font-size="8" text-anchor="middle" fill="#94a3b8">보안 채널</text>
+
+        <!-- 2. Drive-thru Window / API Gateway (검문 창구 with pulse glow) -->
+        <rect x="190" y="138" width="186" height="124" rx="7" fill="rgba(245,158,11,.1)" stroke="#f59e0b" stroke-width="2" style="animation:pulseGlowAmber 3s ease-in-out infinite"/>
+        <text x="283" y="157" font-size="11" text-anchor="middle" fill="#fcd34d" font-weight="700">🛡️ 드라이브스루 주문 창구</text>
+        <text x="283" y="171" font-size="8.5" text-anchor="middle" fill="#fcd34d">Supabase REST (API 게이트웨이)</text>
+
+        <!-- Gatekeeper Checklist -->
+        <rect x="198" y="178" width="170" height="74" rx="4" fill="#1e293b" stroke="#f59e0b" stroke-dasharray="2,2"/>
+        <text x="283" y="194" font-size="8.5" text-anchor="middle" fill="#6ee7b7">✔ 티켓 검증: publishable key 확인</text>
+        <text x="283" y="208" font-size="8.5" text-anchor="middle" fill="#6ee7b7">✔ 메뉴 확인: SELECT 읽기만 허용</text>
+        <text x="283" y="222" font-size="8.5" text-anchor="middle" fill="#fca5a5">🛑 메뉴 밖 거절: DROP/DELETE 차단</text>
+        <text x="283" y="238" font-size="8.5" text-anchor="middle" fill="#94a3b8">안전하게 검증된 조리표만 주방 전달</text>
+
+        <!-- Arrow Gateway -> Kitchen (Animated Flow Stream) -->
+        <path d="M 378 184 L 408 184" stroke="#10b981" stroke-width="2" stroke-dasharray="6,4" style="animation:flowStream 1.2s linear infinite" marker-end="url(#arr-green)"/>
+        <text x="393" y="174" font-size="8" text-anchor="middle" fill="#6ee7b7">② 조리표</text>
+
+        <!-- 3. Sealed Kitchen (PostgreSQL Database SSOT) -->
+        <rect x="414" y="142" width="126" height="114" rx="7" fill="rgba(16,185,129,.1)" stroke="#10b981" stroke-width="1.5"/>
+        <text x="477" y="161" font-size="10.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">🔒 밀폐된 주방 (DB 엔진)</text>
+        <text x="477" y="176" font-size="8.5" text-anchor="middle" fill="#cbd5e1">PostgreSQL 원격 DB</text>
+        
+        <!-- Closed Port Badge -->
+        <rect x="422" y="184" width="110" height="26" rx="4" fill="#1e293b" stroke="#ef4444" stroke-dasharray="2,2"/>
+        <text x="477" y="196" font-size="8" text-anchor="middle" fill="#fca5a5">🔒 외부 직접 접속 차단</text>
+        <text x="477" y="205" font-size="7.5" text-anchor="middle" fill="#94a3b8">내부 전용 네트워크 격리</text>
+
+        <text x="477" y="226" font-size="8.5" text-anchor="middle" fill="#6ee7b7">companies · financials</text>
+        <text x="477" y="240" font-size="8" text-anchor="middle" fill="#94a3b8">단일 진실 공급원 (SSOT)</text>
+
+        <!-- Return Arrow: Packaged Boxed Lunch (JSON) to Car (Animated Flow Stream Rev) -->
+        <path d="M 414 268 L 153 268" stroke="#10b981" stroke-width="2.2" stroke-dasharray="6,4" style="animation:flowStreamRev 1.2s linear infinite" marker-end="url(#arr-green)"/>
+        <text x="284" y="282" font-size="9" text-anchor="middle" fill="#6ee7b7" font-weight="700">③ 반환: 정제된 3줄짜리 JSON 도시락 배달 🍱 → 학생 VS Code에서 pandas DataFrame 자동 변환 완료</text>
+      </svg>
+    </div>
+
+
+
+    <div class="ibox am">
+      <div class="ibox-t">🔑 노트북에 넣어도 되는 key, 넣으면 안 되는 것</div>
+      <ul><li><b>publishable key</b>는 프로젝트 식별용 공개 키 — 학생 노트북에는 세 표의 <code>SELECT</code> 권한만 부여되어 안전하다.</li>
+      <li><b>service_role</b> key·개인 액세스 토큰·DB 비밀번호는 절대 노트북에 적지 않는다 — 관리자 권한이다.</li></ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🆚 무엇이 다른가 — 경계 있는 연속성 (3대 차이 진단)</div>
+    <p class="desc">"거의 그대로 통한다"고 과장하면 나중에 <b>"SQLite에서는 됐는데 왜 안 되지"</b>를 혼자 만나게 된다. 아래 3개 버튼으로 실제 경계를 미리 확인한다.</p>
+    <div class="ctrl">
+      <button class="btn pri" id="tt-btn-type" onclick="typeDiag('type')">① 타입 엄격성 (숫자 열에 '오류아님')</button>
+      <button class="btn" id="tt-btn-date" onclick="typeDiag('date')">② 날짜 함수 이름 (strftime ↔ date_trunc)</button>
+      <button class="btn" id="tt-btn-group" onclick="typeDiag('group')">③ GROUP BY 엄격성 (비집계 열 허용 여부)</button>
+    </div>
+    <div id="tt-result" class="box" style="margin-top:10px"></div>
+    <div class="small">표 값을 담을 열의 타입을 미리 정확히 지키는 습관이, SQLite에서는 "그래도 되니까" 느슨해지기 쉽다는 걸 기억해둔다.</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🔬 교수가 클라우드 DB 값을 바꾸면 일어나는 일 (중앙 SSOT 동기화 구조도)</div>
+    <p class="desc">내 PC의 파일이 아니라 클라우드 DB를 바라볼 때 생기는 진짜 차이 — 교수가 데이터를 고치고 학생이 같은 코드를 재실행하는 과정을 단계별로 확인한다.</p>
+
+    <!-- Cloud SSOT Sync Diagram -->
+    <div class="box" style="background:var(--s2);margin:10px 0;padding:10px;text-align:center">
+      <svg viewBox="0 0 520 110" style="width:100%;max-width:520px;display:inline-block">
+        <!-- Professor Console (Left) -->
+        <rect x="20" y="20" width="120" height="70" rx="6" fill="#1e293b" stroke="#f59e0b"/>
+        <text x="80" y="44" font-size="10.5" text-anchor="middle" fill="#fcd34d" font-weight="700">👨‍🏫 교수 대시보드</text>
+        <text x="80" y="60" font-size="8.5" text-anchor="middle" fill="#cbd5e1">관리자 UPDATE 1건</text>
+        <text x="80" y="74" font-size="8" text-anchor="middle" fill="#fca5a5">sector='반도체·AI'</text>
+
+        <path d="M 140 55 L 185 55" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr-yellow)"/>
+
+        <!-- Central Supabase DB -->
+        <rect x="195" y="15" width="130" height="80" rx="8" fill="rgba(16,185,129,.15)" stroke="#10b981" stroke-width="2"/>
+        <text x="260" y="42" font-size="11.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">☁️ Supabase 중앙 DB</text>
+        <text x="260" y="60" font-size="9" text-anchor="middle" fill="#cbd5e1">단일 진실 공급원 (SSOT)</text>
+        <text x="260" y="75" font-size="8.5" text-anchor="middle" fill="#6ee7b7">데이터 1건 실시간 갱신</text>
+
+        <!-- Student Notebooks (Right) -->
+        <path d="M 325 45 L 365 35" stroke="#3b82f6" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arr-blue)"/>
+        <path d="M 325 65 L 365 75" stroke="#3b82f6" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arr-blue)"/>
+
+        <rect x="375" y="15" width="125" height="36" rx="5" fill="#1e293b" stroke="#3b82f6"/>
+        <text x="437" y="32" font-size="9" text-anchor="middle" fill="#93c5fd">학생 A 노트북 (조회)</text>
+        <text x="437" y="44" font-size="8" text-anchor="middle" fill="#6ee7b7">코드 수정 없이 즉시 반영!</text>
+
+        <rect x="375" y="60" width="125" height="36" rx="5" fill="#1e293b" stroke="#3b82f6"/>
+        <text x="437" y="77" font-size="9" text-anchor="middle" fill="#93c5fd">학생 B 노트북 (조회)</text>
+        <text x="437" y="89" font-size="8" text-anchor="middle" fill="#6ee7b7">코드 수정 없이 즉시 반영!</text>
+      </svg>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn pri" id="sim-btn-1" onclick="simCloud(1)">① 학생 첫 조회 (교수 수정 전)</button>
+      <button class="btn" id="sim-btn-2" onclick="simCloud(2)">② 교수 대시보드 수정 시연</button>
+      <button class="btn" id="sim-btn-3" onclick="simCloud(3)">③ 학생 재조회 (코드 변경 없이 재실행!)</button>
+    </div>
+    <div id="sim-result" class="box" style="margin-top:10px"></div>
+    <div class="small">학생은 코드를 한 글자도 고치지 않고 같은 셀을 다시 실행했을 뿐인데 결과가 바뀌었다 — 중앙의 단일 진실 공급원(SSOT)을 공유하기 때문이다.</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🤖 MCP — 질문을 쓰는 사람이 바뀐다 (3계층 프로토콜 구조)</div>
+    <p class="desc"><b>MCP(Model Context Protocol)</b>는 AI가 정해진 통로로 DB 같은 바깥 시스템에 접근하는 규약이다. 바뀐 것은 "질문을 쓰는 방법"이지 DB 자체가 아니다.</p>
+
+    <!-- MCP 3-tier Architecture SVG -->
+    <div class="box" style="background:var(--s2);margin:10px 0;padding:10px;text-align:center">
+      <svg viewBox="0 0 520 90" style="width:100%;max-width:520px;display:inline-block">
+        <rect x="20" y="15" width="95" height="60" rx="6" fill="#1e293b" stroke="#3b82f6"/>
+        <text x="67" y="42" font-size="10.5" text-anchor="middle" fill="#93c5fd" font-weight="700">👤 사람 (분석가)</text>
+        <text x="67" y="58" font-size="8.5" text-anchor="middle" fill="#cbd5e1">자연어 의도 전달</text>
+
+        <path d="M 115 45 L 145 45" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr-yellow)"/>
+
+        <rect x="155" y="15" width="105" height="60" rx="6" fill="#1e293b" stroke="#8b5cf6"/>
+        <text x="207" y="42" font-size="10.5" text-anchor="middle" fill="#c4b5fd" font-weight="700">🤖 AI (LLM)</text>
+        <text x="207" y="58" font-size="8.5" text-anchor="middle" fill="#cbd5e1">의도 파악 · SQL 작성</text>
+
+        <path d="M 260 45 L 295 45" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arr-purple)"/>
+
+        <rect x="305" y="15" width="95" height="60" rx="6" fill="rgba(245,158,11,.15)" stroke="#f59e0b"/>
+        <text x="352" y="42" font-size="10.5" text-anchor="middle" fill="#fcd34d" font-weight="700">🔌 MCP 통로</text>
+        <text x="352" y="58" font-size="8.5" text-anchor="middle" fill="#fcd34d">권한 통제 · 안전 실행</text>
+
+        <path d="M 400 45 L 430 45" stroke="#10b981" stroke-width="2" marker-end="url(#arr-green)"/>
+
+        <rect x="435" y="15" width="70" height="60" rx="6" fill="rgba(16,185,129,.2)" stroke="#10b981"/>
+        <text x="470" y="44" font-size="10.5" text-anchor="middle" fill="#6ee7b7" font-weight="700">DB</text>
+        <text x="470" y="58" font-size="8.5" text-anchor="middle" fill="#cbd5e1">데이터</text>
+      </svg>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn pri" id="mcp-btn-human" onclick="mcpToggle('human')">① 기존 방식: 사람이 SQL 직접 작성</button>
+      <button class="btn" id="mcp-btn-ai" onclick="mcpToggle('ai')">② MCP 방식: 사람 자연어 → AI → MCP → DB</button>
+    </div>
+    <div id="mcp-result" class="box" style="margin-top:10px"></div>
+    <div class="ibox am">
+      <div class="ibox-t">⚠️ SQL을 몰라도 된다는 뜻이 아니다</div>
+      <ul><li>MCP가 대신 쿼리를 짜준다고 해도, 결과가 맞는지(ORDER BY 누락 여부, ON 누락 폭발 여부)는 SQL을 아는 사람만 검증할 수 있다 — "Trust but Verify".</li></ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">🎯 다음 주 예고: 실전 API에서 OpenDART 퀀트 파이프라인으로</div>
+    <p class="desc">이번 주에는 데이터를 담을 그릇(DB)과 안전한 창구(API 게이트웨이)의 원리를 완성했습니다. 다음 주에는 진짜 외부 세상의 데이터를 긁어와 이 그릇에 꽂아 넣습니다.</p>
+    <div class="box" style="background:var(--s1);border-color:var(--a1);padding:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <span class="badge" style="background:var(--a1);color:#fff">Week 04 실습 로드맵</span>
+        <b class="small" style="color:#93c5fd">금융감독원 OpenDART API ➔ SQLite 자동 적재 파이프라인</b>
+      </div>
+      <p class="small" style="margin:4px 0 8px 0;color:var(--tx);word-break:keep-all">
+        다음 주에는 OpenDART API로 삼성전자 5개년 사업보고서(매출·영업이익·순이익)를 호출해, <code>financials</code> 테이블에 자동으로 쌓는(Append) 파이프라인을 완성합니다.
+      </p>
+      <div class="ibox gr">
+        <div class="ibox-t">💡 3주차와 4주차의 완벽한 결합</div>
+        이번 주에 배운 SQLite / PostgreSQL 저장소가 있어야, 다음 주에 외부 API에서 쏟아지는 수백 MB 공시 데이터를 안전하게 담고 0.001초 만에 백테스트할 수 있습니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">✅ 이제 직접 해보자</div>
+    <p class="desc">이번 주 실습은 환경 진단부터 클라우드 재조회까지 네 단계로 이어진다.</p>
+    <div class="miniFlow">
+      <div class="mini on">🧪 700<br>환경·DB열기</div>
+      <div class="mini on">🎯 800<br>SQL 드릴</div>
+      <div class="mini on">🔍 900<br>read_sql 분석</div>
+      <div class="mini on">☁️ 1000<br>클라우드 재실행</div>
+    </div>
+    <div class="small">FD-03-700 → FD-03-800 → FD-03-900 → FD-03-1000 학생용 노트북을 순서대로 연다.</div>
+  </div>
+</section>
+
+<script>
+function hlSql(sql){
+  if(!sql) return '';
+  var tokenRe = /(--[^\n]*)|('([^'\\]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([a-zA-Z_][a-zA-Z0-9_]*)|(\s+)|([^\s\w])/g;
+  var kw = {
+    'SELECT':1,'FROM':1,'WHERE':1,'AND':1,'OR':1,'JOIN':1,'LEFT':1,'INNER':1,
+    'ON':1,'GROUP':1,'BY':1,'ORDER':1,'LIMIT':1,'AS':1,'DESC':1,'ASC':1,
+    'UNION':1,'ALL':1,'ROUND':1,'AVG':1,'COUNT':1,'SUM':1,'MAX':1,'MIN':1,
+    'DISTINCT':1,'CASE':1,'WHEN':1,'THEN':1,'ELSE':1,'END':1,'IS':1,'NOT':1,
+    'NULL':1,'IN':1,'LIKE':1,'BETWEEN':1,'HAVING':1,'UPDATE':1,'SET':1,'CREATE':1,
+    'TABLE':1,'DROP':1,'STRFTIME':1,'DATE_TRUNC':1
+  };
+  var tbl = {
+    'companies':1,'financials':1,'returns':1,'company':1,'sqlite_master':1
+  };
+  var col = {
+    'code':1,'name':1,'sector':1,'market':1,'year':1,'revenue':1,
+    'operating_income':1,'net_income':1,'equity':1,'close':1,'date':1,
+    'roe':1,'avg_roe':1,'avg_close':1,'ym':1,'n':1,'rows':1,'tbl':1,
+    'roe_wrong':1,'roe_raw':1,'roe_right':1,'c':1,'f':1
+  };
+  return sql.replace(tokenRe, function(tok, cmt, str, _, num, word, spc, pct){
+    if(cmt) return '<span style="color:#94a3b8;font-style:italic">' + cmt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+    if(str) return '<span style="color:#fbbf24">' + str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+    if(num) return '<span style="color:#fbbf24">' + num + '</span>';
+    if(word){
+      var u = word.toUpperCase();
+      if(kw[u]) return '<span style="color:#60a5fa;font-weight:700">' + u + '</span>';
+      var l = word.toLowerCase();
+      if(tbl[l]) return '<span style="color:#c084fc;font-weight:600">' + word + '</span>';
+      if(col[l]) return '<span style="color:#34d399">' + word + '</span>';
+      return word;
+    }
+    if(spc) return spc;
+    if(pct){
+      if(pct === '<') return '&lt;';
+      if(pct === '>') return '&gt;';
+      if(pct === '&') return '&amp;';
+      return pct;
+    }
+    return tok;
+  });
+}
+
+function setBtnPri(id, condition){
+  var el = document.getElementById(id);
+  if(!el) return;
+  if(condition){
+    el.classList.add('pri');
+  } else {
+    el.classList.remove('pri');
+  }
+}
+
+function goTab(n){
+  go(n);
+  document.querySelectorAll('.sbtn').forEach(function(b){ b.classList.remove('on','active'); });
+  document.querySelectorAll('.step-nav .sbtn').forEach(function(b,i){ if(i===n) b.classList.add('on','active'); });
+  // Keep the "16:9 슬라이드 덱으로 전환" link pointed at the deck slide for the panel just opened
+  var deckSlideForPanel = [2, 6, 9, 19, 22, 24]; // scene carrying each tab's 🧪 chip (1:1)
+  var deckSectionForPanel = ['§100', '§200', '§300', '§400', '§500', '§600'];
+  var link = document.getElementById('deckLink');
+  if(link && deckSlideForPanel[n] != null){
+    link.href = link.href.split('#')[0] + '#slide-' + deckSlideForPanel[n];
+    link.textContent = '📽 덱 ' + deckSectionForPanel[n] + ' (장면 ' + deckSlideForPanel[n] + ')로 돌아가기 ↗';
+  }
+  if (window.history && window.history.replaceState) {
+    history.replaceState(null, '', '#p' + n);
+  } else {
+    window.location.hash = 'p' + n;
+  }
+}
+
+/* ── Panel 0: 왜 DB인가 ────────────────────────── */
+var battleDataScenarios = {
+  cond: {
+    title: '① 팀장의 조건 변경: "매출 1조 원 대신 5,000억 원 이상 5개사로 다시 뽑아봐"',
+    fileTime: '⏳ 3분 40초',
+    fileWork: 'DART 공시 파일 3개(기업·재무·수익률) 재다운로드 & <code>pd.merge()</code> 전체 재실행',
+    fileRam: '14.8 GB (92% - OOM 위험)',
+    fileRamPct: 92,
+    fileRisk: '반복 연산 중 메모리 누수 및 주피터 커널 다운 위험 ❌',
+    dbTime: '⚡ 0.03초',
+    dbWork: 'WHERE 조건 <code>revenue > 500000</code>만 엔진에 던져 5행 즉시 반환',
+    dbRam: '42 MB (3% - 쾌적)',
+    dbRamPct: 3,
+    dbRisk: '원본 데이터 불변 보존 & 인덱스 기반 핀포인트 추출 ✅',
+    takeaway: '데이터는 그대로인데 조건 하나 바꿨다고 파일 전체를 매번 다시 뒤집어깔 필요가 없습니다. DB 엔진에 질문(WHERE)만 바꿔 던지면 0.03초 만에 답이 나옵니다!'
+  },
+  oom: {
+    title: '② 10년치 일별주가 500만 행 로딩: "전체 시계열에서 2025년 삼성전자만 보고 싶어"',
+    fileTime: '⏳ 4분 12초 (팬 소음/프리징)',
+    fileWork: '500만 행짜리 <code>stock_daily.csv</code> 전체를 통째로 RAM에 업로드',
+    fileRam: '15.6 GB (98% - OOM Crash)',
+    fileRamPct: 98,
+    fileRisk: 'Out of Memory (OOM) 커널 크래시 발생으로 작업 내용 소실 위험 ❌',
+    dbTime: '⚡ 0.05초 (즉시 반환)',
+    dbWork: 'B-Tree 인덱스(code, date)를 타고 2025년 240일치 행만 메모리로 픽업',
+    dbRam: '48 MB (3% - 쾌적)',
+    dbRamPct: 3,
+    dbRisk: '디스크에서 필요한 240행만 메모리로 올려 시스템 부하 제로 ✅',
+    takeaway: '판다스로 500만 행 CSV를 통째로 메모리에 올리는 것은 <b>100층 건물을 통째로 주머니에 넣고 다니는 것</b>과 같습니다. DB는 필요한 2025년 240줄만 쏙 골라줍니다!'
+  },
+  append: {
+    title: '③ 오늘 장 마감 데이터 덧붙이기: "오늘자 일별 종가 2,500종목 추가 적재"',
+    fileTime: '⏳ 2분 30초 (재작성)',
+    fileWork: '기존 CSV를 읽고, 오늘 데이터를 concat한 뒤 파일 전체를 디스크에 다시 쓰기',
+    fileRam: '8.4 GB (53%)',
+    fileRamPct: 53,
+    fileRisk: '<code>prices_20260911_v2_final.csv</code> 파일명 난립 & 중복 행(Duplicates) 오염 ❌',
+    dbTime: '⚡ 0.01초 (단일 트랜잭션)',
+    dbWork: '<code>INSERT INTO stock_daily ...</code> 1회 호출로 오늘치만 즉시 덧붙임',
+    dbRam: '35 MB (2% - 쾌적)',
+    dbRamPct: 2,
+    dbRisk: 'PRIMARY KEY (code, date) 제약조건으로 중복 행 원천 차단 ✅',
+    takeaway: '파일 방식은 덧붙일 때마다 파일 전체를 새로 써야 해서 파일명 인플레이션과 중복 데이터 지옥이 열립니다. DB는 새 데이터만 쏙 꽂아 넣습니다!'
+  }
+};
+
+function simBattle(mode){
+  if(mode === 'file') mode = 'cond';
+  if(mode === 'db') mode = 'cond';
+  var scenarios = ['cond', 'oom', 'append'];
+  scenarios.forEach(function(s){
+    var bId = 'fdb-bat-' + (s === 'append' ? 'app' : s);
+    setBtnPri(bId, s === mode);
+  });
+  var data = battleDataScenarios[mode] || battleDataScenarios.cond;
+  var el = document.getElementById('fdb-result');
+  if(!el) return;
+
+  el.innerHTML = '<div style="margin-bottom:8px"><b class="small" style="color:#fcd34d">' + data.title + '</b></div>'
+    + '<div class="grid">'
+    + '  <div class="box" style="border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06);padding:10px">'
+    + '    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px">'
+    + '      <b class="small" style="color:var(--bad)">📁 파일 / 엑셀 방식 (File / CSV)</b>'
+    + '      <span class="small" style="background:rgba(239,68,68,.18);color:var(--bad);padding:2px 6px;border-radius:4px;font-weight:700">' + data.fileTime + '</span>'
+    + '    </div>'
+    + '    <div class="small" style="color:var(--tx);line-height:1.5">'
+    + '      • <b>실행 작업:</b> ' + data.fileWork + '<br>'
+    + '      • <b>RAM 점유:</b> <b style="color:var(--bad)">' + data.fileRam + '</b>'
+    + '      <div style="background:rgba(0,0,0,.25);border-radius:4px;height:8px;overflow:hidden;margin:4px 0 6px 0">'
+    + '        <div style="width:' + data.fileRamPct + '%;background:#ef4444;height:100%;transition:width .4s"></div>'
+    + '      </div>'
+    + '      • <b>무결성 위험:</b> <span style="color:var(--bad)">' + data.fileRisk + '</span>'
+    + '    </div>'
+    + '  </div>'
+    + '  <div class="box" style="border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.06);padding:10px">'
+    + '    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px">'
+    + '      <b class="small" style="color:var(--a3)">🗄️ 데이터베이스 방식 (SQLite / DB Engine)</b>'
+    + '      <span class="small" style="background:rgba(16,185,129,.18);color:var(--a3);padding:2px 6px;border-radius:4px;font-weight:700">' + data.dbTime + '</span>'
+    + '    </div>'
+    + '    <div class="small" style="color:var(--tx);line-height:1.5">'
+    + '      • <b>실행 작업:</b> ' + data.dbWork + '<br>'
+    + '      • <b>RAM 점유:</b> <b style="color:var(--a3)">' + data.dbRam + '</b>'
+    + '      <div style="background:rgba(0,0,0,.25);border-radius:4px;height:8px;overflow:hidden;margin:4px 0 6px 0">'
+    + '        <div style="width:' + data.dbRamPct + '%;background:#10b981;height:100%;transition:width .4s"></div>'
+    + '      </div>'
+    + '      • <b>무결성 보장:</b> <span style="color:var(--a3)">' + data.dbRisk + '</span>'
+    + '    </div>'
+    + '  </div>'
+    + '</div>'
+    + '<div class="ibox bl" style="margin-top:8px">'
+    + '  <div class="ibox-t">💡 퀀트 실무 직관</div>'
+    + '  ' + data.takeaway
+    + '</div>';
+}
+
+function dbToggleFileDb(mode){
+  simBattle(mode === 'file' ? 'cond' : 'oom');
+}
+
+var dbNavState = [0, 0, 0, 0];
+var dbNavOptions = [
+  {
+    targetId: 'dbt-sqlite',
+    badge: '🏆 추천: SQLite (FD-03 1부 실습 표준)',
+    reason: '별도의 DB 서버를 설치할 필요 없이 <code>sqlite3.connect(\'data/market_data.db\')</code> 한 줄로 즉시 사용 가능하며, 1인 연구자의 1GB 미만 재무제표 및 일별 주가 분석에 가장 가볍고 안전한 ACID 트랜잭션을 제공합니다.',
+    alt: '추후 팀원들과 실시간으로 데이터를 공유하거나 웹 대시보드를 구축해야 할 때 PostgreSQL (Supabase)로 이전하세요.'
+  },
+  {
+    targetId: 'dbt-postgres',
+    badge: '🏆 추천: PostgreSQL / Supabase (FD-03 2부 실습 표준)',
+    reason: '여러 분석가나 웹 서비스가 동시에 데이터를 읽고 쓰더라도 락 충돌 없이 완벽한 ACID 무결성을 유지합니다. 특히 Supabase의 REST API를 사용하면 외부 인터넷에서도 포트 노출 없이 안전하게 금융 데이터를 배포할 수 있습니다.',
+    alt: '나 혼자 로컬 PC에서 빠르게 프로토타이핑할 때는 서버가 필요 없는 SQLite가 더 간편합니다.'
+  },
+  {
+    targetId: 'dbt-bigquery',
+    badge: '🏆 추천: BigQuery (전사 SQL 분석 · BI 대시보드)',
+    reason: '수억 행 이상의 데이터를 서버 관리 없이 표준 SQL로 조회하고, BI 대시보드와 바로 연동할 수 있는 완전관리형 데이터 웨어하우스입니다. 스캔한 데이터 용량만큼 비용이 청구됩니다.',
+    alt: 'Python/pandas 중심으로 로컬에서 빠르게 반복 분석하려면 서버 설치가 필요 없는 SQLite가 더 간편합니다.'
+  },
+  {
+    targetId: 'dbt-parquet',
+    badge: '🏆 추천: Parquet (초대용량 틱데이터 아카이빙)',
+    reason: '100GB 이상의 고빈도 체결 틱 데이터를 디스크 용량을 70% 이상 압축하여 저장하고, 필요한 특정 열(예: close, volume)만 초고속으로 메모리에 스캔해 로딩하는 퀀트 펀드의 백테스팅 표준 포맷입니다.',
+    alt: '특정 1건의 데이터를 수정(UPDATE)하거나 행 단위로 덧붙여야 할 때는 DB(SQLite / PostgreSQL)가 필수입니다.'
+  },
+  {
+    targetId: 'dbt-csv',
+    badge: '⚠️ 주의: CSV / Excel (단순 데이터 교환용 한정)',
+    reason: '수십 MB 미만의 단순 데이터 확인이나 타 부서 전송용으로는 편리하지만, 금융 시계열이 쌓일수록 OOM 커널 다운과 중복 행 오염 위험이 급증하므로 데이터 저장소로는 비권장합니다.',
+    alt: '지금 바로 <code>sqlite3</code>로 로컬 DB를 구축하여 안전하게 전환하세요!'
+  }
+];
+
+function dbNavSelect(qNum, optIdx){
+  dbNavState[qNum] = optIdx;
+  var maxOpts = [2, 2, 2, 2];
+  for(var i = 0; i < maxOpts[qNum]; i++){
+    setBtnPri('dbnav-q' + qNum + '-' + i, i === optIdx);
+  }
+
+  var vol = dbNavState[0];
+  var pat = dbNavState[1];
+  var acc = dbNavState[2];
+  var stk = dbNavState[3];
+
+  var choiceIdx = 0;
+  if(acc === 1){
+    choiceIdx = 1;
+  } else if(vol === 1 && pat === 1){
+    choiceIdx = (stk === 0) ? 3 : 2;
+  } else if(vol === 1 && pat === 0){
+    choiceIdx = 1;
+  } else {
+    choiceIdx = 0;
+  }
+
+  var res = dbNavOptions[choiceIdx];
+  var el = document.getElementById('dbnav-result');
+  if(el){
+    el.innerHTML = '<div class="ibox ' + (choiceIdx === 4 ? 'am' : 'gr') + '" style="margin:0">'
+      + '<div class="ibox-t">' + res.badge + '</div>'
+      + '<div class="small" style="line-height:1.6">'
+      + '• <b>선택 이유:</b> ' + res.reason + '<br>'
+      + '• <b>전환/대안 고려:</b> ' + res.alt
+      + '</div></div>';
+  }
+
+  ['sqlite', 'postgres', 'bigquery', 'parquet', 'csv'].forEach(function(key){
+    var row = document.getElementById('dbt-' + key);
+    if(row){
+      row.style.background = '';
+      row.style.fontWeight = 'normal';
+    }
+  });
+  var targetRow = document.getElementById(res.targetId);
+  if(targetRow){
+    targetRow.style.background = 'rgba(16,185,129,.18)';
+    targetRow.style.fontWeight = 'bold';
+  }
+}
+
+var bottleData = {
+  rate: {
+    title: '① 호출 한도 (Rate Limit) — API마다 분당·일당 부를 수 있는 횟수가 정해져 있다',
+    file: '<b>[파일/API 매번 요청]</b><br>조건을 확인할 때마다 과거 데이터 전체를 처음부터 다시 요청<br>→ 전체를 매번 받으면 정해진 호출 한도가 금방 바닥난다 ❌',
+    db: '<b>[DB 누적 적재]</b><br>어제까지의 데이터는 이미 DB에 쌓여 있다<br>→ 오늘 새로 생긴 것만 덧붙이면 되니 API를 다시 부를 일 자체가 줄어든다 ✅'
+  },
+  lat: {
+    title: '② 지연 (Latency) — 데이터가 많아질수록 받는 데 걸리는 시간도 늘어난다',
+    file: '<b>[파일/API 매번 요청]</b><br>조건 하나를 바꿀 때마다 파일 세 개를 다시 열고 합치는 과정을 처음부터 반복<br>→ 데이터가 늘어날수록 기다리는 시간도 같이 늘어난다 ❌',
+    db: '<b>[DB 로컬 조회]</b><br>이미 쌓인 DB에 조건 한 줄만 다시 던진다<br>→ 처음부터 다시 합치지 않으니 매번 반복하는 대기 시간 자체가 사라진다 ✅'
+  },
+  rep: {
+    title: '③ 재현성 (Reproducibility) — 같은 계산이 같은 답을 낸다는 보장이 없다',
+    file: '<b>[파일/API 매번 요청]</b><br>데이터를 불러오는 시점이 매번 달라질 수 있어<br>→ 어제 실행한 분석 결과와 오늘 실행한 결과가 미묘하게 달라질 수 있다 ⚠️',
+    db: '<b>[DB 누적 적재]</b><br>한 번 쌓아둔 값은 다시 불러와도 그대로다<br>→ 같은 질문을 몇 번을 다시 던져도 같은 DB 안에서는 같은 값이 나온다 ✅'
+  }
+};
+function dbBottleCheck(mode){
+  ['rate','lat','rep'].forEach(function(k){
+    setBtnPri('fdb-bot-'+k, k===mode);
+  });
+  var d = bottleData[mode];
+  var el = document.getElementById('fdb-bottle-result');
+  el.innerHTML = '<b class="small" style="color:#fcd34d">'+d.title+'</b>'
+    + '<div class="grid" style="margin-top:8px">'
+    + '<div class="box" style="border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06);color:#fca5a5"><div class="small">'+d.file+'</div></div>'
+    + '<div class="box" style="border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.06);color:#6ee7b7"><div class="small">'+d.db+'</div></div>'
+    + '</div>';
+}
+
+function tossSim(simMode){
+  var isPro = (simMode === 1 || simMode === 'pro' || simMode === true);
+  setBtnPri('toss-sim-pro', isPro);
+  setBtnPri('toss-sim-naive', !isPro);
+  var view = document.getElementById('toss-sim-view');
+  if(!view) return;
+  if(isPro){
+    view.innerHTML = '<div class="box" style="background:var(--s2);border-color:#10b981;padding:12px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+      + '  <b class="small" style="color:#6ee7b7">✅ 실전 핀테크 아키텍처 (중앙 DB 연계)</b>'
+      + '  <span class="small" style="color:#6ee7b7;font-weight:700">지연 0.001초 · 호출 한도 0건 · 재현율 100%</span>'
+      + '</div>'
+      + '<svg viewBox="0 0 540 180" style="width:100%;max-width:540px;display:inline-block">'
+      + '  <rect x="10" y="20" width="120" height="140" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="1.2"/>'
+      + '  <text x="70" y="38" font-size="10" text-anchor="middle" fill="#93c5fd" font-weight="700">1. 외부 데이터 (API)</text>'
+      + '  <rect x="18" y="50" width="104" height="42" rx="4" fill="rgba(59,130,246,.15)" stroke="#3b82f6"/>'
+      + '  <text x="70" y="66" font-size="8.5" text-anchor="middle" fill="#cbd5e1">🏛️ OpenDART</text>'
+      + '  <text x="70" y="80" font-size="7.5" text-anchor="middle" fill="#6ee7b7">분기 재무제표 (W04)</text>'
+      + '  <rect x="18" y="102" width="104" height="42" rx="4" fill="rgba(59,130,246,.15)" stroke="#3b82f6"/>'
+      + '  <text x="70" y="118" font-size="8.5" text-anchor="middle" fill="#cbd5e1">📈 KRX/증권사 시세</text>'
+      + '  <text x="70" y="132" font-size="7.5" text-anchor="middle" fill="#6ee7b7">장마감 일별주가</text>'
+      + '  <path d="M 132 90 L 168 90" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,3" style="animation:flowStream 1.5s linear infinite" marker-end="url(#arr-blue)"/>'
+      + '  <text x="150" y="82" font-size="7.5" text-anchor="middle" fill="#93c5fd">배치 적재</text>'
+      + '  <text x="150" y="105" font-size="7" text-anchor="middle" fill="#94a3b8">하루 1회</text>'
+      + '  <rect x="172" y="20" width="140" height="140" rx="6" fill="rgba(16,185,129,.12)" stroke="#10b981" stroke-width="1.5" style="animation:pulseGlowGreen 3s ease-in-out infinite"/>'
+      + '  <text x="242" y="38" font-size="10" text-anchor="middle" fill="#6ee7b7" font-weight="700">2. 중앙 DB 저장소 (SSOT)</text>'
+      + '  <rect x="182" y="52" width="120" height="96" rx="4" fill="#0f172a" stroke="#10b981" stroke-dasharray="2,2"/>'
+      + '  <text x="242" y="72" font-size="8.5" text-anchor="middle" fill="#f1f5f9">SQLite / PostgreSQL</text>'
+      + '  <text x="242" y="90" font-size="8" text-anchor="middle" fill="#6ee7b7">companies · financials</text>'
+      + '  <text x="242" y="104" font-size="8" text-anchor="middle" fill="#6ee7b7">returns (10년치 보존)</text>'
+      + '  <text x="242" y="126" font-size="7.5" text-anchor="middle" fill="#fcd34d">오늘치 1행만 Append</text>'
+      + '  <text x="242" y="138" font-size="7" text-anchor="middle" fill="#94a3b8">호출 한도 차단 0건</text>'
+      + '  <path d="M 314 90 L 350 90" stroke="#10b981" stroke-width="2.2" stroke-dasharray="4,3" style="animation:flowStream 1s linear infinite" marker-end="url(#arr-green)"/>'
+      + '  <text x="332" y="80" font-size="7.5" text-anchor="middle" fill="#6ee7b7">SQL 질의</text>'
+      + '  <text x="332" y="104" font-size="7" text-anchor="middle" fill="#6ee7b7">0.001초</text>'
+      + '  <rect x="354" y="20" width="176" height="140" rx="6" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.2"/>'
+      + '  <text x="442" y="38" font-size="10" text-anchor="middle" fill="#c4b5fd" font-weight="700">3. 서비스 &amp; 분석 엔진</text>'
+      + '  <rect x="364" y="50" width="156" height="42" rx="4" fill="rgba(139,92,246,.15)" stroke="#8b5cf6"/>'
+      + '  <text x="442" y="66" font-size="8.5" text-anchor="middle" fill="#cbd5e1">📱 토스증권 모바일 앱</text>'
+      + '  <text x="442" y="80" font-size="7.5" text-anchor="middle" fill="#6ee7b7">종목 탭 시 0.1초 즉시 렌더링</text>'
+      + '  <rect x="364" y="102" width="156" height="42" rx="4" fill="rgba(139,92,246,.15)" stroke="#8b5cf6"/>'
+      + '  <text x="442" y="118" font-size="8.5" text-anchor="middle" fill="#cbd5e1">💻 내 퀀트 파이썬 엔진</text>'
+      + '  <text x="442" y="132" font-size="7.5" text-anchor="middle" fill="#6ee7b7">로컬 SQL로 초고속 매매신호</text>'
+      + '</svg>'
+      + '<div class="ibox gr" style="margin-top:8px">'
+      + '  <div class="ibox-t">💡 핀테크 실전 메커니즘</div>'
+      + '  토스는 사용자가 종목을 누를 때 DART 서버로 가지 않고, <b>자사 중앙 DB 캐시에서 0.1초 만에</b> 카드를 띄웁니다. 여러분의 퀀트 전략도 매번 API를 찌르는 것이 아니라, <b>내 로컬 SQLite에서 0.001초 만에</b> 데이터를 뽑아 연산합니다!'
+      + '</div>'
+      + '</div>';
+  } else {
+    view.innerHTML = '<div class="box" style="background:var(--s2);border-color:#ef4444;padding:12px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+      + '  <b class="small" style="color:#fca5a5">❌ 순진한 방식 (매번 API 호출 / CSV 다운로드)</b>'
+      + '  <span class="small" style="color:#ef4444;font-weight:700">지연 30초~3분 · 호출 차단 429 · 재현성 소실</span>'
+      + '</div>'
+      + '<svg viewBox="0 0 540 140" style="width:100%;max-width:540px;display:inline-block">'
+      + '  <rect x="20" y="30" width="130" height="80" rx="6" fill="#1e293b" stroke="#ef4444" stroke-width="1.2"/>'
+      + '  <text x="85" y="55" font-size="9.5" text-anchor="middle" fill="#fca5a5" font-weight="700">💻 내 퀀트 / 토스 앱</text>'
+      + '  <text x="85" y="74" font-size="8" text-anchor="middle" fill="#cbd5e1">화면 누를 때마다</text>'
+      + '  <text x="85" y="90" font-size="8" text-anchor="middle" fill="#fca5a5">전체 500MB 요청</text>'
+      + '  <path d="M 152 55 L 368 55" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,3" style="animation:flowStream 1.2s linear infinite" marker-end="url(#arr-red)"/>'
+      + '  <text x="260" y="47" font-size="8" text-anchor="middle" fill="#fca5a5">전체 데이터 다운로드 요청 (반복)</text>'
+      + '  <path d="M 370 85 L 154 85" stroke="#ef4444" stroke-width="2" stroke-dasharray="3,3"/>'
+      + '  <text x="260" y="100" font-size="8" text-anchor="middle" fill="#ef4444" font-weight="700">🛑 HTTP 429 Too Many Requests (호출 차단!)</text>'
+      + '  <rect x="370" y="30" width="150" height="80" rx="6" fill="rgba(239,68,68,.15)" stroke="#ef4444" stroke-width="1.5"/>'
+      + '  <text x="445" y="55" font-size="9.5" text-anchor="middle" fill="#fca5a5" font-weight="700">🏛️ 외부 공시 / 시세 서버</text>'
+      + '  <text x="445" y="74" font-size="8" text-anchor="middle" fill="#cbd5e1">초당 호출 제한 초과!</text>'
+      + '  <text x="445" y="90" font-size="8" text-anchor="middle" fill="#fca5a5">클라이언트 IP 임시 차단 🚫</text>'
+      + '</svg>'
+      + '<div class="ibox rd" style="margin-top:8px">'
+      + '  <div class="ibox-t">💥 순진한 방식이 겪는 3대 치명적 재앙</div>'
+      + '  <ul>'
+      + '    <li><b>호출 한도 차단 (Rate Limit):</b> DART/거래소 서버가 과도한 트래픽으로 판단하여 접속을 차단합니다.</li>'
+      + '    <li><b>네트워크 응답 지연 (Latency):</b> 수백 MB 보고서를 매번 받아오느라 30초~3분 동안 화면이 멈춥니다(Freezing).</li>'
+      + '    <li><b>재현성 소실 (No SSOT):</b> 데이터가 로컬에 저장되지 않아 어제 분석한 결과를 오늘 다시 검증할 수 없습니다.</li>'
+      + '  </ul>'
+      + '</div>'
+      + '</div>';
+  }
+}
+
+function dbMapping(mode){
+  setBtnPri('fdm-shop', mode==='shop');
+  setBtnPri('fdm-post', mode==='post');
+  setBtnPri('fdm-toss', mode==='toss');
+  setBtnPri('fdm-bridge', mode==='bridge');
+  setBtnPri('fdm-fin', mode==='fin');
+  setBtnPri('fdm-match', mode==='match');
+  var el = document.getElementById('fdm-result');
+  if(!el) return;
+
+  if(mode==='post'){
+    el.innerHTML = '<div class="grid" style="gap:10px">'
+      + '<div class="box" style="background:var(--s1);border-color:var(--a1);padding:10px">'
+      + '  <b class="small" style="color:#93c5fd">💬 에브리타임 게시글 &amp; 댓글 (영구 보존과 동시성)</b>'
+      + '  <p class="small" style="margin:6px 0;color:var(--tx)">게시글을 쓰고 새로고침할 때 글이 사라진다면 아무도 쓰지 않습니다. 파이썬 메모리 변수나 일반 텍스트 파일에 저장하면 서버가 재시작될 때 날아가고, 100명이 동시에 댓글을 달면 파일이 깨져버립니다.</p>'
+      + '  <div class="small" style="color:#6ee7b7">✔ 해결책: RDBMS는 디스크 <b>영구 보존(Persistence)</b>과 동시 요청 <b>무결성(Concurrency Lock)</b>을 완벽히 보장합니다.</div>'
+      + '</div>'
+      + '<div class="box" style="background:var(--s1);border-color:var(--a3);padding:10px">'
+      + '  <b class="small" style="color:#fcd34d">📊 Google Spreadsheet (가벼운 간이 DB의 체급과 한계)</b>'
+      + '  <p class="small" style="margin:6px 0;color:var(--tx)">Google Sheets API는 소규모 팀 프로젝트나 1만 행 미만 프로토타입에서 간이 DB로 유용하게 쓰입니다. 하지만 행이 1만 건을 넘거나 0.01초 단위 퀀트 호가 연산을 돌리면 시트가 멈추고 API 지연이 발생합니다.</p>'
+      + '  <div class="small" style="color:#fca5a5">🛑 한계: 대규모 금융 시계열 및 고속 연산에는 진짜 관계형 DB(SQLite / PostgreSQL)가 필수적입니다.</div>'
+      + '</div>'
+      + '</div>';
+  } else if(mode==='toss'){
+    el.innerHTML = '<div class="ctrl" style="margin-bottom:8px">'
+      + '  <button class="btn pri small" id="toss-sim-pro" onclick="tossSim(1)">✅ 실전 핀테크 아키텍처 (중앙 DB 연계)</button>'
+      + '  <button class="btn small" id="toss-sim-naive" onclick="tossSim(0)">❌ 순진한 방식 (매번 API 호출/CSV)</button>'
+      + '</div>'
+      + '<div id="toss-sim-view"></div>';
+    tossSim(1);
+  } else if(mode==='bridge'){
+    el.innerHTML = '<div class="box" style="background:var(--s1);border-color:var(--a1);padding:12px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">'
+      + '  <span class="badge" style="background:var(--a1);color:#fff">로드맵</span>'
+      + '  <b class="small" style="color:#93c5fd">🎯 3주차 DB 그릇 ➔ 4주차 OpenDART API 수집 파이프라인 브릿지</b>'
+      + '</div>'
+      + '<table class="pe-table" style="margin-bottom:8px"><thead><tr><th>구분</th><th>Week 03 (이번 주 핵심 실습)</th><th>Week 04 (다음 주 실전 확장)</th></tr></thead><tbody>'
+      + '<tr><td><b>데이터 역할</b></td><td>데이터를 담을 완벽한 그릇 설계</td><td>진짜 외부 세상의 API 데이터 자동 수집</td></tr>'
+      + '<tr><td><b>주요 대상</b></td><td><code>companies</code> · <code>financials</code> · <code>returns</code></td><td>금융감독원 <b>OpenDART API</b> (사업보고서 재무제표)</td></tr>'
+      + '<tr><td><b>동작 원리</b></td><td>로컬 SQLite 파일 및 클라우드 Supabase DB 적재</td><td>파이썬 requests로 공시 JSON 호출 ➔ DB 테이블로 자동 INSERT</td></tr>'
+      + '</tbody></table>'
+      + '<div class="ibox gr"><div class="ibox-t">💡 연계의 핵심</div>이번 주에 튼튼한 DB 저장소를 구축해 두어야, 다음 주에 OpenDART API에서 가져온 방대한 기업 공시 데이터를 에러 없이 안전하게 담아낼 수 있습니다!</div>'
+      + '</div>';
+  } else if(mode==='fin'){
+    el.innerHTML = '<table class="pe-table"><thead><tr><th>표</th><th>담는 것</th><th>잇는 열(Key)</th></tr></thead><tbody>'
+      + '<tr><td>companies</td><td>기업 프로필 (업종, 시장)</td><td style="color:#6ee7b7;font-weight:700">code</td></tr>'
+      + '<tr><td>financials</td><td>연도별 재무제표 (매출, 이익)</td><td style="color:#6ee7b7;font-weight:700">code</td></tr>'
+      + '<tr><td>returns</td><td>일별 종가 및 수익률 시계열</td><td style="color:#6ee7b7;font-weight:700">code</td></tr></tbody></table>';
+  } else {
+    el.innerHTML = '<table class="pe-table"><thead><tr><th>쇼핑몰 개념 (Toy 모델)</th><th>금융데이터 표 (실무)</th><th>공통 열(Join Key)</th><th>연결 목적</th></tr></thead><tbody>'
+      + '<tr><td>회원 정보</td><td>companies (기업)</td><td style="color:#6ee7b7;font-weight:700">code</td><td>기업 기본 정보 매칭</td></tr>'
+      + '<tr><td>주문 내역</td><td>financials (재무)</td><td style="color:#6ee7b7;font-weight:700">code</td><td>연도별 실적 데이터 결합</td></tr>'
+      + '<tr><td>배송 상태</td><td>returns (수익률)</td><td style="color:#6ee7b7;font-weight:700">code</td><td>일별 시장 성과 대조</td></tr></tbody></table>'
+      + '<div class="ibox gr"><div class="ibox-t">💡 1단계 핵심 직관 (Toy 모델)</div>쇼핑몰에서 <code>user_id</code>로 주문 내역을 묶어내듯, 금융에서는 <code>code</code>(종목코드)로 재무정보와 주가를 묶는다!</div>';
+  }
+}
+
+/* ── Panel 1: 3구역 왕복 파이프라인 시뮬레이터 ── */
+var pipelineModes = {
+  conn: {
+    code: "import sqlite3\n\n# 🔌 1단계: 파이썬(RAM)과 로컬 디스크 DB 파일 사이에 전용 배관(conn) 개설\nconn = sqlite3.connect('data/market_data.db')\nprint('연결 핸들 생성:', conn)",
+    desc: "🔌 <b>sqlite3.connect()</b>: 파이썬 프로세스(RAM)와 로컬 디스크 파일(<code>market_data.db</code>) 사이에 통신 채널을 엽니다. 무거운 DB 서버를 띄울 필요 없이, C언어 기반 SQLite 엔진이 파일 핸들을 즉시 생성하여 입출력 통로를 개설합니다."
+  },
+  tosql: {
+    code: "# 📤 2단계: 내 손 안의 판다스 df 데이터를 디스크 DB 창고로 들이붓기 (적재)\nnew_prices = pd.DataFrame({\n    'date': ['2025-09-02'],\n    'code': ['005930'],\n    'close': [72400]\n})\n\n# 기존 표를 유지한 채 새 행만 맨 뒤에 덧붙임 (append)\nnew_prices.to_sql('returns', conn, if_exists='append', index=False)",
+    desc: "📤 <b>df.to_sql(..., if_exists='append')</b>: 파이썬 메모리(RAM)에 머물던 일별 주가 데이터가 배관을 타고 로컬 디스크의 <code>returns</code> 테이블 맨 끝에 안전하게 기록됩니다. 이제 노트북 커널이 재시작되거나 컴퓨터를 꺼도 데이터가 영구 보존됩니다."
+  },
+  readsql: {
+    code: "# 📥 3단계: DB 창고의 방대한 데이터 중 필요한 정예 행만 당겨오기 (인출)\nsql = '''\nSELECT code, name, revenue\n  FROM financials\n WHERE year = 2025\n   AND revenue > 1000000;\n'''\n\ndf_selected = pd.read_sql(sql, conn)",
+    desc: "📥 <b>pd.read_sql(sql, conn)</b>: 수백만 행 전체를 메모리에 올리지 않고, SQLite 엔진이 디스크에서 <code>WHERE</code> 조건에 맞는 행만 고속 추출하여 파이썬 RAM으로 밀어올립니다. 즉시 판다스 <code>DataFrame</code>으로 변환되어 메모리를 절약합니다."
+  }
+};
+
+function simPipeline(mode){
+  ['conn','tosql','readsql'].forEach(function(m){
+    setBtnPri('pipe-btn-'+m, m===mode);
+  });
+  var p = pipelineModes[mode];
+  var codeEl = document.getElementById('pipe-code');
+  if(codeEl) codeEl.innerHTML = hlSql(p.code);
+  var descEl = document.getElementById('pipe-desc');
+  if(descEl) descEl.innerHTML = p.desc;
+
+  var arrowTo = document.getElementById('pipe-arrow-to');
+  var arrowRead = document.getElementById('pipe-arrow-read');
+  var dfBox = document.getElementById('pipe-svg-df');
+
+  if(arrowTo && arrowRead){
+    if(mode === 'conn'){
+      arrowTo.setAttribute('stroke', '#64748b');
+      arrowTo.setAttribute('stroke-width', '1.5');
+      arrowRead.setAttribute('stroke', '#64748b');
+      arrowRead.setAttribute('stroke-width', '1.5');
+      if(dfBox) dfBox.setAttribute('stroke', '#3b82f6');
+    } else if(mode === 'tosql'){
+      arrowTo.setAttribute('stroke', '#10b981');
+      arrowTo.setAttribute('stroke-width', '3.5');
+      arrowRead.setAttribute('stroke', '#64748b');
+      arrowRead.setAttribute('stroke-width', '1.5');
+      if(dfBox) dfBox.setAttribute('stroke', '#10b981');
+    } else if(mode === 'readsql'){
+      arrowTo.setAttribute('stroke', '#64748b');
+      arrowTo.setAttribute('stroke-width', '1.5');
+      arrowRead.setAttribute('stroke', '#3b82f6');
+      arrowRead.setAttribute('stroke-width', '3.5');
+      if(dfBox) dfBox.setAttribute('stroke', '#3b82f6');
+    }
+  }
+}
+
+/* ── Panel 1: SQLite 열기 ────────────────────────── */
+var envDiagData = [
+  {
+    cmd: "import sys\nprint(sys.executable)",
+    out: "/Users/mark/FD_26/.venv/bin/python3",
+    tip: "경로 끝이 FD_26/.venv/bin/python3가 아니면, VS Code 오른쪽 위(또는 커맨드 팔레트 'Python: Select Interpreter')에서 가상환경 커널을 바꾼다."
+  },
+  {
+    cmd: "import pandas as pd",
+    out: "# import 에러 없음 — pandas 패키지 정상 로드",
+    tip: "import pandas에서 ModuleNotFoundError가 발생하면 프로젝트 커널이 FD_26이 맞는지 먼저 확인한다."
+  },
+  {
+    cmd: "import os\nprint(os.path.exists('data/market_data.db'))",
+    out: "True",
+    tip: "data/market_data.db가 False로 나오면 노트북 실행 위치(CWD)가 과목 루트 폴더인지 점검한다."
+  },
+  {
+    cmd: "import sqlite3, pandas as pd\nconn = sqlite3.connect('data/market_data.db')\nquery = \"\"\"\nSELECT name\n  FROM sqlite_master\n WHERE type = 'table';\n\"\"\"\npd.read_sql(query, conn)",
+    out: "        name\n0  companies\n1 financials\n2    returns\n# 3개 표 정상 인식",
+    tip: "표 3개가 보이지 않으면 빈 DB 파일이 열린 것이므로 파일 경로 철자를 다시 확인한다."
+  }
+];
+
+function envTip(i){
+  for(var idx=0; idx<4; idx++){
+    var b = document.getElementById('env-box-'+idx);
+    b.style.borderColor = idx===i ? 'var(--a1)' : 'var(--bd)';
+  }
+  var d = envDiagData[i];
+  var term = document.getElementById('env-terminal');
+  term.innerHTML = '<span style="color:var(--td)"># 진단 실행 코드:</span>\n<span style="color:var(--col-warn)">' + d.cmd + '</span>\n\n<span style="color:var(--td)"># 콘솔 예상 출력:</span>\n<span style="color:var(--col-pass)">' + d.out + '</span>';
+  var tip = document.getElementById('env-tip');
+  tip.innerHTML = '<div class="ibox-t">⚠️ 점검 가이드</div><ul><li>' + d.tip + '</li></ul>';
+}
+
+var sqliteDiag = {
+  1: {
+    code: "SELECT name\n  FROM sqlite_master\n WHERE type = 'table';",
+    html: '<div style="margin-bottom:8px"><span class="tok tw">companies</span> <span class="tok tw">financials</span> <span class="tok tw">returns</span></div>'
+      + '<div class="small">100번 노트에서 설계한 3개 표가 실제로 이 파일 하나 안에 들어 있다.</div>'
+  },
+  2: {
+    code: "SELECT *\n  FROM companies\n LIMIT 5;",
+    html: '<table class="pe-table"><thead><tr><th>code</th><th>name</th><th>sector</th><th>market</th></tr></thead><tbody>'
+      + '<tr><td style="color:var(--col-pass);font-weight:700">005930</td><td>삼성전자</td><td>전기전자</td><td>KOSPI</td></tr>'
+      + '<tr><td style="color:var(--col-pass);font-weight:700">000660</td><td>SK하이닉스</td><td>전기전자</td><td>KOSPI</td></tr>'
+      + '<tr><td style="color:var(--col-pass);font-weight:700">009150</td><td>삼성전기</td><td>전기전자</td><td>KOSPI</td></tr>'
+      + '<tr><td style="color:var(--col-pass);font-weight:700">051910</td><td>LG화학</td><td>화학</td><td>KOSPI</td></tr>'
+      + '<tr><td style="color:var(--col-pass);font-weight:700">011170</td><td>롯데케미칼</td><td>화학</td><td>KOSPI</td></tr></tbody></table>'
+      + '<div class="small">종목코드(code)가 <code>005930</code>처럼 따옴표로 감싸진 문자열(TEXT)임을 꼭 확인한다.</div>'
+  },
+  3: {
+    code: "SELECT code,\n       year,\n       revenue,\n       operating_income,\n       net_income,\n       equity\n  FROM financials\n LIMIT 5;",
+    html: '<table class="pe-table"><thead><tr><th>code</th><th>year</th><th>revenue</th><th>operating_income</th><th>net_income</th><th>equity</th></tr></thead><tbody>'
+      + '<tr><td>005930</td><td>2024</td><td>3022314</td><td>350000</td><td>320000</td><td>3250000</td></tr>'
+      + '<tr><td>005930</td><td>2025</td><td>3466200</td><td>435000</td><td>381432</td><td>3467567</td></tr>'
+      + '<tr><td>000660</td><td>2024</td><td>660000</td><td>120000</td><td>100000</td><td>980000</td></tr>'
+      + '<tr><td>000660</td><td>2025</td><td>1007720</td><td>350000</td><td>303706</td><td>1265440</td></tr>'
+      + '<tr><td>009150</td><td>2025</td><td>91728</td><td>8500</td><td>7191</td><td>102726</td></tr></tbody></table>'
+      + '<div class="small">회사별로 2024년·2025년 2개년치 재무제표가 누적되어 있다.</div>'
+  },
+  4: {
+    code: "SELECT date,\n       code,\n       close\n  FROM returns\n LIMIT 5;",
+    html: '<table class="pe-table"><thead><tr><th>date</th><th>code</th><th>close</th></tr></thead><tbody>'
+      + '<tr><td>2025-08-27</td><td>005930</td><td>71200</td></tr>'
+      + '<tr><td>2025-08-28</td><td>005930</td><td>71500</td></tr>'
+      + '<tr><td>2025-08-29</td><td>005930</td><td>70900</td></tr>'
+      + '<tr><td>2025-09-01</td><td>005930</td><td>72100</td></tr>'
+      + '<tr><td>2025-09-02</td><td>005930</td><td>72400</td></tr></tbody></table>'
+      + '<div class="small">영업일 기준 일별 주가와 수익률 데이터가 날짜별로 누적 적재된다.</div>'
+  },
+  5: {
+    code: "SELECT 'companies'  AS tbl, COUNT(*) AS rows FROM companies\n UNION ALL\nSELECT 'financials' AS tbl, COUNT(*) AS rows FROM financials;",
+    html: '<table class="pe-table"><thead><tr><th>테이블명</th><th>행 수</th><th>설명</th></tr></thead><tbody>'
+      + '<tr><td>companies</td><td><b>12행</b></td><td>KOSPI 대표 12개 기업 정보</td></tr>'
+      + '<tr><td>financials</td><td><b>24행</b></td><td>12개 기업 × 2개년(2024, 2025) 재무 데이터</td></tr>'
+      + '<tr><td>returns</td><td><b>시계열</b></td><td>12개 기업의 일별 주가 및 수익률 누적</td></tr></tbody></table>'
+      + '<div class="small">표의 체급을 파악하면 뒤의 JOIN에서 몇 행이 나와야 정상인지 미리 예측할 수 있다!</div>'
+  }
+};
+
+function sqliteReveal(n){
+  for(var i=1; i<=5; i++){
+    setBtnPri('sq-btn-'+i, i===n);
+  }
+  var d = sqliteDiag[n];
+  var box = document.getElementById('sqlite-diag-box');
+  box.innerHTML = '<div class="calc" style="margin-bottom:8px;font-size:11.5px;text-align:left;white-space:pre-wrap">' + hlSql(d.code) + '</div>' + d.html;
+}
+
+var appendSteps = [
+  {
+    rows: [
+      ['2025-08-27','005930','71200','기존 데이터'],
+      ['2025-08-28','005930','71500','기존 데이터'],
+      ['2025-08-29','005930','70900','기존 데이터']
+    ],
+    note: '기본 보관 상태: 3개 거래일 데이터가 정상 적재되어 있다.'
+  },
+  {
+    rows: [
+      ['2025-08-27','005930','71200','기존 데이터'],
+      ['2025-08-28','005930','71500','기존 데이터'],
+      ['2025-08-29','005930','70900','기존 데이터'],
+      ['2025-09-01','005930','72100','➕ 09-01 append']
+    ],
+    note: '<b>append 성공!</b> 기존 3행을 전혀 건드리지 않고, 새로 들어온 09-01 데이터만 뒤에 안전하게 덧붙었다 (누적 4행).'
+  },
+  {
+    rows: [
+      ['2025-08-27','005930','71200','기존 데이터'],
+      ['2025-08-28','005930','71500','기존 데이터'],
+      ['2025-08-29','005930','70900','기존 데이터'],
+      ['2025-09-01','005930','72100','기존 데이터'],
+      ['2025-09-02','005930','72400','➕ 09-02 append']
+    ],
+    note: '<b>2일 연속 append 성공!</b> 매일 새 행만 덧붙이며 데이터베이스가 지속적으로 성장한다 (누적 5행).'
+  },
+  {
+    rows: [
+      ['2025-09-02','005930','72400','⚠️ replace로 덮어씀']
+    ],
+    note: '<b style="color:var(--bad)">🚨 대형 사고 발생!</b> if_exists="replace"를 쓰는 바람에 과거 4일치 데이터가 영구 삭제되고 오늘 1행만 남았다. replace는 "표를 처음 생성할 때 딱 한 번"만 써야 한다!'
+  }
+];
+
+function appendSim(step){
+  for(var i=0; i<4; i++){
+    setBtnPri('ar-step-'+i, i===step);
+  }
+  var data = appendSteps[step];
+  var tbody = document.getElementById('ar-body');
+  var html = '';
+  data.rows.forEach(function(r){
+    var isNew = r[3].indexOf('append') !== -1;
+    var isRep = r[3].indexOf('replace') !== -1;
+    var style = isNew ? 'color:var(--col-pass);font-weight:700' : (isRep ? 'color:var(--bad);font-weight:700' : '');
+    html += '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td style="' + style + '">' + r[2] + '</td><td style="' + style + '">' + r[3] + '</td></tr>';
+  });
+  tbody.innerHTML = html;
+  document.getElementById('ar-note').innerHTML = data.note;
+}
+
+/* ── Panel 2: 인터랙티브 SQL X-Ray 시뮬레이터 ────────── */
+var xraySourceData = [
+  { code: '005930', name: '삼성전자', sector: '전기전자', year: 2025, revenue: 3466200 },
+  { code: '005930', name: '삼성전자', sector: '전기전자', year: 2024, revenue: 3022314 },
+  { code: '005380', name: '현대차',   sector: '자동차',   year: 2025, revenue: 1797600 },
+  { code: '000270', name: '기아',     sector: '자동차',   year: 2025, revenue: 1209900 },
+  { code: '000660', name: 'SK하이닉스', sector: '전기전자', year: 2025, revenue: 1007720 },
+  { code: '000660', name: 'SK하이닉스', sector: '전기전자', year: 2024, revenue: 660000 },
+  { code: '051910', name: 'LG화학',   sector: '화학',     year: 2025, revenue: 470256 },
+  { code: '207940', name: '삼성바이오로직스', sector: '바이오', year: 2025, revenue: 54740 }
+];
+
+var xrayState = {
+  sel: 'basic',  // 'all' | 'basic' | 'detail'
+  whr: '2025',   // 'all' | '2025' | '1tril' | 'elec' | 'auto'
+  ord: 'desc'    // 'none' | 'desc' | 'asc'
+};
+
+var sqlAnimStep = 0;
+var sqlAutoPlayTimer = null;
+
+function setSqlAnimStep(step){
+  sqlAnimStep = step;
+  for(var i = 0; i <= 4; i++){
+    var btn = document.getElementById('anim-step-' + i);
+    if(btn) btn.className = 'pill' + (i === step ? ' active' : '');
+  }
+  var descEl = document.getElementById('anim-step-desc');
+  var cutoffEl = document.getElementById('xray-cutoff-line');
+
+  if(step === 0){
+    xrayState.sel = 'all';
+    xrayState.whr = 'all';
+    xrayState.ord = 'none';
+    if(descEl) descEl.innerHTML = '<b>0단계 (FROM financials)</b>: 디스크에서 원본 데이터 8행 5열 전체를 메모리로 로드합니다.';
+    if(cutoffEl) cutoffEl.style.display = 'none';
+  } else if(step === 1){
+    xrayState.sel = 'all';
+    xrayState.whr = '2025';
+    xrayState.ord = 'none';
+    if(descEl) descEl.innerHTML = '<b>1단계 (WHERE year = 2025)</b>: 행 조건을 검사합니다. 2024년 2개 행은 <span style="color:#fca5a5">붉은 취소선과 함께 오른쪽으로 밀려나며 탈락</span>하고, 6개 행이 <span style="color:#6ee7b7">초록색으로 통과</span>합니다!';
+    if(cutoffEl) cutoffEl.style.display = 'none';
+  } else if(step === 2){
+    xrayState.sel = 'basic';
+    xrayState.whr = '2025';
+    xrayState.ord = 'none';
+    if(descEl) descEl.innerHTML = '<b>2단계 (SELECT name, revenue)</b>: 불필요한 열(<code>code, sector, year</code>)이 <span style="color:#93c5fd">부드럽게 너비 0으로 축소되며 소멸</span>하고, 요청한 2개 열(<code>name, revenue</code>)만 슬림하게 남습니다!';
+    if(cutoffEl) cutoffEl.style.display = 'none';
+  } else if(step === 3){
+    xrayState.sel = 'basic';
+    xrayState.whr = '2025';
+    xrayState.ord = 'desc';
+    if(descEl) descEl.innerHTML = '<b>3단계 (ORDER BY revenue DESC)</b>: 살아남은 행들이 매출 순서대로 <span style="color:#fcd34d">위아래로 스르륵 자리를 바꾸며 내림차순(DESC)</span>으로 줄을 섭니다!';
+    if(cutoffEl) cutoffEl.style.display = 'none';
+  } else if(step === 4){
+    xrayState.sel = 'basic';
+    xrayState.whr = '2025';
+    xrayState.ord = 'desc';
+    if(descEl) descEl.innerHTML = '<b>4단계 (LIMIT 5)</b>: 5번째 행 아래에 <span style="color:#67e8f9">경계선</span>이 생기며 상위 5개 행만 최종 결과 집합으로 추출됩니다!';
+    if(cutoffEl) cutoffEl.style.display = 'flex';
+  }
+  // Sync button states
+  ['all','basic','detail'].forEach(function(m){ setBtnPri('xray-sel-' + m, m === xrayState.sel); });
+  ['all','2025','1tril','elec','auto'].forEach(function(m){ setBtnPri('xray-whr-' + m, m === xrayState.whr); });
+  ['none','desc','asc'].forEach(function(m){ setBtnPri('xray-ord-' + m, m === xrayState.ord); });
+  xrayUpdate();
+}
+
+function toggleSqlAutoPlay(){
+  var btn = document.getElementById('anim-autoplay-btn');
+  if(sqlAutoPlayTimer){
+    clearInterval(sqlAutoPlayTimer);
+    sqlAutoPlayTimer = null;
+    if(btn) btn.innerHTML = '▶ 자동 연속 재생';
+  } else {
+    if(btn) btn.innerHTML = '⏸ 일시 정지';
+    var cur = sqlAnimStep;
+    sqlAutoPlayTimer = setInterval(function(){
+      cur = (cur + 1) % 5;
+      setSqlAnimStep(cur);
+      if(cur === 4){
+        clearInterval(sqlAutoPlayTimer);
+        sqlAutoPlayTimer = null;
+        if(btn) btn.innerHTML = '▶ 자동 연속 재생';
+      }
+    }, 1300);
+  }
+}
+
+function xraySetSel(mode){
+  xrayState.sel = mode;
+  ['all','basic','detail'].forEach(function(m){
+    setBtnPri('xray-sel-' + m, m === mode);
+  });
+  xrayUpdate();
+}
+
+function xraySetWhr(mode){
+  xrayState.whr = mode;
+  ['all','2025','1tril','elec','auto'].forEach(function(m){
+    setBtnPri('xray-whr-' + m, m === mode);
+  });
+  xrayUpdate();
+}
+
+function xraySetOrd(mode){
+  xrayState.ord = mode;
+  ['none','desc','asc'].forEach(function(m){
+    setBtnPri('xray-ord-' + m, m === mode);
+  });
+  xrayUpdate();
+}
+
+function xrayUpdate(){
+  // 1. Build SQL string
+  var colsSql = '';
+  var activeCols = { code: false, name: false, sector: false, year: false, revenue: false };
+  if(xrayState.sel === 'all'){
+    colsSql = '       *';
+    activeCols.code = true; activeCols.name = true; activeCols.sector = true; activeCols.year = true; activeCols.revenue = true;
+  } else if(xrayState.sel === 'basic'){
+    colsSql = '       name,\n       revenue';
+    activeCols.name = true; activeCols.revenue = true;
+  } else if(xrayState.sel === 'detail'){
+    colsSql = '       code,\n       name,\n       sector,\n       revenue';
+    activeCols.code = true; activeCols.name = true; activeCols.sector = true; activeCols.revenue = true;
+  }
+
+  var whrSql = '';
+  if(xrayState.whr === 'all'){
+    whrSql = '';
+  } else if(xrayState.whr === '2025'){
+    whrSql = ' WHERE year = 2025\n';
+  } else if(xrayState.whr === '1tril'){
+    whrSql = ' WHERE revenue > 1000000\n';
+  } else if(xrayState.whr === 'elec'){
+    whrSql = ' WHERE year = 2025\n   AND sector = \'전기전자\'\n';
+  } else if(xrayState.whr === 'auto'){
+    whrSql = ' WHERE year = 2025\n   AND sector = \'자동차\'\n';
+  }
+
+  var ordSql = '';
+  if(xrayState.ord === 'none'){
+    ordSql = (sqlAnimStep === 4) ? ' LIMIT 5;' : ';';
+  } else if(xrayState.ord === 'desc'){
+    ordSql = ' ORDER BY revenue DESC' + ((sqlAnimStep === 4) ? '\n LIMIT 5;' : ';');
+  } else if(xrayState.ord === 'asc'){
+    ordSql = ' ORDER BY revenue ASC' + ((sqlAnimStep === 4) ? '\n LIMIT 5;' : ';');
+  }
+
+  var fullSql = 'SELECT ' + colsSql.trim() + '\n  FROM financials\n' + whrSql + ordSql;
+  var calcEl = document.getElementById('xray-calc');
+  if(calcEl) calcEl.innerHTML = hlSql(fullSql);
+  var legacyCalc = document.getElementById('ob-calc');
+  if(legacyCalc) legacyCalc.innerHTML = hlSql(fullSql);
+
+  // 2. Filter & Sort rows
+  var rowPass = [];
+  xraySourceData.forEach(function(item, idx){
+    var pass = true;
+    if(xrayState.whr === '2025') {
+      pass = (item.year === 2025);
+    } else if(xrayState.whr === '1tril') {
+      pass = (item.revenue > 1000000);
+    } else if(xrayState.whr === 'elec') {
+      pass = (item.year === 2025 && item.sector === '전기전자');
+    } else if(xrayState.whr === 'auto') {
+      pass = (item.year === 2025 && item.sector === '자동차');
+    }
+    rowPass.push({ item: item, pass: pass, origIdx: idx });
+  });
+
+  var passing = rowPass.filter(function(r){ return r.pass; });
+  var failing = rowPass.filter(function(r){ return !r.pass; });
+
+  if(xrayState.ord === 'desc'){
+    passing.sort(function(a, b){ return b.item.revenue - a.item.revenue; });
+  } else if(xrayState.ord === 'asc'){
+    passing.sort(function(a, b){ return a.item.revenue - b.item.revenue; });
+  }
+
+  var displayRows = passing.concat(failing);
+
+  // 3. Update Table Header Columns
+  var colKeys = ['code', 'name', 'sector', 'year', 'revenue'];
+  colKeys.forEach(function(k){
+    var th = document.getElementById('th-' + k);
+    if(th){
+      if(activeCols[k]){
+        th.style.maxWidth = '150px';
+        th.style.opacity = '1';
+        th.style.padding = '8px 10px';
+        th.style.background = 'rgba(59, 130, 246, 0.08)';
+        th.style.fontWeight = '700';
+        th.style.color = (k === 'revenue') ? 'var(--col-pass)' : (k === 'name' ? 'var(--col-act)' : 'var(--tx)');
+      } else {
+        th.style.maxWidth = '0px';
+        th.style.opacity = '0';
+        th.style.padding = '0px';
+        th.style.background = 'transparent';
+      }
+    }
+  });
+
+  // 4. Render Table Body
+  var tbody = document.getElementById('xray-tbody');
+  var rowsHtml = '';
+  var passCount = passing.length;
+
+  displayRows.forEach(function(r, rankIdx){
+    var it = r.item;
+    var isPass = r.pass;
+    var rowClass = isPass ? 'sql-row pass-glow' : 'sql-row fail-dim';
+
+    function cellHtml(colName, val){
+      if(!activeCols[colName]){
+        return '<td style="max-width:0;opacity:0;padding:0;overflow:hidden;border:none">' + val + '</td>';
+      }
+      var style = '';
+      if(isPass && colName === 'revenue') style = 'color:var(--col-pass);font-weight:700;';
+      if(isPass && colName === 'name') style = 'color:var(--col-act);font-weight:600;';
+      return '<td style="' + style + '">' + val + '</td>';
+    }
+
+    var statusBadge = '';
+    if(isPass){
+      var rankBadge = (xrayState.ord !== 'none' && rankIdx < 5) ? (' #' + (rankIdx + 1)) : '';
+      statusBadge = '<span style="color:var(--col-pass);font-weight:700">✅ 통과' + rankBadge + '</span>';
+    } else {
+      statusBadge = '<span style="color:var(--col-fail);font-weight:600">❌ 탈락</span>';
+    }
+
+    var revFormatted = Number(it.revenue).toLocaleString();
+
+    rowsHtml += '<tr class="' + rowClass + '">'
+      + cellHtml('code', it.code)
+      + cellHtml('name', it.name)
+      + cellHtml('sector', it.sector)
+      + cellHtml('year', it.year)
+      + cellHtml('revenue', revFormatted)
+      + '<td style="width:85px;text-align:center">' + statusBadge + '</td>'
+      + '</tr>';
+  });
+
+  if(tbody) tbody.innerHTML = rowsHtml;
+
+  // 5. Render Takeaway Summary Box
+  var sumEl = document.getElementById('xray-summary');
+  if(sumEl){
+    var activeColNames = Object.keys(activeCols).filter(function(k){ return activeCols[k]; }).join(', ');
+    var whrDesc = '';
+    if(xrayState.whr === 'all') whrDesc = '조건 없음 (전체 8행)';
+    else if(xrayState.whr === '2025') whrDesc = '2025년도 실적 (6개사)';
+    else if(xrayState.whr === '1tril') whrDesc = '매출 1조원 초과 대기업 (4개사: 삼성전자·현대차·기아·SK하이닉스)';
+    else if(xrayState.whr === 'elec') whrDesc = '2025년 결산 &amp; 전기전자 업종 (삼성전자, SK하이닉스 2개사)';
+    else if(xrayState.whr === 'auto') whrDesc = '2025년 결산 &amp; 자동차 업종 (현대차, 기아 2개사)';
+
+    var ordDesc = '';
+    if(xrayState.ord === 'none') ordDesc = '저장 순서 그대로 (정렬 없음)';
+    else if(xrayState.ord === 'desc') ordDesc = '매출 높은 순 내림차순 (DESC)';
+    else if(xrayState.ord === 'asc') ordDesc = '매출 낮은 순 오름차순 (ASC)';
+
+    sumEl.innerHTML = '<div class="ibox-t">💡 [SQL X-Ray 판정 분석] 세로를 자르는 SELECT × 가로를 거르는 WHERE</div>'
+      + '<ul style="margin:4px 0;padding-left:18px">'
+      + '<li><b>선택된 열 (세로 절삭)</b>: <code>' + activeColNames + '</code> (' + Object.keys(activeCols).filter(function(k){ return activeCols[k]; }).length + '개 열 유지, 나머지 흐림 처리)</li>'
+      + '<li><b>통과된 행 (가로 필터)</b>: 8개 행 중 <b style="color:var(--col-pass)">' + passCount + '개 행 통과</b> (' + whrDesc + ')</li>'
+      + '<li><b>정렬 상태</b>: ' + ordDesc + '</li>'
+      + '</ul>'
+      + '<div class="small" style="color:var(--tx);margin-top:6px;border-top:1px dashed var(--bd);padding-top:4px">'
+      + '📌 <b>핵심 직관</b>: <code>SELECT</code>는 네트워크로 전송할 컬럼 폭을 줄이고, <code>WHERE</code>는 계산할 대상 행을 좁힙니다. 오랜만에 SQL을 쓸 때 두 키워드가 <b>"가로 방향 vs 세로 방향"</b>으로 완전히 다른 차원을 다룬다는 점을 기억하세요!</div>';
+  }
+}
+
+function orderToggle(mode){
+  ['none','desc','asc','where'].forEach(function(m){
+    setBtnPri('ob-btn-'+m, m===mode);
+  });
+  var noteEl = document.getElementById('ob-note');
+  if(mode === 'none'){
+    xrayState.sel = 'basic';
+    xrayState.whr = '2025';
+    xrayState.ord = 'none';
+    if(noteEl) noteEl.innerHTML = '⚡ <b>시나리오 ①</b>: <code>ORDER BY</code> 없이 <code>LIMIT 5</code>만 걸린 상태. 정렬되지 않고 DB 저장 순서대로 5개가 잘려 나옵니다.';
+  } else if(mode === 'desc'){
+    xrayState.sel = 'basic';
+    xrayState.whr = '2025';
+    xrayState.ord = 'desc';
+    if(noteEl) noteEl.innerHTML = '⚡ <b>시나리오 ②</b>: <code>ORDER BY revenue DESC LIMIT 5</code> — 2025년 매출 상위 5개 기업이 정상 줄세우기 되었습니다.';
+  } else if(mode === 'asc'){
+    xrayState.sel = 'basic';
+    xrayState.whr = '2025';
+    xrayState.ord = 'asc';
+    if(noteEl) noteEl.innerHTML = '⚡ <b>시나리오 ③</b>: <code>ORDER BY revenue ASC LIMIT 5</code> — 2025년 매출이 가장 작은 기업부터 오름차순 정렬되었습니다.';
+  } else if(mode === 'where'){
+    xrayState.sel = 'basic';
+    xrayState.whr = '1tril';
+    xrayState.ord = 'desc';
+    if(noteEl) noteEl.innerHTML = '⚡ <b>시나리오 ④</b>: <code>WHERE revenue > 1000000 ORDER BY revenue DESC</code> — 1조원 초과 4대 기업만 통과했습니다.';
+  }
+  // Sync X-Ray UI buttons
+  ['all','basic','detail'].forEach(function(m){ setBtnPri('xray-sel-' + m, m === xrayState.sel); });
+  ['all','2025','1tril','elec','auto'].forEach(function(m){ setBtnPri('xray-whr-' + m, m === xrayState.whr); });
+  ['none','desc','asc'].forEach(function(m){ setBtnPri('xray-ord-' + m, m === xrayState.ord); });
+
+  xrayUpdate();
+}
+
+var calcModes = {
+  wrong: {
+    sql: "SELECT code,\n       name,\n       net_income / equity AS roe_wrong\n  FROM financials\n LIMIT 5;",
+    hdr: "roe_wrong (소수점 절삭 ❌)",
+    vals: ['0', '0', '0', '0', '0'],
+    style: "color:var(--col-fail);font-weight:700",
+    note: "<b style=\"color:var(--bad)\">🚨 정수 나눗셈 함정 발생!</b> 정수(INTEGER) / 정수(INTEGER)는 결과도 정수가 되어 소수점 아래가 통째로 절삭(truncate)되어 0이 됩니다. 모든 기업 ROE가 0으로 산출되는 치명적 함정입니다.",
+    badge: "<span class=\"badge\" style=\"background:rgba(239,68,68,.15);color:var(--col-fail);font-size:11px\">❌ 정수 나눗셈 함정: 소수점 이하 .109999... 강제 절삭 중</span>",
+    boxLeftBorder: "#ef4444",
+    boxLeftBg: "rgba(239,68,68,.1)",
+    boxRightBorder: "#64748b",
+    boxRightBg: "rgba(16,185,129,.05)",
+    txtL1: "net_income(정수) / equity(정수)",
+    txtL2: "381,432 / 3,467,567 = 0",
+    txtL3: "✂️ .109999... 통째로 잘려나감!",
+    txtR1: "실수 변환 (* 1.0) 또는 ROUND()",
+    txtR2: "버튼을 눌러 실수를 복원하세요",
+    txtR3: "정상 소수점 지표 산출 대기"
+  },
+  raw: {
+    sql: "SELECT code,\n       name,\n       net_income * 1.0 / equity AS roe_raw\n  FROM financials\n LIMIT 5;",
+    hdr: "roe_raw (* 1.0 실수 승격 ✅)",
+    vals: ['0.1099999...', '0.2400003...', '0.0699999...', '0.0499998...', '0.0199998...'],
+    style: "color:var(--col-warn);font-weight:600",
+    note: "<b>✅ 실수 승격 성공!</b> 분자에 <code>* 1.0</code>을 곱해주어 전체 연산이 실수(FLOAT)로 승격되었습니다. 소수점이 온전히 살아났으나 무한 소수 꼬리가 붙어 있습니다.",
+    badge: "<span class=\"badge\" style=\"background:rgba(245,158,11,.15);color:var(--col-warn);font-size:11px\">✅ 실수 승격 성공: * 1.0으로 소수점 보존 (반올림 필요)</span>",
+    boxLeftBorder: "#64748b",
+    boxLeftBg: "rgba(59,130,246,.05)",
+    boxRightBorder: "#f59e0b",
+    boxRightBg: "rgba(245,158,11,.1)",
+    txtL1: "381,432 / 3,467,567 = 0",
+    txtL2: "소수점 절삭 극복 필요",
+    txtL3: "⬇ * 1.0 실수 변환 적용",
+    txtR1: "net_income * 1.0 / equity",
+    txtR2: "381,432.0 / 3,467,567 = 0.1099999...",
+    txtR3: "✅ 소수점 복원 완료 (정밀 반올림 대기)"
+  },
+  right: {
+    sql: "SELECT code,\n       name,\n       ROUND(net_income * 1.0 / equity, 4) AS roe_right\n  FROM financials\n LIMIT 5;",
+    hdr: "roe_right (ROUND 4자리 정밀 완성 🎯)",
+    vals: ['0.1100', '0.2400', '0.0700', '0.0500', '0.0200'],
+    style: "color:var(--col-pass);font-weight:700",
+    note: "<b>🎯 최종 완성!</b> <code>ROUND(..., 4)</code> 함수를 씌워 소수 4자리(0.1100 = 11.00%)로 깔끔하게 반올림했습니다. 금융 실무 보고서에 즉시 투입 가능한 정량 지표입니다.",
+    badge: "<span class=\"badge\" style=\"background:rgba(16,185,129,.15);color:var(--col-pass);font-size:11px\">🎯 실무 완성: ROUND(..., 4)로 소수 4자리 정밀 표준화</span>",
+    boxLeftBorder: "#64748b",
+    boxLeftBg: "rgba(59,130,246,.05)",
+    boxRightBorder: "#10b981",
+    boxRightBg: "rgba(16,185,129,.12)",
+    txtL1: "ROUND(..., 4)",
+    txtL2: "반올림 함수 래핑",
+    txtL3: "금융 표준 4자리 통일",
+    txtR1: "ROUND(net_income * 1.0 / equity, 4)",
+    txtR2: "381,432.0 / 3,467,567 ➔ 0.1100",
+    txtR3: "🎯 금융 실무 투입 가능 ROE 지표 완성!"
+  }
+};
+
+function calcToggle(mode){
+  ['wrong','raw','right'].forEach(function(m){
+    setBtnPri('cc-btn-'+m, m===mode);
+  });
+  var d = calcModes[mode];
+  var badgeEl = document.getElementById('calc-step-badge');
+  if(badgeEl) badgeEl.innerHTML = d.badge;
+
+  var bLeft = document.getElementById('calc-box-left');
+  var bRight = document.getElementById('calc-box-right');
+  if(bLeft && bRight){
+    bLeft.setAttribute('stroke', d.boxLeftBorder);
+    bLeft.setAttribute('fill', d.boxLeftBg);
+    bRight.setAttribute('stroke', d.boxRightBorder);
+    bRight.setAttribute('fill', d.boxRightBg);
+  }
+  var l1 = document.getElementById('calc-txt-l1');
+  var l2 = document.getElementById('calc-txt-l2');
+  var l3 = document.getElementById('calc-txt-l3');
+  var r1 = document.getElementById('calc-txt-r1');
+  var r2 = document.getElementById('calc-txt-r2');
+  var r3 = document.getElementById('calc-txt-r3');
+  if(l1 && l2 && l3 && r1 && r2 && r3){
+    l1.textContent = d.txtL1; l2.textContent = d.txtL2; l3.textContent = d.txtL3;
+    r1.textContent = d.txtR1; r2.textContent = d.txtR2; r3.textContent = d.txtR3;
+  }
+
+  var calcEl = document.getElementById('cc-calc');
+  if(calcEl) calcEl.innerHTML = hlSql(d.sql);
+  var hdrEl = document.getElementById('cc-hdr');
+  if(hdrEl) hdrEl.textContent = d.hdr;
+
+  var rowsData = [
+    ['005930', '381,432', '3,467,567'],
+    ['000660', '303,706', '1,265,440'],
+    ['009150', '7,191', '102,726'],
+    ['051910', '27,965', '559,304'],
+    ['011170', '2,867', '143,361']
+  ];
+  var tbody = document.getElementById('cc-body');
+  var html = '';
+  rowsData.forEach(function(r, i){
+    html += '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td style="' + d.style + '">' + d.vals[i] + '</td></tr>';
+  });
+  if(tbody) tbody.innerHTML = html;
+  var noteEl = document.getElementById('cc-note');
+  if(noteEl) noteEl.innerHTML = d.note;
+}
+
+function groupToggle(mode){
+  setBtnPri('gb-btn-danger', mode==='danger');
+  setBtnPri('gb-btn-safe', mode==='safe');
+  setBtnPri('gb-btn-detail', mode==='detail');
+  var warn = document.getElementById('gb-warn');
+  var detail = document.getElementById('gb-detail-box');
+  var buckets = document.getElementById('gb-buckets');
+  var thead = document.getElementById('gb-thead');
+  var tbody = document.getElementById('gb-body');
+  var gbCalc = document.getElementById('gb-calc');
+
+  if(mode==='danger'){
+    if(gbCalc) gbCalc.innerHTML = hlSql("SELECT name,\n       sector,\n       ROUND(AVG(roe), 4) AS avg_roe\n  FROM financials\n GROUP BY sector;");
+    if(warn) warn.style.display = 'block';
+    if(detail) detail.style.display = 'none';
+    if(buckets){
+      buckets.innerHTML = '<div class="small" style="color:var(--bad);font-weight:700;margin-bottom:4px">🚨 업종별 바구니 집계 시각화 (대표 회사명 임의 부착 함정):</div>'
+        + '<div class="grid" style="gap:8px">'
+        + '  <div class="box" style="border-color:var(--bad);background:rgba(239,68,68,.06);padding:8px">'
+        + '    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><b class="small" style="color:var(--a1)">⚡ 전기전자 바구니</b><span class="small" style="color:var(--bad);font-weight:700">3사 평균: 0.1400</span></div>'
+        + '    <div class="small" style="color:var(--tx);margin:4px 0">• 삼성전자 (0.11)<br>• SK하이닉스 (0.24)<br>• 삼성전기 (0.07)</div>'
+        + '    <div class="small" style="color:var(--bad);border-top:1px dashed rgba(239,68,68,.4);padding-top:4px">⚠️ SQLite 임의 부착: <b>name=\'삼성전자\'</b> (왜곡!)</div>'
+        + '  </div>'
+        + '  <div class="box" style="border-color:var(--bad);background:rgba(239,68,68,.06);padding:8px">'
+        + '    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><b class="small" style="color:var(--a1)">🚗 자동차 바구니</b><span class="small" style="color:var(--bad);font-weight:700">2사 평균: 0.1150</span></div>'
+        + '    <div class="small" style="color:var(--tx);margin:4px 0">• 현대차 (0.12)<br>• 기아 (0.11)</div>'
+        + '    <div class="small" style="color:var(--bad);border-top:1px dashed rgba(239,68,68,.4);padding-top:4px">⚠️ SQLite 임의 부착: <b>name=\'기아\'</b> (왜곡!)</div>'
+        + '  </div>'
+        + '</div>';
+    }
+    thead.innerHTML = '<th>name (임의 선택 위험!)</th><th>sector</th><th>avg_roe</th>';
+    tbody.innerHTML = '<tr><td style="color:var(--bad);font-style:italic">삼성전자</td><td>전기전자</td><td style="color:var(--a3)">0.1400</td></tr>'
+      + '<tr><td style="color:var(--bad);font-style:italic">삼성바이오로직스</td><td>바이오</td><td style="color:var(--a3)">0.1400</td></tr>'
+      + '<tr><td style="color:var(--bad);font-style:italic">기아</td><td>자동차</td><td style="color:var(--a3)">0.1150</td></tr>'
+      + '<tr><td style="color:var(--bad);font-style:italic">NAVER</td><td>서비스</td><td style="color:var(--a3)">0.0900</td></tr>'
+      + '<tr><td style="color:var(--bad);font-style:italic">KB금융</td><td>금융</td><td style="color:var(--a3)">0.0850</td></tr>'
+      + '<tr><td style="color:var(--bad);font-style:italic">LG화학</td><td>화학</td><td style="color:var(--a3)">0.0433</td></tr>';
+  } else if(mode==='safe'){
+    if(gbCalc) gbCalc.innerHTML = hlSql("SELECT sector,\n       ROUND(AVG(roe), 4) AS avg_roe,\n       COUNT(*)           AS n\n  FROM financials\n GROUP BY sector;");
+    if(warn) warn.style.display = 'none';
+    if(detail) detail.style.display = 'none';
+    if(buckets){
+      buckets.innerHTML = '<div class="small" style="color:var(--a3);font-weight:700;margin-bottom:4px">✅ 업종별 바구니 정상 집계 시각화 (AVG + COUNT):</div>'
+        + '<div class="grid" style="gap:8px">'
+        + '  <div class="box" style="border-color:var(--a3);background:rgba(16,185,129,.06);padding:8px">'
+        + '    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><b class="small" style="color:var(--a1)">⚡ 전기전자 바구니</b><span class="small" style="color:var(--a3);font-weight:700">n=3</span></div>'
+        + '    <div class="small" style="color:var(--tx);margin:4px 0">• 삼성전자 (0.11)<br>• SK하이닉스 (0.24)<br>• 삼성전기 (0.07)</div>'
+        + '    <div class="small" style="color:var(--a3);border-top:1px dashed rgba(16,185,129,.4);padding-top:4px">AVG(roe) = <b>0.1400</b> (정확)</div>'
+        + '  </div>'
+        + '  <div class="box" style="border-color:var(--a3);background:rgba(16,185,129,.06);padding:8px">'
+        + '    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><b class="small" style="color:var(--a1)">🚗 자동차 바구니</b><span class="small" style="color:var(--a3);font-weight:700">n=2</span></div>'
+        + '    <div class="small" style="color:var(--tx);margin:4px 0">• 현대차 (0.12)<br>• 기아 (0.11)</div>'
+        + '    <div class="small" style="color:var(--a3);border-top:1px dashed rgba(16,185,129,.4);padding-top:4px">AVG(roe) = <b>0.1150</b> (정확)</div>'
+        + '  </div>'
+        + '</div>';
+    }
+    thead.innerHTML = '<th>sector</th><th>avg_roe</th><th>n (회사 수)</th>';
+    tbody.innerHTML = '<tr><td>전기전자</td><td style="color:var(--a3);font-weight:700">0.1400</td><td>3</td></tr>'
+      + '<tr><td>바이오</td><td style="color:var(--a3);font-weight:700">0.1400</td><td>1</td></tr>'
+      + '<tr><td>자동차</td><td style="color:var(--a3);font-weight:700">0.1150</td><td>2</td></tr>'
+      + '<tr><td>서비스</td><td style="color:var(--a3);font-weight:700">0.0900</td><td>1</td></tr>'
+      + '<tr><td>금융</td><td style="color:var(--a3);font-weight:700">0.0850</td><td>2</td></tr>'
+      + '<tr><td>화학</td><td style="color:var(--a3);font-weight:700">0.0433</td><td>3</td></tr>';
+  } else {
+    if(gbCalc) gbCalc.innerHTML = hlSql("SELECT name,\n       sector,\n       roe\n  FROM financials\n WHERE sector = '전기전자';");
+    if(warn) warn.style.display = 'none';
+    if(detail) detail.style.display = 'block';
+    if(buckets) buckets.innerHTML = '';
+    detail.innerHTML = '<b class="small" style="color:#fcd34d">🔍 전기전자 업종 3개 회사 실제 계산 분해:</b>'
+      + '<table class="pe-table"><thead><tr><th>회사명</th><th>개별 ROE</th><th>업종 계산 방식</th></tr></thead><tbody>'
+      + '<tr><td>삼성전자</td><td>0.1100</td><td rowspan="3" style="vertical-align:middle;color:#6ee7b7;font-weight:700">평균 = (0.11 + 0.24 + 0.07) / 3<br>= <b>0.1400</b></td></tr>'
+      + '<tr><td>SK하이닉스</td><td>0.2400</td></tr>'
+      + '<tr><td>삼성전기</td><td>0.0700</td></tr></tbody></table>'
+      + '<div class="small">0.1400은 3개 회사의 평균인데, 위험한 쿼리는 마치 삼성전자 단독 ROE가 0.1400인 것처럼 왜곡해버립니다!</div>';
+    thead.innerHTML = '<th>sector</th><th>avg_roe</th><th>n</th>';
+    tbody.innerHTML = '<tr><td>전기전자</td><td style="color:#6ee7b7;font-weight:700">0.1400</td><td>3</td></tr>';
+  }
+}
+
+function joinToggle(mode){
+  setBtnPri('jn-btn-on', mode==='on');
+  setBtnPri('jn-btn-off', mode==='off');
+  setBtnPri('jn-btn-full', mode==='full');
+  var el = document.getElementById('jn-result');
+  var linesOn = document.getElementById('join-lines-on');
+  var linesOff = document.getElementById('join-lines-off');
+  var jnCalc = document.getElementById('jn-calc');
+
+  if(mode==='on'){
+    if(jnCalc) jnCalc.innerHTML = hlSql("SELECT c.name,\n       f.year,\n       f.revenue,\n       f.net_income\n  FROM companies  AS c\n  JOIN financials AS f\n    ON c.code = f.code;");
+    if(linesOn) linesOn.style.display = 'block';
+    if(linesOff) linesOff.style.display = 'none';
+    el.innerHTML = '<b class="small" style="color:#6ee7b7">ON c.code = f.code — 각 회사가 자기 재무 데이터와만 결합 (정상 6행)</b>'
+      + '<table class="pe-table"><thead><tr><th>c.code</th><th>c.name</th><th>f.year</th><th>결합 여부</th></tr></thead><tbody>'
+      + '<tr><td style="color:#6ee7b7;font-weight:700">005930</td><td>삼성전자</td><td>2024</td><td>✅ 정상 매칭</td></tr>'
+      + '<tr><td style="color:#6ee7b7;font-weight:700">005930</td><td>삼성전자</td><td>2025</td><td>✅ 정상 매칭</td></tr>'
+      + '<tr><td style="color:#6ee7b7;font-weight:700">000660</td><td>SK하이닉스</td><td>2024</td><td>✅ 정상 매칭</td></tr>'
+      + '<tr><td style="color:#6ee7b7;font-weight:700">000660</td><td>SK하이닉스</td><td>2025</td><td>✅ 정상 매칭</td></tr>'
+      + '<tr><td style="color:#6ee7b7;font-weight:700">051910</td><td>LG화학</td><td>2024</td><td>✅ 정상 매칭</td></tr>'
+      + '<tr><td style="color:#6ee7b7;font-weight:700">051910</td><td>LG화학</td><td>2025</td><td>✅ 정상 매칭</td></tr></tbody></table>'
+      + '<div class="small">3개 회사 × 2개년 = 정확히 6행 생성.</div>';
+  } else if(mode==='off'){
+    if(jnCalc) jnCalc.innerHTML = hlSql("-- ⚠️ 위험: ON 조건 누락 (3사 x 6행 = 18행 카르테시안 곱 폭발)\nSELECT c.name,\n       f.year,\n       f.revenue,\n       f.net_income\n  FROM companies  AS c\n  JOIN financials AS f;");
+    if(linesOn) linesOn.style.display = 'none';
+    if(linesOff) linesOff.style.display = 'block';
+    el.innerHTML = '<b class="small" style="color:#fca5a5">ON 없음 — 가능한 모든 조합(카르테시안 곱) 발생 (18행 뻥튀기!)</b>'
+      + '<table class="pe-table"><thead><tr><th>c.code</th><th>c.name</th><th>f.code</th><th>f.year</th><th>판정</th></tr></thead><tbody>'
+      + '<tr><td>005930</td><td>삼성전자</td><td>005930</td><td>2024</td><td>우연히 일치</td></tr>'
+      + '<tr><td style="color:var(--bad)">005930</td><td>삼성전자</td><td style="color:var(--bad)">000660</td><td>2024</td><td style="color:var(--bad)">❌ 엉뚱한 결합!</td></tr>'
+      + '<tr><td style="color:var(--bad)">005930</td><td>삼성전자</td><td style="color:var(--bad)">051910</td><td>2024</td><td style="color:var(--bad)">❌ 엉뚱한 결합!</td></tr>'
+      + '<tr><td colspan="5" style="text-align:center;color:#94a3b8">... 총 18개 행 생성 (3개사 × 6개 재무행) ...</td></tr></tbody></table>'
+      + '<div class="small" style="color:#fca5a5">삼성전자 행에 SK하이닉스와 LG화학의 재무 정보까지 전부 결합된다 — 에러 없이 결과가 나오기 때문에 알아차리기 훨씬 힘든 치명적 함정이다.</div>';
+  } else {
+    if(jnCalc) jnCalc.innerHTML = hlSql("-- 📊 전체 12사 x 24행 기준 체급 비교\nSELECT COUNT(*)\n  FROM companies  AS c\n  JOIN financials AS f\n    ON c.code = f.code;  -- 결과: 24행 (정상)\n\nSELECT COUNT(*)\n  FROM companies  AS c\n  JOIN financials AS f;  -- 결과: 288행 (12배 왜곡!)");
+    if(linesOn) linesOn.style.display = 'block';
+    if(linesOff) linesOff.style.display = 'none';
+    el.innerHTML = '<b class="small" style="color:#fcd34d">📊 실제 전체 데이터(12개사 × 24개 재무행) 체급 비교:</b>'
+      + '<table class="pe-table"><thead><tr><th>구분</th><th>계산 공식</th><th>행 수</th><th>영향</th></tr></thead><tbody>'
+      + '<tr><td>ON 조건 있음</td><td>12개사 × 2개년</td><td style="color:#6ee7b7;font-weight:700">24행</td><td>정상 분석 가능</td></tr>'
+      + '<tr><td>ON 누락 (카르테시안 곱)</td><td>12개사 × 24행</td><td style="color:var(--bad);font-weight:700">288행</td><td>데이터 12배 뻥튀기 왜곡!</td></tr></tbody></table>'
+      + '<div class="small">만약 수만 행 테이블에서 ON을 빼먹으면 수억 행의 카르테시안 곱이 발생해 DB 메모리가 고갈된다.</div>';
+  }
+}
+
+var errData = [
+  {
+    bad: "SELECT *\n  FROM company\n LIMIT 1;",
+    msg: "Execution failed on sql:\nno such table: company",
+    tip: "표 이름 철자 · 단수/복수 여부를 확인한다. (정답: companies)"
+  },
+  {
+    bad: "SELECT ticker\n  FROM companies\n LIMIT 1;",
+    msg: "Execution failed on sql:\nno such column: ticker",
+    tip: "열 이름 철자 · 어느 표에 속한 열인지 확인한다. (이 DB에서는 ticker가 아니라 code다)"
+  },
+  {
+    bad: "SELEC *\n  FROM companies\n LIMIT 1;",
+    msg: "Execution failed on sql:\nnear \"SELEC\": syntax error",
+    tip: "SQL 예약어 키워드 철자(SELEC -> SELECT), 쉼표(,), 괄호 짝을 확인한다."
+  },
+  {
+    bad: "SELECT code\n  FROM financials\n WHERE AVG(revenue) > 0;",
+    msg: "Execution failed on sql:\nmisuse of aggregate function AVG()",
+    tip: "AVG, SUM 같은 집계 함수는 행을 거르는 WHERE 절에 바로 쓸 수 없다. (HAVING 절이나 서브쿼리 사용)"
+  }
+];
+
+function errShow(i){
+  for(var idx=0; idx<4; idx++){
+    setBtnPri('err-btn-'+idx, idx===i);
+  }
+  var d = errData[i];
+  var bSql = document.getElementById('err-bad-sql');
+  var msg = document.getElementById('err-msg');
+  var tip = document.getElementById('err-tip');
+  bSql.innerHTML = '<span style="color:#94a3b8"># 실행한 잘못된 쿼리:</span>\n<span style="color:#fcd34d">' + d.bad + '</span>';
+  msg.textContent = d.msg;
+  tip.innerHTML = '<div class="ibox-t">👀 무엇을 확인해야 하나</div><ul><li>' + d.tip + '</li></ul>';
+}
+
+/* ── Panel 3: SQL → pandas ────────────────────────── */
+var pdPipes = {
+  head: {
+    code: "df.head(5)",
+    html: '<table class="pe-table"><thead><tr><th>name</th><th>sector</th><th>revenue</th><th>roe</th></tr></thead><tbody>'
+      + '<tr><td>삼성전자</td><td>전기전자</td><td>3466200</td><td>0.11</td></tr>'
+      + '<tr><td>SK하이닉스</td><td>전기전자</td><td>1007720</td><td>0.24</td></tr>'
+      + '<tr><td>삼성전기</td><td>전기전자</td><td>91728</td><td>0.07</td></tr>'
+      + '<tr><td>LG화학</td><td>화학</td><td>470256</td><td>0.05</td></tr>'
+      + '<tr><td>롯데케미칼</td><td>화학</td><td>131100</td><td>0.02</td></tr></tbody></table>'
+      + '<div class="small">DB에서 SQL로 가져온 표의 첫 5행을 판다스에서 즉시 확인한다.</div>'
+  },
+  info: {
+    code: "df.info()",
+    html: '<div class="calc" style="font-size:11.5px">&lt;class \'pandas.DataFrame\'&gt;\nRangeIndex: 12 entries, 0 to 11\nData columns (total 4 columns):\n #   Column   Non-Null Count  Dtype\n---  ------   --------------  -----\n 0   name     12 non-null     object\n 1   sector   12 non-null     object\n 2   revenue  12 non-null     int64\n 3   roe      12 non-null     float64\ndtypes: float64(1), int64(1), object(2)</div>'
+      + '<div class="small">12개 행 모두 결측치 없이 정수(revenue)와 실수(roe) 타입으로 정확히 읽혔다.</div>'
+  },
+  filter: {
+    code: "df[df['roe'] > 0.08].sort_values('roe', ascending=False)",
+    html: '<table class="pe-table"><thead><tr><th>name</th><th>sector</th><th>revenue</th><th>roe</th></tr></thead><tbody>'
+      + '<tr><td>SK하이닉스</td><td>전기전자</td><td>1007720</td><td style="color:#6ee7b7;font-weight:700">0.24</td></tr>'
+      + '<tr><td>삼성바이오로직스</td><td>바이오</td><td>54740</td><td style="color:#6ee7b7;font-weight:700">0.14</td></tr>'
+      + '<tr><td>기아</td><td>자동차</td><td>1209900</td><td style="color:#6ee7b7;font-weight:700">0.13</td></tr>'
+      + '<tr><td>삼성전자</td><td>전기전자</td><td>3466200</td><td style="color:#6ee7b7;font-weight:700">0.11</td></tr>'
+      + '<tr><td>현대차</td><td>자동차</td><td>1797600</td><td style="color:#6ee7b7;font-weight:700">0.10</td></tr>'
+      + '<tr><td>KB금융</td><td>금융</td><td>237930</td><td style="color:#6ee7b7;font-weight:700">0.09</td></tr>'
+      + '<tr><td>NAVER</td><td>서비스</td><td>117700</td><td style="color:#6ee7b7;font-weight:700">0.09</td></tr></tbody></table>'
+      + '<div class="small">앵커 질문의 답 — "수익성이 좋은 기업들" 7곳이 판다스 불리언 마스크로 정확히 추출되었다.</div>'
+  },
+  desc: {
+    code: "df.describe()",
+    html: '<table class="pe-table"><thead><tr><th>통계량</th><th>revenue</th><th>roe</th></tr></thead><tbody>'
+      + '<tr><td>count</td><td>12.0</td><td>12.0</td></tr>'
+      + '<tr><td>mean (평균)</td><td>764,612</td><td>0.0983 (약 9.8%)</td></tr>'
+      + '<tr><td>min (최소)</td><td>54,740</td><td>0.0200 (2.0%)</td></tr>'
+      + '<tr><td>50% (중앙값)</td><td>302,820</td><td>0.0900 (9.0%)</td></tr>'
+      + '<tr><td>max (최대)</td><td>3,466,200</td><td>0.2400 (24.0%)</td></tr></tbody></table>'
+      + '<div class="small">가져온 표를 바탕으로 Week02에서 배운 기술 통계량을 그대로 적용한다.</div>'
+  }
+};
+
+function pandasPipe(mode){
+  ['head','info','filter','desc'].forEach(function(m){
+    setBtnPri('pd-btn-'+m, m===mode);
+  });
+  var d = pdPipes[mode];
+  var box = document.getElementById('pd-pipe-box');
+  box.innerHTML = '<div class="calc" style="font-size:12px;margin-bottom:8px"># pandas 실행:\n' + d.code + '</div>' + d.html;
+}
+
+function pandasCompare(mode){
+  var isSql = mode === 'sql';
+  setBtnPri('pc-sql', isSql);
+  setBtnPri('pc-pd', !isSql);
+  document.getElementById('pc-hdr').textContent = mode==='sql' ? 'avg_roe (SQL GROUP BY)' : 'avg_roe (df.groupby)';
+  document.getElementById('pc-note').innerHTML = mode==='sql'
+    ? '앞선 300번 노트의 <code>SELECT c.sector, ROUND(AVG(...), 4) FROM ... GROUP BY c.sector</code> 실행 결과.'
+    : '손에 쥔 DataFrame으로 <code>df.groupby(\'sector\')[\'roe\'].mean().round(4)</code>를 실행한 결과 — 소수점 4자리까지 SQL과 100% 동일하다!';
+}
+
+/* ── Panel 4: DB 지도 ────────────────────────── */
+var dbMapData = [
+  {
+    title: "① SQLite — 지금 우리가 있는 자리",
+    scale: "1인 개인 분석",
+    size: "수십 KB ~ 수 GB (단일 로컬 파일)",
+    perm: "로컬 파일 완전 소유 (생성/읽기/쓰기)",
+    role: "파이프라인 중심 저장소가 아니라 개인 분석용 캐시",
+    warn: "여러 명이 동시에 쓰면 파일이 통째로 잠긴다 (Database Lock). 팀 운영 DB로는 부적합하다."
+  },
+  {
+    title: "② PostgreSQL · MySQL — 회사 서버 서비스 DB",
+    scale: "팀 / 수십~수백 명 동시 접속",
+    size: "수십 GB ~ 수 TB",
+    perm: "분석가는 전형적으로 읽기 전용(SELECT Only) 계정 부여",
+    role: "사내 서비스 운영 및 실시간 트랜잭션 처리(OLTP)",
+    warn: "타입 체크가 매우 엄격하며, 불필요한 전체 스캔(Full Scan) 쿼리를 날리면 사내 서비스가 느려질 수 있다."
+  },
+  {
+    title: "③ Supabase 등 — 클라우드 운영 DB",
+    scale: "클라우드 공유 / 다수 동시 조회",
+    size: "수 GB ~ 수 TB",
+    perm: "publishable key(읽기 전용) vs service_role key(관리자)",
+    role: "클라우드 관리형 PostgreSQL — 별도 서버 설치 없이 즉시 조회",
+    warn: "RLS(Row Level Security) 정책으로 허용된 테이블만 접근 가능. 관리자 비밀번호를 노트북에 적지 않는다."
+  },
+  {
+    title: "④ BigQuery 등 — 대규모 데이터 분석",
+    scale: "조직 전체 / 전사 분석팀",
+    size: "수억 행 ~ 수십 TB/PB 이상",
+    perm: "분석 전용 권한 (쿼리 비용 모니터링 수반)",
+    role: "분석 전용 데이터 웨어하우스(OLAP) — 수억 건의 집계를 순식간에 처리",
+    warn: "개인 분석용 로컬 캐시와는 목적 자체가 다르며, 쿼리당 스캔 용량에 따라 비용이 발생한다."
+  }
+];
+
+function dbMapShow(i){
+  for(var idx=0; idx<5; idx++){
+    setBtnPri('map-btn-'+idx, idx===i);
+  }
+  var el = document.getElementById('dbmap-detail');
+  if(i===4){
+    el.innerHTML = '<b class="small" style="color:#fcd34d">📊 4대 데이터베이스 시스템 1:1 비교표</b>'
+      + '<table class="pe-table"><thead><tr><th>시스템</th><th>사용자 규모</th><th>데이터 체급</th><th>분석가 전형적 권한</th><th>실무 주의사항</th></tr></thead><tbody>'
+      + '<tr><td style="color:#6ee7b7;font-weight:700">SQLite</td><td>1인 개인</td><td>MB ~ 수 GB</td><td>파일 완전 소유</td><td>동시 쓰기 시 파일 잠김 (캐시용)</td></tr>'
+      + '<tr><td style="color:#93c5fd;font-weight:700">PostgreSQL</td><td>팀 / 사내</td><td>수십 GB ~ TB</td><td>읽기 전용 (SELECT)</td><td>엄격한 타입 체크, 서비스 부하 주의</td></tr>'
+      + '<tr><td style="color:#fcd34d;font-weight:700">Supabase</td><td>클라우드 팀</td><td>수 GB ~ TB</td><td>publishable key (읽기전용)</td><td>RLS 보안, 관리자 키 노출 금지</td></tr>'
+      + '<tr><td style="color:#fca5a5;font-weight:700">BigQuery</td><td>전사 분석</td><td>수억 행 ~ PB</td><td>분석 쿼리 권한</td><td>스캔 용량별 쿼리 비용 발생</td></tr></tbody></table>'
+      + '<div class="small"><b>회사는 이 중 하나만 쓰지 않는다:</b> 실무에서는 서비스 DB(PostgreSQL)에서 데이터를 모아 웨어하우스(BigQuery)에 적재하고, 분석가는 필요한 만큼만 SQLite 캐시로 내려받아 쓴다.</div>';
+    return;
+  }
+  var d = dbMapData[i];
+  el.innerHTML = '<b class="small" style="color:#6ee7b7">' + d.title + '</b>'
+    + '<table class="pe-table" style="margin-top:6px"><tbody>'
+    + '<tr><td style="width:130px;color:var(--td)">사용자 규모</td><td>' + d.scale + '</td></tr>'
+    + '<tr><td style="color:var(--td)">데이터 체급</td><td>' + d.size + '</td></tr>'
+    + '<tr><td style="color:var(--td)">분석가 권한</td><td>' + d.perm + '</td></tr>'
+    + '<tr><td style="color:var(--td)">실무 핵심 역할</td><td>' + d.role + '</td></tr>'
+    + '<tr><td style="color:var(--td)">주의사항</td><td style="color:#fca5a5">' + d.warn + '</td></tr></tbody></table>';
+}
+
+/* ── Panel 5: 클라우드 DB ────────────────────────── */
+var typeDiags = {
+  type: {
+    title: "① 타입 엄격성 차이 — 숫자 열에 문자열 '오류아님' 입력 시",
+    sqlite: "-- SQLite 실행:\nCREATE TABLE t (revenue INTEGER);\nINSERT INTO t VALUES ('오류아님');\n\nSELECT * FROM t;\n-- 결과: '오류아님' (에러 없이 저장 성공!)",
+    pg: "-- PostgreSQL 실행:\nCREATE TABLE t (revenue INTEGER);\nINSERT INTO t VALUES ('오류아님');\n\n❌ ERROR: invalid input syntax for type integer: \"오류아님\"\n-- 결과: 트랜잭션 즉시 거부 및 롤백!",
+    lesson: "SQLite는 데이터 타입에 관대(Type Affinity)하지만, PostgreSQL은 선언된 타입을 절대적으로 강제한다."
+  },
+  date: {
+    title: "② 날짜 함수 이름 차이 — 월별 집계 추출 시",
+    sqlite: "SELECT strftime('%Y-%m', date) AS ym,\n       AVG(close)              AS avg_close\n  FROM returns\n GROUP BY ym;",
+    pg: "SELECT date_trunc('month', date) AS ym,\n       AVG(close)                AS avg_close\n  FROM returns\n GROUP BY ym;",
+    lesson: "SQLite의 strftime 문자열 포맷팅이 PostgreSQL에서는 date_trunc 계열 함수로 대체된다. 문법 차이의 대표적 사례다."
+  },
+  group: {
+    title: "③ GROUP BY 비집계 열 처리 차이",
+    sqlite: "SELECT name,\n       sector,\n       AVG(roe) AS avg_roe\n  FROM companies\n GROUP BY sector;\n\n✅ SQLite는 에러 없이 임의의 회사 이름을 하나 골라 출력한다 (조용히 왜곡됨).",
+    pg: "SELECT name,\n       sector,\n       AVG(roe) AS avg_roe\n  FROM companies\n GROUP BY sector;\n\n❌ ERROR: column \"companies.name\" must appear in the GROUP BY clause or be used in an aggregate function\n\nPostgreSQL은 이 쿼리를 아예 실행 불가능한 문법 에러로 차단한다.",
+    lesson: "PostgreSQL의 엄격함이 오히려 침묵하는 오류를 원천 차단해준다."
+  }
+};
+
+function typeDiag(mode){
+  ['type','date','group'].forEach(function(m){
+    setBtnPri('tt-btn-'+m, m===mode);
+  });
+  var d = typeDiags[mode];
+  var el = document.getElementById('tt-result');
+  el.innerHTML = '<b class="small" style="color:#fcd34d">' + d.title + '</b>'
+    + '<div class="grid" style="margin-top:8px">'
+    + '<div class="box"><b class="small" style="color:#6ee7b7">SQLite (관대함)</b><div class="calc" style="font-size:11.5px;margin-top:6px">' + hlSql(d.sqlite) + '</div></div>'
+    + '<div class="box"><b class="small" style="color:#fca5a5">PostgreSQL (엄격함)</b><div class="calc" style="font-size:11.5px;margin-top:6px">' + hlSql(d.pg) + '</div></div>'
+    + '</div>'
+    + '<div class="ibox bl" style="margin-top:8px"><div class="ibox-t">💡 학습 시사점</div>' + d.lesson + '</div>';
+}
+
+
+
+var simSteps = {
+  1: {
+    btnIdx: 1,
+    title: "① 학생 첫 조회 (교수 수정 전)",
+    code: "companies = supabase.table('companies').select('*').limit(3).execute().data\npd.DataFrame(companies)",
+    html: '<table class="pe-table"><thead><tr><th>code</th><th>name</th><th>sector</th></tr></thead><tbody>'
+      + '<tr><td>005930</td><td>삼성전자</td><td style="color:#93c5fd">전기전자</td></tr>'
+      + '<tr><td>000660</td><td>SK하이닉스</td><td>전기전자</td></tr>'
+      + '<tr><td>009150</td><td>삼성전기</td><td>전기전자</td></tr></tbody></table>',
+    note: "학생 노트북에서 클라우드 Supabase를 조회했을 때 삼성전자의 업종이 '전기전자'로 나온다."
+  },
+  2: {
+    btnIdx: 2,
+    title: "② 교수의 클라우드 데이터 수정 (관리자 권한 시연)",
+    code: "# 교수가 Supabase 관리자 콘솔에서 단 1건의 데이터를 수정함:\nUPDATE companies SET sector = '반도체·AI' WHERE code = '005930';",
+    html: '<div class="ibox am"><div class="ibox-t">⚙️ 클라우드 원본 데이터 변경 완료</div>삼성전자(005930)의 sector 값이 [전기전자] → [반도체·AI]로 중앙 DB에서 실시간 업데이트되었습니다. 학생 노트북 코드는 전혀 건드리지 않았습니다.</div>',
+    note: "교수가 중앙의 원본 데이터를 수정했다. 이제 학생이 자기 노트북에서 같은 셀을 다시 돌리면 어떻게 될까?"
+  },
+  3: {
+    btnIdx: 3,
+    title: "③ 학생 노트북 재실행 (코드 변경 없이 그대로 재조회!)",
+    code: "# 학생은 이전 셀을 코드 변경 없이 그대로 '재실행'만 누름:\ncompanies = supabase.table('companies').select('*').limit(3).execute().data\npd.DataFrame(companies)",
+    html: '<table class="pe-table"><thead><tr><th>code</th><th>name</th><th>sector</th></tr></thead><tbody>'
+      + '<tr><td>005930</td><td>삼성전자</td><td style="color:#6ee7b7;font-weight:700">반도체·AI (실시간 반영!)</td></tr>'
+      + '<tr><td>000660</td><td>SK하이닉스</td><td>전기전자</td></tr>'
+      + '<tr><td>009150</td><td>삼성전기</td><td>전기전자</td></tr></tbody></table>',
+    note: "<b style='color:#6ee7b7'>조회 결과가 실시간으로 바뀌었다!</b> 로컬 파일 방식이었다면 새 CSV를 다시 다운받아야 했겠지만, 클라우드 DB는 중앙의 단일 진실 공급원(SSOT)을 조회하므로 즉시 최신 데이터가 반영된다."
+  }
+};
+
+function simCloud(step){
+  [1,2,3].forEach(function(s){
+    setBtnPri('sim-btn-'+s, s===step);
+  });
+  var d = simSteps[step];
+  var box = document.getElementById('sim-result');
+  box.innerHTML = '<b class="small" style="color:#fcd34d">' + d.title + '</b>'
+    + '<div class="calc" style="font-size:11.5px;margin-top:6px">' + d.code + '</div>'
+    + '<div style="margin-top:8px">' + d.html + '</div>'
+    + '<div class="small" style="margin-top:6px">' + d.note + '</div>';
+}
+
+function mcpToggle(mode){
+  var isHuman = mode === 'human';
+  setBtnPri('mcp-btn-human', isHuman);
+  setBtnPri('mcp-btn-ai', !isHuman);
+  var el = document.getElementById('mcp-result');
+  if(isHuman){
+    el.innerHTML = '<b class="small" style="color:#93c5fd">사람이 SQL을 직접 작성하여 질의하는 방식</b>'
+      + '<div class="flow">'
+      + '<div class="f" style="border-color:var(--a1);color:#93c5fd">사람<br>(SQL 지식 필요)</div>'
+      + '<div class="op">→ 쿼리 작성 →</div>'
+      + '<div class="f" style="border-color:var(--a2);color:#c4b5fd">VS Code<br>(pd.read_sql)</div>'
+      + '<div class="op">→</div>'
+      + '<div class="f" style="border-color:var(--a3);color:#6ee7b7">Supabase DB</div>'
+      + '</div>'
+      + '<div class="small">내가 SQL 문법(JOIN, GROUP BY 등)을 직접 알고 있어야 원하는 답을 얻을 수 있다.</div>';
+  } else {
+    el.innerHTML = '<b class="small" style="color:#fcd34d">MCP를 통해 AI가 중간에서 쿼리를 작성·실행하는 방식</b>'
+      + '<div class="flow">'
+      + '<div class="f" style="border-color:var(--a4);color:#fcd34d">사람<br>(한국어 자연어 질문)</div>'
+      + '<div class="op">→ "매출 1위 기업 찾아줘" →</div>'
+      + '<div class="f" style="border-color:var(--a2);color:#c4b5fd">Claude / AI 모델</div>'
+      + '<div class="op">→ [MCP 통로] →</div>'
+      + '<div class="f" style="border-color:var(--a3);color:#6ee7b7">Supabase DB</div>'
+      + '</div>'
+      + '<div class="small">바뀐 것은 <b>"질문을 쓰는 사람(사람 → AI)"</b>이지 DB 자체가 아니다. AI가 작성한 쿼리에 함정(ORDER BY 누락 등)이 없는지 검증하는 것은 여전히 분석가의 몫이다.</div>';
+  }
+}
+
+// Initial renders on page load
+window.addEventListener('DOMContentLoaded', function(){
+  simBattle('cond');
+  dbBottleCheck('rate');
+  dbMapping('shop');
+  dbNavSelect(0, 0);
+  envTip(0);
+  sqliteReveal(1);
+  simPipeline('conn');
+  appendSim(0);
+  orderToggle('desc');
+  calcToggle('wrong');
+  groupToggle('safe');
+  joinToggle('on');
+  errShow(0);
+  pandasPipe('head');
+  dbMapShow(0);
+  typeDiag('type');
+  simCloud(1);
+  mcpToggle('human');
+
+  ['ob-calc', 'cc-calc', 'gb-calc', 'jn-calc'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && el.textContent) {
+      el.innerHTML = hlSql(el.textContent.trim());
+    }
+  });
+});
+</script>
+</div>
+<script>
+// Tab navigation — panels identified by id="p0", "p1", ...
+(function(){
+  var cur = 0;
+  window.go = function(n) {
+    var prev = document.getElementById('p' + cur);
+    if (prev) prev.classList.remove('on');
+    var navBtns = document.querySelectorAll('.sbtn, .nav button');
+    navBtns.forEach(function(b, i){ if(i === cur) b.classList.remove('on','active'); });
+    cur = n;
+    var next = document.getElementById('p' + cur);
+    if (next) next.classList.add('on');
+    navBtns.forEach(function(b, i){ if(i === cur) b.classList.add('on','active'); });
+    // Update progress bar if present
+    var prog = document.getElementById('prog');
+    if (prog) {
+      var total = document.querySelectorAll('.panel').length;
+      prog.style.width = ((cur + 1) / total * 100) + '%';
+    }
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  };
+  // Sub-tab support
+  window.showTab = function(groupId, idx) {
+    var panels = document.querySelectorAll('[data-group="' + groupId + '"]');
+    panels.forEach(function(p, i){
+      p.classList.toggle('on', i === idx);
+    });
+    var tabs = document.querySelectorAll('[data-tab-group="' + groupId + '"]');
+    tabs.forEach(function(t, i){
+      t.classList.toggle('on', i === idx);
+    });
+  };
+})();
+// Theme toggle — dark is the default; light persisted via localStorage.
+function lecThemeLabel(t){ return t === 'light' ? '☀️ 라이트' : '🌙 다크'; }
+function lecApplyTheme(t){
+  if (t === 'light') document.body.setAttribute('data-theme', 'light');
+  else document.body.removeAttribute('data-theme');
+  var b = document.getElementById('themeBtn');
+  if (b) b.textContent = lecThemeLabel(t);
+}
+window.toggleTheme = function(){
+  var next = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  lecApplyTheme(next);
+  try { localStorage.setItem('lecHtmlTheme', next); } catch(e){}
+};
+(function(){
+  var saved; try { saved = localStorage.getItem('lecHtmlTheme'); } catch(e){}
+  lecApplyTheme(saved === 'light' ? 'light' : 'dark');
+})();
+
+// Hash router for Dual Deliverable Bridge (#p0 .. #p5 or #bench0 .. #bench5)
+function handleHashRoute() {
+  var h = window.location.hash;
+  var idx = 0;
+  if (h) {
+    var m = h.match(/#(?:p|bench)(\d+)/);
+    if (m) {
+      var parsed = parseInt(m[1], 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed < 6) {
+        idx = parsed;
+      }
+    }
+  }
+  if (typeof window.goTab === 'function') {
+    window.goTab(idx);
+  } else if (typeof window.go === 'function') {
+    window.go(idx);
+  }
+}
+window.addEventListener('hashchange', handleHashRoute);
+window.addEventListener('DOMContentLoaded', handleHashRoute);
+handleHashRoute();
+
+// Syntax-highlight the one static SQL block not covered by the existing hlSql() sweep
+(function(){
+  var el = document.getElementById('p3-sql');
+  if(el) el.innerHTML = hlSql(el.textContent);
+})();
+</script>
+</body>
+</html>
